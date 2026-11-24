@@ -2,7 +2,7 @@
 
 An experimental Python project for studying how groups of sounds create a musical timeline and a continuous, measurable musical pattern.
 
-**Original ideas:** See `music.txt` and the 15 verbatim statements below. **Key distinction:** Row 1 is the musical structure carried across changing sound groups; active-row count is only an early diagnostic, not a full definition of that structure.
+**Original ideas:** See `music.txt`: statements 1–15 appear below, and statement 16 appears in the new appendix at the bottom. **Key distinction:** Row 1 is the musical structure carried across changing sound groups; active-row count is only an early diagnostic, not a full definition of that structure.
 
 ## The author's ideas — corrected grammar and punctuation
 
@@ -398,9 +398,47 @@ When using floating-point timestamps, adopt a documented tolerance or an integer
 
 This repository begins as a **mathematical music-structure experiment**, not a full music editor, audio player, or genre classifier. The first goal is to prove that sound events can generate variable-width columns and that temporary rows can be combined into a meaningful, inspectable measurement over time.
 
-**Status (November 24, 2026):** The music repository has a tested Python timeline and Tkinter visualization. The most recently confirmed pushed checkpoint is `19ed531` (progressive column refitting and independent song GUI), with 41 tests passing at that checkpoint. A later local Stage 2B Phase 3 experiment for low-to-high development has been reported by Google Antigravity with 49 tests passing, but **its changes have not yet been independently confirmed or committed**. These experiments do not establish the proposed musical-style distinctions.
+**Status (November 24, 2026):** The last user-confirmed pushed checkpoint is `bfae081` (low-to-high musical development), after a reported 49-test Phase 3 baseline. Google Antigravity subsequently reported a local, uncommitted Stage 3 MIDI importer with 62 passing tests; that report and screenshots do not establish musical-style distinctions. This README appendix records the latest author clarification for review before further development.
 
 ## Source of the author's wording
 
-The companion `music.txt` is the canonical, unedited record of all 15 original statements. Keep that file unchanged when extending this project. The explanations in this README are interpretations, not quotations or replacements for the author's own words.
+The companion `music.txt` is the canonical, unedited record of all 16 original statements. Keep all original wording unchanged when extending this project; add further statements separately. The explanations in this README are interpretations, not quotations or replacements for the author's own words.
 
+---
+
+## New author clarification — Statement 16: One song-wide set of fitted columns
+
+This appendix adds the author's latest clarification after inspecting the Stage 3 MIDI timeline screenshots. It follows the established documentation pattern: **the author's exact words**, **the same words with grammar and punctuation corrected**, and **an explicitly separate interpretation for AI collaborators**. Earlier statements 1–15 and their explanations remain above.
+
+### Original statement 16 — Verbatim (no corrections)
+
+> it looks like the columns are different sizes on different rows. and not all the same size and fit into the music they describe. the columns fit the entire group of sound in the song and then multiple groups fit together and this is how they form the contstant row 1 that blends into the rows 2 and 3 etc by being able to go from low to high sound similar to a duck running on water then with a whirrring foot on water sound to flapping in the air and flying sound similar to the ride of the valkyries sound.
+
+### Edited statement 16 — Grammar and punctuation corrected (author's voice)
+
+> It looks like the columns are different sizes on different rows, rather than being the same sizes and fitting the music they describe. The columns should fit the entire group of sounds in the song. Then multiple groups fit together, and that is how they form the constant Row 1, which blends into Rows 2, 3, and so on by allowing the music to go from a low sound to a high sound. It is similar to a duck running on water: first there is a whirring sound as its feet move across the water, then the sound of flapping in the air and flying. To me, this is similar to the sound of *Ride of the Valkyries*.
+
+### Assistant interpretation for Claude, Grok, Google Antigravity, and other collaborators
+
+**Status of this section:** This is a working interpretation of the author's words, not a verbatim statement or a proven musical theory. When a technical choice is not specified by the author, mark it as a proposal to test.
+
+**A. One song, one column coordinate system.** The author expects the sound groups within a *single song* to fit together in one coherent set of time columns. These columns may have unequal durations **from one column to the next**, because the music changes at uneven times. However, a given column boundary should align vertically across Row 1 and all temporary rows within the same song. The columns should not be separately resized for each row.
+
+**B. Distinguish columns from sound bars.** A sound event in Row 2 may continue across multiple master columns, while a shorter sound in Row 3 may occupy only one or part of one. Their colored event bars can therefore have different visible lengths **without** implying that the song's column boundaries differ between rows. Use shared vertical grid lines, a common time-to-screen mapping, and unambiguous column labels so that users can distinguish event length from column width. The screenshots raise a **visual alignment concern**; they do not by themselves prove that the underlying timing calculations are wrong.
+
+**C. How the columns are fitted.** Each temporary sound group contributes its meaningful beginnings and endings. Combining these within the same song produces the master sequence of columns. As another musical group is added, that column sequence may be subdivided or extended. Existing sound identities and their true times should remain unchanged. Row 1 uses this resulting shared structure; it should not be shown on an independent, incompatible grid.
+
+**D. What Row 1 means to the author.** Row 1 is the proposed *constant musical connection or identity* created through the relationships of distinct lower-row sound groups. The author's duck analogy describes a recognizable development: low, whirring water-contact sounds become transitional movement and then higher flying or flapping sounds. The analogy communicates a qualitative musical change; it is **not** evidence that a particular pitch-average formula captures musical identity. The existing *active-row count* and *mean MIDI pitch* are separate experimental diagnostics, not complete definitions of Row 1.
+
+**E. Across songs.** Each song should derive its **own** master columns from its own sound groups; different songs need not have matching numbers or widths of columns. Only after building each song independently should the program compare their Row 1 structures and possible linear or curved development. Neither “more columns means curved” nor “traditional music means linear” is established by the current examples.
+
+**F. Practical design acceptance checks (proposed, not yet verified).**
+
+1. For every column in a song, display a single start and end time that is shared across all rows; draw vertical boundaries continuously from the header through Row 1 and all temporary rows.
+2. Use one time-to-x mapping per song and confirm the same timestamp has the same x-coordinate in every row. Allow variable widths between consecutive columns, never independent widths for the same column on different rows.
+3. Draw long notes and sounds as continuous events spanning whichever columns they overlap. Do not force every sound to fill exactly one column or copy it each time a boundary is introduced.
+4. Recheck the Stage 3 20-column MIDI example at the beginning, middle, and end while horizontally scrolling, and verify that Row 1 and all instrument rows share aligned boundaries.
+5. Display the structural baseline (number of active rows) separately from experimental pitch or musical-development measurements. Do not declare the author's “musical carrier” solved until a meaningful, testable definition is agreed.
+6. Preserve two-song independence and all existing tests when implementing changes. Do not change the calculator repository; do not commit or push without authorization.
+
+**Open research question:** Exactly which audible features and which kinds of connections between distinct groups make Row 1 carry a composition's recognizable low-to-high musical identity? The author has given a guiding analogy and structural constraints, but not a final numerical formula.
