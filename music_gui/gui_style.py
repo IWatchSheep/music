@@ -21,13 +21,16 @@ FG_HEADER = "#1e293b"          # Slate 800
 FG_HEADER_SUB = "#64748b"      # Slate 500
 BORDER_HEADER = "#cbd5e1"
 
-# Column boundary vertical grid guidelines
-GRID_LINE_COLOR = "#cbd5e1"    # Dotted or solid line separating columns
-GRID_LINE_DASH = (3, 3)
+# Column boundary vertical grid guidelines (Solid master gridlines across all rows)
+GRID_LINE_COLOR = "#94a3b8"    # Solid slate 400 line unifying all rows
+GRID_LINE_DASH = ()            # Solid lines across master columns
+INTERNAL_DIVIDER_COLOR = "#ffffff"  # Crisp white internal divider over long sound bars
 
-# Temporary Row Lanes
+# Temporary Row Lanes & Master Column Cells
 BG_ROW_EVEN = "#ffffff"
 BG_ROW_ODD = "#f8fafc"
+BG_COL_EVEN = "#ffffff"
+BG_COL_ODD = "#f8fafc"
 BG_ROW_LABEL = "#dcfce7"       # Green 100 badge
 BORDER_ROW_LABEL = "#86efac"   # Green 300 border
 FG_ROW_LABEL = "#166534"       # Green 800 text
@@ -43,7 +46,7 @@ SOUND_COLORS = [
     ("#fdba74", "#ea580c", "#7c2d12"),  # 6: Coral Orange
 ]
 
-# Constant Row Theme (bottom)
+# Constant Row Theme (Musical Development Carrier)
 BG_CONSTANT_ROW = "#fffbeb"          # Amber 50
 BG_CONSTANT_LABEL = "#fef3c7"        # Amber 100 badge
 BORDER_CONSTANT_LABEL = "#f59e0b"    # Amber 500
@@ -51,6 +54,8 @@ FG_CONSTANT_LABEL = "#92400e"        # Amber 800
 BG_CONSTANT_CELL = "#ffffff"         # White box inside constant row
 BORDER_CONSTANT_CELL = "#d97706"     # Amber 600 border
 FG_CONSTANT_VAL = "#b45309"          # Amber 700 bold number
+FG_TREND_LINE = "#d97706"            # Amber 600 development trend line
+FG_TREND_NODE = "#b45309"            # Amber 700 development node
 
 # Fonts
 FONT_TITLE = ("Segoe UI", 11, "bold")
@@ -64,5 +69,5 @@ FONT_EVENT_TITLE = ("Segoe UI", 9, "bold")
 FONT_EVENT_SUB = ("Segoe UI", 8)
 FONT_CONSTANT_LABEL = ("Segoe UI", 9, "bold")
 FONT_CONSTANT_SUB = ("Segoe UI", 8)
-FONT_CONSTANT_VAL = ("Segoe UI", 13, "bold")
+FONT_CONSTANT_VAL = ("Segoe UI", 12, "bold")
 FONT_STATUS = ("Segoe UI", 8)

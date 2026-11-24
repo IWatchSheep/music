@@ -1,11 +1,13 @@
 """Interactive Tkinter timeline viewport widget.
 
 Displays:
-1. Linked time columns with duration and millisecond boundaries.
-2. Row 1: The Calculated Constant Musical Row (Active Temporary Row Count or Low-to-High Profile).
+1. Unified Master Columns: Every row (Header, Row 1, and all temporary rows)
+   displays the exact same master column structure derived from the song's sound events.
+2. Row 1: Musical Development Carrier (Low-to-High Profile, Trend Line, and Active Row Diagnostic).
 3. Temporary sound rows (Row 2, Row 3, ...) placed sequentially below Row 1.
-4. Continuous colored sound bars spanning across multi-column intervals.
-5. Vertical boundary guidelines indicating how temporary rows dictate time columns.
+4. Continuous colored sound bars spanning across multi-column intervals with crisp
+   internal column boundary markers (visual annotations preserving SoundEvent integrity).
+5. Solid vertical master column guidelines unifying all rows at exact x-coordinates.
 6. Pinned left sidebar badges remaining visible during horizontal scrolling.
 """
 
@@ -18,12 +20,12 @@ from typing import Callable, List, Optional, Tuple
 from music_gui.coordinates import TimelineCoordinates
 from music_gui.gui_style import (
     BG_CANVAS,
+    BG_COL_EVEN,
+    BG_COL_ODD,
     BG_CONSTANT_CELL,
     BG_CONSTANT_LABEL,
     BG_CONSTANT_ROW,
     BG_HEADER,
-    BG_ROW_EVEN,
-    BG_ROW_ODD,
     BORDER_CONSTANT_CELL,
     BORDER_CONSTANT_LABEL,
     BORDER_DEFAULT,
@@ -32,6 +34,8 @@ from music_gui.gui_style import (
     FG_CONSTANT_VAL,
     FG_HEADER,
     FG_HEADER_SUB,
+    FG_TREND_LINE,
+    FG_TREND_NODE,
     FONT_CONSTANT_LABEL,
     FONT_CONSTANT_SUB,
     FONT_CONSTANT_VAL,
@@ -42,11 +46,12 @@ from music_gui.gui_style import (
     FONT_ROW_LABEL,
     FONT_ROW_SUB,
     GRID_LINE_COLOR,
-    GRID_LINE_DASH,
+    INTERNAL_DIVIDER_COLOR,
     SOUND_COLORS,
 )
 from music_model.constant_row import calculate_constant_row
 from music_model.development_profile import calculate_development_constant_row
+from music_model.midi_importer import pitch_to_note_name
 from music_model.timeline import MusicTimeline
 
 
@@ -63,10 +68,10 @@ class TimelineCanvas(tk.Frame):
         parent: tk.Widget,
         timeline: MusicTimeline,
         constant_row_at_top: bool = True,
-        constant_row_mode: str = "active_rows",  # 'active_rows' or 'development'
+        constant_row_mode: str = "active_rows",
         **kwargs,
     ) -> None:
-        super().__init__(parent, bg=BG_CANVAS, **kwargs)
+        super().__init__(parent, **kwargs)
 
         self.coords: TimelineCoordinates = TimelineCoordinates(
             timeline, constant_row_at_top=constant_row_at_top
@@ -74,7 +79,7 @@ class TimelineCanvas(tk.Frame):
         self.constant_row_mode: str = constant_row_mode
         self._last_pinned_x: float = 0.0
 
-        # Build scrollable canvas architecture (adapted from the calculator)
+        # Build scrollable canvas architecture
         self.canvas = tk.Canvas(
             self,
             bg=BG_CANVAS,
@@ -138,17 +143,44 @@ class TimelineCanvas(tk.Frame):
         """Find canvas item ID(s) for a sound event bar."""
         return list(self.canvas.find_withtag(f"sound_bar_{clean_tag(event_id)}"))
 
-    def find_col_header(self, col_index: int) -> List[int]:
+    def find_column_header(self, col_index: int) -> List[int]:
         """Find canvas item ID(s) for a column header box."""
         return list(self.canvas.find_withtag(f"col_header_{col_index}"))
 
-    def find_const_cell(self, col_index: int) -> List[int]:
+    # Backward compatibility alias for tests
+    find_col_header = find_column_header
+
+    def find_constant_cell(self, col_index: int) -> List[int]:
         """Find canvas item ID(s) for a constant row cell."""
         return list(self.canvas.find_withtag(f"const_cell_{col_index}"))
 
-    def find_const_val(self, col_index: int) -> List[int]:
+    find_const_cell = find_constant_cell
+
+    def find_constant_val(self, col_index: int) -> List[int]:
         """Find canvas text item ID(s) for a constant row value."""
         return list(self.canvas.find_withtag(f"const_val_{col_index}"))
+
+    find_const_val = find_constant_val
+
+    def find_master_grid_lines(self) -> List[int]:
+        """Find canvas line items for vertical master column gridlines."""
+        return list(self.canvas.find_withtag("master_grid_line"))
+
+    def find_internal_column_dividers(self, event_id: str = "") -> List[int]:
+        """Find internal boundary divider lines over continuous sound bars."""
+        if event_id:
+            return list(self.canvas.find_withtag(f"internal_col_divider_{clean_tag(event_id)}"))
+        return list(self.canvas.find_withtag("internal_col_divider"))
+
+    def find_dev_trend_line(self) -> List[int]:
+        """Find the continuous musical development trend line in Row 1."""
+        return list(self.canvas.find_withtag("dev_trend_line"))
+
+    def find_master_col_cells(self, row_id: str = "", col_index: Optional[int] = None) -> List[int]:
+        """Find background master column cells in temporary rows."""
+        if row_id and col_index is not None:
+            return list(self.canvas.find_withtag(f"row_{clean_tag(row_id)}_col_{col_index}"))
+        return list(self.canvas.find_withtag("master_col_cell"))
 
     # --- Pinned Left Sidebar Scroll Synchronization ---
 
@@ -174,9 +206,6 @@ class TimelineCanvas(tk.Frame):
     def _bind_mousewheel(self) -> None:
         """Cross-platform mouse wheel scrolling."""
         def on_mousewheel(event: tk.Event) -> None:
-            # Shift+Scroll = Horizontal scroll
-            # Ctrl+Scroll = Zoom
-            # Normal Scroll = Vertical scroll
             state = getattr(event, "state", 0)
             shift_pressed = bool(state & 0x0001)
             ctrl_pressed = bool(state & 0x0004)
@@ -211,10 +240,9 @@ class TimelineCanvas(tk.Frame):
         columns = timeline.build_columns()
         boundaries = timeline.extract_boundaries()
 
-        if self.constant_row_mode == "development":
-            constant_row = calculate_development_constant_row(timeline)
-        else:
-            constant_row = calculate_constant_row(timeline)
+        active_row_counts = calculate_constant_row(timeline)
+        dev_profile = calculate_development_constant_row(timeline) if self.constant_row_mode == "development" else None
+        constant_row = dev_profile if self.constant_row_mode == "development" else active_row_counts
 
         total_w = self.coords.total_width
         total_h = self.coords.total_height
@@ -228,7 +256,9 @@ class TimelineCanvas(tk.Frame):
         rows = timeline.rows
         timeline_bottom_y = total_h - self.coords.padding_bottom
 
-        # 1. Draw Top Header Background & Column Headers
+        # -------------------------------------------------------------
+        # 1. Master Timeline Header (Top): Columns & Shared Interval Titles
+        # -------------------------------------------------------------
         self.canvas.create_rectangle(
             0,
             y_hdr_top,
@@ -243,7 +273,7 @@ class TimelineCanvas(tk.Frame):
         for col in columns:
             x0, x1 = self.coords.column_x_bounds(col)
 
-            # Column header box
+            # Master column header box
             self.canvas.create_rectangle(
                 x0,
                 y_hdr_top,
@@ -254,11 +284,11 @@ class TimelineCanvas(tk.Frame):
                 width=1,
                 tags=(f"col_header_{col.index}", "col_header"),
             )
-            # Column index & interval text
+            # Column index & shared interval text
             self.canvas.create_text(
                 (x0 + x1) / 2,
                 y_hdr_top + 14,
-                text=f"Col {col.index}",
+                text=f"Master Col {col.index}",
                 font=FONT_HEADER,
                 fill=FG_HEADER,
                 tags=("col_title",),
@@ -276,12 +306,13 @@ class TimelineCanvas(tk.Frame):
                 y_hdr_top + 44,
                 text=f"Δ {col.duration_ms} ms ({col.duration_seconds:.2f}s)",
                 font=FONT_HEADER_SUB,
-                fill="#0f766e",  # Teal duration note
+                fill="#0f766e",
                 tags=("col_duration",),
             )
 
-        # 2. Draw Row 1: Calculated Constant Musical Row (At Top Beneath Header)
-        # Constant row background lane
+        # -------------------------------------------------------------
+        # 2. Row 1: The Musical Development Carrier (Prominent Row at Top)
+        # -------------------------------------------------------------
         self.canvas.create_rectangle(
             0,
             y_const_top,
@@ -293,10 +324,19 @@ class TimelineCanvas(tk.Frame):
             tags=("constant_row_bg",),
         )
 
-        # Constant Row Values per Column
+        trend_points: List[Tuple[float, float]] = []
+        valid_dev_vals = [
+            v for v in (dev_profile.values if dev_profile else ())
+            if isinstance(v, (int, float)) and v > 0
+        ]
+        min_dev = min(valid_dev_vals) if valid_dev_vals else 0.0
+        max_dev = max(valid_dev_vals) if valid_dev_vals else 100.0
+        dev_range = max_dev - min_dev if max_dev > min_dev else 1.0
+
         for col in columns:
             cx0, cx1 = self.coords.column_x_bounds(col)
             val = constant_row[col.index]
+            act_count = active_row_counts[col.index]
 
             cell_pad_x = 4
             cell_pad_y = 6
@@ -305,7 +345,7 @@ class TimelineCanvas(tk.Frame):
             cell_y0 = y_const_top + cell_pad_y
             cell_y1 = y_const_bot - cell_pad_y
 
-            # Result card matching the column
+            # Result card aligned with master column
             self.canvas.create_rectangle(
                 cell_x0,
                 cell_y0,
@@ -319,12 +359,27 @@ class TimelineCanvas(tk.Frame):
             cell_center_x = (cell_x0 + cell_x1) / 2
 
             if self.constant_row_mode == "development":
-                val_text = f"{val:.1f}" if isinstance(val, float) else str(val)
-                active_note = f"height: {val_text}"
+                if isinstance(val, (int, float)) and val > 0:
+                    val_text = f"{val:.1f}" if isinstance(val, float) else str(val)
+                    pitch_int = int(round(val))
+                    if 0 <= pitch_int <= 127:
+                        note_str = pitch_to_note_name(pitch_int)
+                        active_sub = f"{note_str}  |  [{act_count} row" + ("s" if act_count != 1 else "") + "]"
+                    else:
+                        active_sub = f"Dev: {val_text}  |  [{act_count} row" + ("s" if act_count != 1 else "") + "]"
+
+                    # Normalize y position for visible development trend line
+                    norm_y = (val - min_dev) / dev_range
+                    trend_y = cell_y1 - 10 - (norm_y * (cell_y1 - cell_y0 - 24))
+                    trend_points.append((cell_center_x, trend_y))
+                else:
+                    val_text = "N/A"
+                    active_sub = f"[{act_count} active row" + ("s" if act_count != 1 else "") + "]"
             else:
                 val_text = str(val)
-                active_note = f"{val} active row" + ("s" if val != 1 else "")
+                active_sub = f"{val} active row" + ("s" if val != 1 else "")
 
+            # Value text
             self.canvas.create_text(
                 cell_center_x,
                 cell_y0 + 17,
@@ -333,14 +388,33 @@ class TimelineCanvas(tk.Frame):
                 fill=FG_CONSTANT_VAL,
                 tags=(f"const_val_{col.index}", "const_val"),
             )
+            # Secondary diagnostic badge
             self.canvas.create_text(
                 cell_center_x,
                 cell_y0 + 34,
-                text=active_note,
+                text=active_sub,
                 font=FONT_CONSTANT_SUB,
                 fill="#78350f",
                 tags=("const_sub",),
             )
+
+        # Draw Development Trend Line connecting column nodes across Row 1
+        if len(trend_points) >= 2:
+            flat_coords = [coord for pt in trend_points for coord in pt]
+            self.canvas.create_line(
+                *flat_coords,
+                fill=FG_TREND_LINE,
+                width=2,
+                tags=("dev_trend_line",),
+            )
+            for tx, ty in trend_points:
+                self.canvas.create_oval(
+                    tx - 3, ty - 3, tx + 3, ty + 3,
+                    fill=FG_TREND_NODE,
+                    outline="#ffffff",
+                    width=1,
+                    tags=("dev_trend_node",),
+                )
 
         # Separator line beneath Row 1
         self.canvas.create_line(
@@ -353,22 +427,27 @@ class TimelineCanvas(tk.Frame):
             tags=("const_separator",),
         )
 
-        # 3. Draw Temporary Sound Rows (Row 2, Row 3, ...) Sequentially Below Row 1
+        # -------------------------------------------------------------
+        # 3. Temporary Sound Rows (Row 2, Row 3, ...) Sequentially Below Row 1
+        #    Every row renders the exact same master columns
+        # -------------------------------------------------------------
         for row_idx, row in enumerate(rows):
             y_r_top, y_r_bot = self.coords.row_y_bounds(row_idx)
-            row_bg = BG_ROW_EVEN if row_idx % 2 == 0 else BG_ROW_ODD
 
-            # Row background lane
-            self.canvas.create_rectangle(
-                0,
-                y_r_top,
-                total_w,
-                y_r_bot,
-                fill=row_bg,
-                outline=BORDER_DEFAULT,
-                width=1,
-                tags=(f"row_lane_{clean_tag(row.row_id)}", "row_lane"),
-            )
+            # Master column cells on this temporary row (alternating subtle tint)
+            for col in columns:
+                cx0, cx1 = self.coords.column_x_bounds(col)
+                col_tint = BG_COL_EVEN if (row_idx + col.index) % 2 == 0 else BG_COL_ODD
+                self.canvas.create_rectangle(
+                    cx0,
+                    y_r_top,
+                    cx1,
+                    y_r_bot,
+                    fill=col_tint,
+                    outline="#e2e8f0",
+                    width=1,
+                    tags=(f"row_{clean_tag(row.row_id)}_col_{col.index}", "master_col_cell"),
+                )
 
             # Sound Events in this row (continuous colored bars)
             for event_idx, event in enumerate(row.events):
@@ -390,6 +469,29 @@ class TimelineCanvas(tk.Frame):
                     width=2,
                     tags=(f"sound_bar_{clean_tag(event.event_id)}", "sound_bar"),
                 )
+
+                # Crisp internal column boundary markers across this continuous sound event
+                # Visual annotation only: SoundEvent data object remains 100% continuous
+                for b_time in boundaries:
+                    if event.start_time_ms < b_time < event.end_time_ms:
+                        bx = self.coords.time_to_x(b_time)
+                        self.canvas.create_line(
+                            bx,
+                            ey0,
+                            bx,
+                            ey1,
+                            fill=INTERNAL_DIVIDER_COLOR,
+                            width=2,
+                            dash=(2, 2),
+                            tags=(f"internal_col_divider_{clean_tag(event.event_id)}", "internal_col_divider"),
+                        )
+                        # Notches at top and bottom edge of bar
+                        self.canvas.create_line(
+                            bx - 2, ey0, bx + 2, ey0, fill=bar_border, width=2, tags=("internal_col_divider",)
+                        )
+                        self.canvas.create_line(
+                            bx - 2, ey1, bx + 2, ey1, fill=bar_border, width=2, tags=("internal_col_divider",)
+                        )
 
                 # Sound Event label & duration
                 bar_w = ex1 - ex0
@@ -420,7 +522,10 @@ class TimelineCanvas(tk.Frame):
                     tags=(f"sound_sub_{clean_tag(event.event_id)}", "sound_sub"),
                 )
 
-        # 4. Vertical Column Boundary Guidelines (Across header, Row 1, and all temporary rows)
+        # -------------------------------------------------------------
+        # 4. Solid Vertical Master Column Boundaries
+        #    Extend through Header, Row 1, and all temporary rows
+        # -------------------------------------------------------------
         for b_time in boundaries:
             bx = self.coords.time_to_x(b_time)
             self.canvas.create_line(
@@ -429,13 +534,13 @@ class TimelineCanvas(tk.Frame):
                 bx,
                 timeline_bottom_y,
                 fill=GRID_LINE_COLOR,
-                dash=GRID_LINE_DASH,
                 width=1,
-                tags=("grid_line",),
+                tags=("master_grid_line", "grid_line"),
             )
 
-        # 5. Pinned Left Header & Badges (Stay visible during horizontal scrolling)
-        # Solid background covering left sidebar to prevent scrolling timeline from showing through
+        # -------------------------------------------------------------
+        # 5. Pinned Left Header & Badges (Stay stationary during scrolling)
+        # -------------------------------------------------------------
         self.canvas.create_rectangle(
             0,
             y_hdr_top,
@@ -456,110 +561,95 @@ class TimelineCanvas(tk.Frame):
             tags=("pinned_left", "pinned_sidebar_border"),
         )
 
-        # Pinned Header Badge
-        self.canvas.create_rectangle(
-            8,
-            y_hdr_top + 4,
-            self.coords.left_header_width - 12,
-            y_hdr_bot - 4,
-            fill=BG_HEADER,
-            outline=BORDER_HEADER,
-            width=1,
-            tags=("pinned_left", "header_label_box"),
-        )
+        # Header Title Badge (Top Left)
+        hdr_center_y = (y_hdr_top + y_hdr_bot) / 2
         self.canvas.create_text(
-            16,
-            (y_hdr_top + y_hdr_bot) / 2 - 8,
-            text="Linked Columns",
+            self.coords.left_header_width / 2,
+            hdr_center_y - 8,
+            text="Master Timeline",
             font=FONT_HEADER,
             fill=FG_HEADER,
-            anchor="w",
-            tags=("pinned_left", "header_label"),
+            tags=("pinned_left", "pinned_title"),
         )
         self.canvas.create_text(
-            16,
-            (y_hdr_top + y_hdr_bot) / 2 + 10,
-            text="Time Axis (ms) →",
+            self.coords.left_header_width / 2,
+            hdr_center_y + 10,
+            text=f"{len(columns)} Master Columns ({len(boundaries)} Boundaries)",
             font=FONT_HEADER_SUB,
             fill=FG_HEADER_SUB,
-            anchor="w",
-            tags=("pinned_left", "header_sublabel"),
+            tags=("pinned_left", "pinned_subtitle"),
         )
 
-        # Pinned Row 1 Badge (Constant Musical Row)
-        badge_y0 = y_const_top + 6
-        badge_y1 = y_const_bot - 6
+        # Row 1 Badge
+        const_badge_y = (y_const_top + y_const_bot) / 2
+        r1_badge_title = (
+            "Row 1: Constant (Development Profile)"
+            if self.constant_row_mode == "development"
+            else "Row 1: Constant (Active Row Count)"
+        )
+        r1_badge_sub = (
+            "Development Profile (Low-to-High)"
+            if self.constant_row_mode == "development"
+            else "Active Row Count"
+        )
         self.canvas.create_rectangle(
-            8,
-            badge_y0,
-            self.coords.left_header_width - 12,
-            badge_y1,
+            4,
+            y_const_top + 4,
+            self.coords.left_header_width - 4,
+            y_const_bot - 4,
             fill=BG_CONSTANT_LABEL,
             outline=BORDER_CONSTANT_LABEL,
-            width=1,
-            tags=("pinned_left", "constant_badge"),
+            width=1.5,
+            tags=("pinned_left", "const_label_bg", "constant_badge"),
         )
-
-        if self.constant_row_mode == "development":
-            badge_title = "Row 1: Development"
-            badge_sub = "(Low-to-High Profile)"
-        else:
-            badge_title = "Row 1: Constant"
-            badge_sub = "(Active Row Count)"
-
         self.canvas.create_text(
-            (8 + self.coords.left_header_width - 12) / 2,
-            badge_y0 + 14,
-            text=badge_title,
+            self.coords.left_header_width / 2,
+            const_badge_y - 8,
+            text=r1_badge_title,
             font=FONT_CONSTANT_LABEL,
             fill=FG_CONSTANT_LABEL,
-            tags=("pinned_left", "const_label"),
+            tags=("pinned_left", "const_label_title", "const_label"),
         )
         self.canvas.create_text(
-            (8 + self.coords.left_header_width - 12) / 2,
-            badge_y0 + 32,
-            text=badge_sub,
+            self.coords.left_header_width / 2,
+            const_badge_y + 10,
+            text=r1_badge_sub,
             font=FONT_CONSTANT_SUB,
-            fill=FG_CONSTANT_LABEL,
-            tags=("pinned_left", "const_sublabel"),
+            fill="#78350f",
+            tags=("pinned_left", "const_label_sub", "const_sublabel"),
         )
 
-        # Pinned Badges for Temporary Rows (Row 2, Row 3, ...)
+        # Temporary Row Badges (Below Row 1)
         for row_idx, row in enumerate(rows):
             y_r_top, y_r_bot = self.coords.row_y_bounds(row_idx)
-            badge_y0 = y_r_top + 8
-            badge_y1 = y_r_bot - 8
+            row_badge_y = (y_r_top + y_r_bot) / 2
+            row_title = f"{row.row_id}" if not row.label else f"{row.row_id} ({row.label})"
 
             self.canvas.create_rectangle(
-                8,
-                badge_y0,
-                self.coords.left_header_width - 12,
-                badge_y1,
-                fill="#ffffff",
-                outline="#cbd5e1",
-                width=1,
-                tags=("pinned_left", f"badge_box_{clean_tag(row.row_id)}"),
+                4,
+                y_r_top + 4,
+                self.coords.left_header_width - 4,
+                y_r_bot - 4,
+                fill="#dcfce7",
+                outline="#86efac",
+                width=1.5,
+                tags=("pinned_left", f"row_badge_bg_{clean_tag(row.row_id)}"),
             )
-            # Label
-            display_row_label = row.label if row.label else f"Sound Group {row_idx + 1}"
             self.canvas.create_text(
-                16,
-                badge_y0 + 14,
-                text=row.row_id,
+                self.coords.left_header_width / 2,
+                row_badge_y - 8,
+                text=row_title,
                 font=FONT_ROW_LABEL,
-                fill="#0f172a",
-                anchor="w",
-                tags=("pinned_left", f"badge_lbl_{clean_tag(row.row_id)}"),
+                fill="#166534",
+                tags=("pinned_left", f"row_badge_title_{clean_tag(row.row_id)}"),
             )
             self.canvas.create_text(
-                16,
-                badge_y0 + 30,
-                text=display_row_label,
+                self.coords.left_header_width / 2,
+                row_badge_y + 10,
+                text=f"{len(row)} event(s) on Master Timeline",
                 font=FONT_ROW_SUB,
-                fill="#64748b",
-                anchor="w",
-                tags=("pinned_left", f"badge_sub_{clean_tag(row.row_id)}"),
+                fill="#15803d",
+                tags=("pinned_left", f"row_badge_sub_{clean_tag(row.row_id)}"),
             )
 
-        # Position pinned items over current scroll position
         self._update_pinned_headers()

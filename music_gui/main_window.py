@@ -1,16 +1,17 @@
-"""Main application window for the Music Project Stage 2B GUI.
+"""Main application window for the Music Project Stage 2B/Stage 3 GUI.
 
 Houses:
 - Non-clipping, responsive two-tier navigation and action toolbar.
 - View Mode Switcher:
   1. Progressive Refitting Mode: Selectable Stage A (1 col), Stage B (3 cols), Stage C (5 cols).
-  2. Dual Independent Songs View: Song 1 vs Song 2 with independent columns and scrolling.
-  3. Single Timeline View: Inspect any individual timeline or synthetic proof.
-  4. 32-Column Stress Test: Validating wide many-column layouts.
-  5. Duck Flight Experiment (Stage 2B Phase 3): Low-to-high musical development (Arrangement A vs B).
+  2. Duck Flight Experiment (Stage 2B Phase 3): Low-to-high musical development (Arrangement A vs B).
+  3. MIDI & Symbolic Passage View (Stage 3): Import SMF Type 0/1 files or reproducible JSON passages.
+  4. Dual Independent Songs View: Song 1 vs Song 2 with independent columns and scrolling.
+  5. Single Timeline View: Inspect any individual timeline or synthetic proof.
+  6. 32-Column Stress Test: Validating wide many-column layouts.
 - Row 1 (Constant Musical Row) prominently displayed at the top beneath the time header:
   - Active Temporary Row Count (Diagnostic Baseline).
-  - Low-to-High Development Profile (Experimental Continuous Measurement).
+  - Low-to-High / Pitch Development Profile (Experimental Continuous Measurement).
 - Temporary sound rows (Row 2, Row 3, ...) placed below Row 1.
 - Pinned left sidebar badges remaining visible during horizontal scrolling.
 """
@@ -18,7 +19,7 @@ Houses:
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, messagebox, ttk
 from typing import Optional
 
 from music_gui.dual_view import DualSongView
@@ -44,6 +45,9 @@ from music_model.datasets import (
     create_variable_width_timeline,
 )
 from music_model.development_profile import calculate_development_constant_row
+from music_model.midi_fixture import create_synthetic_orchestral_song
+from music_model.midi_importer import MidiImporter
+from music_model.passage_format import load_song_from_file, save_song_to_file
 from music_model.song import SongTimeline
 from music_model.timeline import MusicTimeline
 
@@ -59,7 +63,7 @@ class MusicGUI(tk.Tk):
         self.configure(bg=BG_WINDOW)
 
         # Current view states
-        self.current_view_mode: str = "progressive"  # 'progressive', 'single', 'dual', 'stress', 'duck'
+        self.current_view_mode: str = "progressive"  # 'progressive', 'single', 'dual', 'stress', 'duck', 'midi'
         self.current_stage: str = "A"               # 'A', 'B', 'C'
         self.current_constant_row_mode: str = "active_rows"  # 'active_rows' or 'development'
         self.current_dataset_name: str = "Progressive Refitting — Stage A (Row 2 alone)"
@@ -69,6 +73,7 @@ class MusicGUI(tk.Tk):
             timeline if timeline is not None else create_progressive_stage_timeline("A").timeline
         )
         self.song1, self.song2 = create_dual_independent_songs()
+        self.current_song: Optional[SongTimeline] = None
 
         # Build UI layout
         self._build_toolbar()
@@ -132,6 +137,20 @@ class MusicGUI(tk.Tk):
             command=self.show_duck_mode,
         )
         self.btn_mode_duck.pack(side="left", padx=2)
+
+        self.btn_mode_midi = tk.Button(
+            tier1,
+            text="MIDI / Symbolic Passage",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=8,
+            pady=2,
+            command=self.show_midi_mode,
+        )
+        self.btn_mode_midi.pack(side="left", padx=2)
 
         self.btn_mode_dual = tk.Button(
             tier1,
@@ -262,40 +281,25 @@ class MusicGUI(tk.Tk):
             text="",
             font=FONT_TOOLBAR_BOLD,
             bg="#ffffff",
-            fg="#b45309",
+            fg="#7c2d12",
         )
-        self.lbl_constant_summary.pack(side="right", padx=16, pady=4)
+        self.lbl_constant_summary.pack(side="right", padx=12, pady=4)
 
     def _build_content_area(self) -> None:
-        """Embed the main viewport container."""
-        self.content_holder = tk.Frame(
-            self,
-            bg=BG_WINDOW,
-            highlightbackground="#94a3b8",
-            highlightthickness=1,
-        )
-        self.content_holder.pack(fill="both", expand=True, padx=8, pady=(0, 4))
+        """Create the central display area hosting the Single and Dual timeline canvases."""
+        self.content_frame = tk.Frame(self, bg=BG_WINDOW)
+        self.content_frame.pack(fill="both", expand=True, padx=8, pady=2)
 
-        # Single canvas view
-        self.timeline_view = TimelineCanvas(
-            self.content_holder,
-            self.timeline,
-            constant_row_at_top=True,
-            constant_row_mode=self.current_constant_row_mode,
-        )
+        # 1. Single Timeline Canvas (used for Progressive Stages, Single View, Stress Test, MIDI)
+        self.timeline_view = TimelineCanvas(self.content_frame, self.timeline)
 
-        # Dual canvas view
-        self.dual_view = DualSongView(
-            self.content_holder,
-            self.song1,
-            self.song2,
-            constant_row_mode=self.current_constant_row_mode,
-        )
+        # 2. Dual Independent Songs View (used for Song 1 vs Song 2, Duck Flight A vs B)
+        self.dual_view = DualSongView(self.content_frame, self.song1, self.song2)
 
     def _build_status_bar(self) -> None:
         """Create the bottom status bar."""
-        status_frame = tk.Frame(self, bg=BG_TOOLBAR)
-        status_frame.pack(fill="x", side="bottom", padx=8, pady=(0, 4))
+        status_frame = tk.Frame(self, bg=BG_TOOLBAR, bd=0)
+        status_frame.pack(fill="x", side="bottom", padx=8, pady=(2, 4))
 
         self.lbl_status = tk.Label(
             status_frame,
@@ -316,6 +320,7 @@ class MusicGUI(tk.Tk):
         all_buttons = (
             self.btn_mode_progressive,
             self.btn_mode_duck,
+            self.btn_mode_midi,
             self.btn_mode_dual,
             self.btn_mode_single,
             self.btn_mode_stress,
@@ -500,6 +505,156 @@ class MusicGUI(tk.Tk):
         self.current_dataset_name = song.title
         self._update_summary()
 
+    # --- Mode 3: MIDI & Symbolic Passage Importer ---
+
+    def show_midi_mode(self, song: Optional[SongTimeline] = None) -> None:
+        """Display an imported MIDI file or reproducible JSON passage."""
+        self.current_view_mode = "midi"
+        self._set_active_mode_button(self.btn_mode_midi)
+
+        if song is None:
+            song = create_synthetic_orchestral_song()
+
+        self.current_song = song
+        self.timeline = song.timeline
+        self.timeline_view.set_constant_row_mode(self.current_constant_row_mode)
+        self.timeline_view.set_timeline(self.timeline)
+
+        # Show single canvas, hide dual view
+        self.dual_view.pack_forget()
+        self.timeline_view.pack(fill="both", expand=True)
+
+        self._clear_subcontrols()
+        tk.Label(
+            self.subcontrols_frame,
+            text="MIDI & Passage Tools:",
+            font=FONT_TOOLBAR_BOLD,
+            bg=BG_TOOLBAR,
+            fg="#475569",
+        ).pack(side="left", padx=(4, 6))
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Synthetic Orchestral (MIDI)",
+            font=FONT_TOOLBAR,
+            bg="#e0f2fe",
+            fg="#0369a1",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=lambda: self.show_midi_mode(create_synthetic_orchestral_song()),
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Open MIDI... (.mid)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._on_open_midi_file,
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Open JSON... (.json)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._on_open_json_file,
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Export JSON... (.json)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._on_export_json_file,
+        ).pack(side="left", padx=2)
+
+        toggle_txt = "Active Rows" if self.current_constant_row_mode == "active_rows" else "Pitch Dev Profile"
+        tk.Button(
+            self.subcontrols_frame,
+            text=f"Row 1: {toggle_txt}",
+            font=FONT_TOOLBAR_BOLD,
+            bg="#fef3c7",
+            fg="#92400e",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._toggle_constant_row_mode,
+        ).pack(side="left", padx=(8, 2))
+
+        self.current_dataset_name = f"Imported: {song.title}"
+        self._update_summary()
+
+    def _on_open_midi_file(self) -> None:
+        """Prompt user for a MIDI file and import it."""
+        filepath = filedialog.askopenfilename(
+            title="Open MIDI File",
+            filetypes=[("MIDI files", "*.mid *.midi"), ("All files", "*.*")],
+        )
+        if not filepath:
+            return
+        try:
+            importer = MidiImporter()
+            song = importer.import_file(filepath)
+            self.show_midi_mode(song)
+        except Exception as ex:
+            messagebox.showerror("MIDI Import Error", f"Failed to import MIDI file:\n{ex}")
+
+    def _on_open_json_file(self) -> None:
+        """Prompt user for a passage JSON file and load it."""
+        filepath = filedialog.askopenfilename(
+            title="Open Passage JSON",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        if not filepath:
+            return
+        try:
+            song = load_song_from_file(filepath)
+            self.show_midi_mode(song)
+        except Exception as ex:
+            messagebox.showerror("Passage Load Error", f"Failed to load JSON passage:\n{ex}")
+
+    def _on_export_json_file(self) -> None:
+        """Export the currently active song/passage to JSON."""
+        if self.current_song is None:
+            # Build a song from the active timeline
+            self.current_song = SongTimeline("exported_passage", self.current_dataset_name)
+            for r in self.timeline.rows:
+                row = self.current_song.create_row(r.row_id, r.label)
+                for e in r.events:
+                    row.add_event(e)
+
+        filepath = filedialog.asksaveasfilename(
+            title="Export Passage to JSON",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialfile=f"{self.current_song.song_id}.json",
+        )
+        if not filepath:
+            return
+        try:
+            save_song_to_file(self.current_song, filepath)
+            messagebox.showinfo("Export Successful", f"Passage saved to:\n{filepath}")
+        except Exception as ex:
+            messagebox.showerror("Export Error", f"Failed to export passage:\n{ex}")
+
     def _toggle_constant_row_mode(self) -> None:
         """Toggle Row 1 measurement between active_rows baseline and development profile."""
         if self.current_constant_row_mode == "active_rows":
@@ -512,6 +667,8 @@ class MusicGUI(tk.Tk):
 
         if self.current_view_mode in ("duck", "dual"):
             self._refresh_dual_constant_summary()
+        elif self.current_view_mode == "midi":
+            self.show_midi_mode(self.current_song)
         else:
             self._update_summary()
 
@@ -530,7 +687,7 @@ class MusicGUI(tk.Tk):
             text=f"{lbl} S1: {c1}  |  S2: {c2}"
         )
 
-    # --- Mode 3: Dual Independent Songs View ---
+    # --- Mode 4: Dual Independent Songs View ---
 
     def show_dual_mode(self) -> None:
         """Display two independent songs with separate timelines and scrollbars."""
@@ -548,35 +705,7 @@ class MusicGUI(tk.Tk):
         self._clear_subcontrols()
         tk.Label(
             self.subcontrols_frame,
-            text="Independent Songs: Both songs calculate their own columns independently (No shared grid).",
-            font=FONT_TOOLBAR,
-            bg=BG_TOOLBAR,
-            fg="#1e293b",
-        ).pack(side="left", padx=(4, 6))
-
-        self.current_dataset_name = "Dual Independent Songs View (Song 1 vs Song 2)"
-        cols1 = self.song1.column_count
-        cols2 = self.song2.column_count
-        self.lbl_dataset.configure(text=f"Mode: {self.current_dataset_name}")
-        self.lbl_summary.configure(
-            text=f"Song 1: {cols1} columns, {self.song1.total_duration_ms} ms  |  Song 2: {cols2} columns, {self.song2.total_duration_ms} ms"
-        )
-        self._refresh_dual_constant_summary()
-
-    # --- Mode 4: Single Timeline View ---
-
-    def show_single_mode(self) -> None:
-        """Display single timeline with dataset picker."""
-        self.current_view_mode = "single"
-        self._set_active_mode_button(self.btn_mode_single)
-
-        self.dual_view.pack_forget()
-        self.timeline_view.pack(fill="both", expand=True)
-
-        self._clear_subcontrols()
-        tk.Label(
-            self.subcontrols_frame,
-            text="Select Dataset:",
+            text="Dual Independent Songs:",
             font=FONT_TOOLBAR_BOLD,
             bg=BG_TOOLBAR,
             fg="#475569",
@@ -584,7 +713,87 @@ class MusicGUI(tk.Tk):
 
         tk.Button(
             self.subcontrols_frame,
-            text="Stage 1 Proof (A/B/C)",
+            text="Inspect Song 1 Alone (5 cols)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._show_solo_song1,
+        ).pack(side="left", padx=3)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Inspect Song 2 Alone (7 cols)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._show_solo_song2,
+        ).pack(side="left", padx=3)
+
+        self.current_dataset_name = "Dual Independent Songs: Song 1 (5 cols) vs Song 2 (7 cols)"
+        self.lbl_dataset.configure(text=f"Dataset: {self.current_dataset_name}")
+        cols1 = self.song1.column_count
+        cols2 = self.song2.column_count
+        self.lbl_summary.configure(
+            text=f"Song 1: {cols1} cols, {self.song1.total_duration_ms} ms  |  Song 2: {cols2} cols, {self.song2.total_duration_ms} ms"
+        )
+        self._refresh_dual_constant_summary()
+
+    def _show_solo_song1(self) -> None:
+        """Display Song 1 alone in single view."""
+        self.timeline = self.song1.timeline
+        self.timeline_view.set_timeline(self.timeline)
+
+        self.dual_view.pack_forget()
+        self.timeline_view.pack(fill="both", expand=True)
+
+        self.current_dataset_name = self.song1.title
+        self._update_summary()
+
+    def _show_solo_song2(self) -> None:
+        """Display Song 2 alone in single view."""
+        self.timeline = self.song2.timeline
+        self.timeline_view.set_timeline(self.timeline)
+
+        self.dual_view.pack_forget()
+        self.timeline_view.pack(fill="both", expand=True)
+
+        self.current_dataset_name = self.song2.title
+        self._update_summary()
+
+    # --- Mode 5: Single Timeline View ---
+
+    def show_single_mode(self) -> None:
+        """Display single timeline mode with synthetic proof selection."""
+        self.current_view_mode = "single"
+        self._set_active_mode_button(self.btn_mode_single)
+
+        self.dual_view.pack_forget()
+        self.timeline_view.pack(fill="both", expand=True)
+
+        self.timeline = create_stage_1_proof_timeline()
+        self.timeline_view.set_timeline(self.timeline)
+        self.current_dataset_name = "Stage 1 Mathematical Proof (Events A, B, C)"
+
+        self._clear_subcontrols()
+        tk.Label(
+            self.subcontrols_frame,
+            text="Synthetic Datasets:",
+            font=FONT_TOOLBAR_BOLD,
+            bg=BG_TOOLBAR,
+            fg="#475569",
+        ).pack(side="left", padx=(4, 6))
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Stage 1 Proof (5 cols)",
             font=FONT_TOOLBAR,
             bg="#f1f5f9",
             fg="#334155",
@@ -597,7 +806,7 @@ class MusicGUI(tk.Tk):
 
         tk.Button(
             self.subcontrols_frame,
-            text="Variable-Width Proof",
+            text="Variable-Width (4 cols)",
             font=FONT_TOOLBAR,
             bg="#f1f5f9",
             fg="#334155",
@@ -610,7 +819,7 @@ class MusicGUI(tk.Tk):
 
         tk.Button(
             self.subcontrols_frame,
-            text="Continuity Proof",
+            text="Continuity Proof (7 cols)",
             font=FONT_TOOLBAR,
             bg="#f1f5f9",
             fg="#334155",
@@ -621,35 +830,9 @@ class MusicGUI(tk.Tk):
             command=self.load_continuity_proof,
         ).pack(side="left", padx=2)
 
-        tk.Button(
-            self.subcontrols_frame,
-            text="Duck Flight: Arr. A",
-            font=FONT_TOOLBAR,
-            bg="#e0f2fe",
-            fg="#0369a1",
-            relief="raised",
-            bd=1,
-            padx=6,
-            pady=2,
-            command=self.load_duck_arrangement_a,
-        ).pack(side="left", padx=2)
+        self._update_summary()
 
-        tk.Button(
-            self.subcontrols_frame,
-            text="Duck Flight: Arr. B",
-            font=FONT_TOOLBAR,
-            bg="#e0f2fe",
-            fg="#0369a1",
-            relief="raised",
-            bd=1,
-            padx=6,
-            pady=2,
-            command=self.load_duck_arrangement_b,
-        ).pack(side="left", padx=2)
-
-        self.load_stage_1_proof()
-
-    # --- Mode 5: 32-Column Stress Test ---
+    # --- Mode 6: 32-Column Stress Test ---
 
     def show_stress_mode(self) -> None:
         """Display the 32-column layout stress test."""
@@ -659,44 +842,44 @@ class MusicGUI(tk.Tk):
         self.dual_view.pack_forget()
         self.timeline_view.pack(fill="both", expand=True)
 
+        self.timeline = create_32_column_timeline()
+        self.timeline_view.set_timeline(self.timeline)
+        self.current_dataset_name = "32-Column Layout Stress Test (Dense boundary alignment)"
+
         self._clear_subcontrols()
         tk.Label(
             self.subcontrols_frame,
-            text="Display Stress Test: 32 derived variable-width columns spanning beyond window width.",
+            text="Stress Test: 32 linked columns derived across 32,000 ms.",
             font=FONT_TOOLBAR,
             bg=BG_TOOLBAR,
-            fg="#0f766e",
-        ).pack(side="left", padx=(4, 6))
+            fg="#475569",
+        ).pack(side="left", padx=6)
 
-        song = create_32_column_timeline()
-        self.timeline = song.timeline
-        self.timeline_view.set_timeline(self.timeline)
-
-        self.current_dataset_name = "32-Column Layout Stress Test"
         self._update_summary()
 
-    def _update_summary(self) -> None:
-        """Refresh summary metrics text from the active timeline."""
-        columns = self.timeline.build_columns()
+    # --- Helper & Utility Methods ---
 
-        if self.current_constant_row_mode == "development":
-            constant_row = calculate_development_constant_row(self.timeline)
-            c_vals = [round(v, 1) for v in constant_row.values]
-            r1_lbl = "Row 1 (Dev Profile)"
-        else:
-            constant_row = calculate_constant_row(self.timeline)
-            c_vals = list(constant_row.values)
-            r1_lbl = "Row 1 (Constant)"
+    def _update_summary(self) -> None:
+        """Update the top metric banner labels for single-timeline views."""
+        col_count = len(self.timeline.build_columns())
+        row_count = self.timeline.row_count
+        dur_s = self.timeline.total_duration_seconds
+        dur_ms = self.timeline.total_duration_ms
 
         self.lbl_dataset.configure(text=f"Dataset: {self.current_dataset_name}")
         self.lbl_summary.configure(
-            text=(
-                f"Columns: {len(columns)}  |  "
-                f"Total Duration: {self.timeline.total_duration_ms} ms ({self.timeline.total_duration_seconds:.2f}s)  |  "
-                f"Temporary Rows: {self.timeline.row_count}  |  "
-                f"Sound Events: {self.timeline.event_count}"
-            )
+            text=f"Rows: {row_count}  |  Columns: {col_count}  |  Duration: {dur_s:.2f}s ({dur_ms} ms)"
         )
+
+        if self.current_constant_row_mode == "development":
+            c_row = calculate_development_constant_row(self.timeline)
+            c_vals = [round(v, 1) for v in c_row.values]
+            r1_lbl = "Row 1 (Dev Profile)"
+        else:
+            c_row = calculate_constant_row(self.timeline)
+            c_vals = list(c_row.values)
+            r1_lbl = "Row 1 (Constant)"
+
         self.lbl_constant_summary.configure(
             text=f"{r1_lbl}: {c_vals}"
         )

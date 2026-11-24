@@ -27,6 +27,27 @@ from music_model.development_profile import (
     calculate_development_constant_row,
     get_event_height,
 )
+from music_model.midi_fixture import (
+    create_synthetic_orchestral_midi_bytes,
+    create_synthetic_orchestral_song,
+)
+from music_model.midi_importer import (
+    MidiImporter,
+    MidiNoteRaw,
+    MidiParser,
+    ParsedMidiFile,
+    TempoEvent,
+    TempoMap,
+    pitch_to_note_name,
+)
+from music_model.passage_format import (
+    load_song_from_file,
+    save_song_to_file,
+    song_from_dict,
+    song_from_json,
+    song_to_dict,
+    song_to_json,
+)
 from music_model.song import (
     ProgressiveRefitter,
     RefitStep,
@@ -61,4 +82,19 @@ __all__ = [
     "calculate_development_constant_row",
     "DevelopmentAnalysis",
     "analyze_development_profile",
+    "MidiParser",
+    "MidiImporter",
+    "ParsedMidiFile",
+    "MidiNoteRaw",
+    "TempoEvent",
+    "TempoMap",
+    "pitch_to_note_name",
+    "create_synthetic_orchestral_midi_bytes",
+    "create_synthetic_orchestral_song",
+    "song_to_dict",
+    "song_from_dict",
+    "song_to_json",
+    "song_from_json",
+    "save_song_to_file",
+    "load_song_from_file",
 ]
