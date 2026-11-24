@@ -1,16 +1,21 @@
-# This is a sample Python script.
+"""Main application entry point for the Music Project.
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+Launches the Stage 2 Tkinter GUI displaying temporary sound rows,
+linked variable-width time columns, and the calculated constant musical row.
+"""
+
+from __future__ import annotations
+
+import sys
+from music_gui.main_window import MusicGUI
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def main() -> int:
+    """Run the Music Timeline Explorer GUI application."""
+    app = MusicGUI()
+    app.mainloop()
+    return 0
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+if __name__ == "__main__":
+    sys.exit(main())
