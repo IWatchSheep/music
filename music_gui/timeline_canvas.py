@@ -2,9 +2,10 @@
 
 Visualizes:
 1. Horizontal time axis with exact boundaries and variable-width column durations.
-2. Temporary sound rows with continuous colored event bars.
-3. Vertical column boundary guidelines showing linked boundaries through all rows.
-4. Calculated Constant Musical Row (Active Temporary Row Count) at the bottom.
+2. Row 1: The Calculated Constant Musical Row (Active Temporary Row Count) at the top.
+3. Temporary sound rows (Row 2, Row 3, ...) placed sequentially below Row 1.
+4. Vertical column boundary guidelines extending through all rows and Row 1.
+5. Pinned left header badges that remain readable during horizontal scrolling.
 """
 
 from __future__ import annotations
@@ -58,10 +59,19 @@ def clean_tag(name: str) -> str:
 class TimelineCanvas(tk.Frame):
     """A scrollable canvas viewport that renders temporary rows and linked columns."""
 
-    def __init__(self, parent: tk.Widget, timeline: MusicTimeline, **kwargs) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        timeline: MusicTimeline,
+        constant_row_at_top: bool = True,
+        **kwargs,
+    ) -> None:
         super().__init__(parent, bg=BG_CANVAS, **kwargs)
 
-        self.coords: TimelineCoordinates = TimelineCoordinates(timeline)
+        self.coords: TimelineCoordinates = TimelineCoordinates(
+            timeline, constant_row_at_top=constant_row_at_top
+        )
+        self._last_pinned_x: float = 0.0
 
         # Build scrollable canvas architecture (adapted from the calculator)
         self.canvas = tk.Canvas(
@@ -74,10 +84,10 @@ class TimelineCanvas(tk.Frame):
             self, orient="vertical", command=self.canvas.yview
         )
         self.h_scrollbar = ttk.Scrollbar(
-            self, orient="horizontal", command=self.canvas.xview
+            self, orient="horizontal", command=self._on_scrollbar_x
         )
         self.canvas.configure(
-            xscrollcommand=self.h_scrollbar.set,
+            xscrollcommand=self._on_canvas_xscroll,
             yscrollcommand=self.v_scrollbar.set,
         )
 
@@ -133,6 +143,24 @@ class TimelineCanvas(tk.Frame):
         """Find canvas item IDs for constant row value text by column index."""
         return list(self.canvas.find_withtag(f"const_val_{col_index}"))
 
+    def _on_scrollbar_x(self, *args) -> None:
+        """Handle horizontal scrollbar interaction and keep left headers pinned."""
+        self.canvas.xview(*args)
+        self._update_pinned_headers()
+
+    def _on_canvas_xscroll(self, first: str, last: str) -> None:
+        """Callback from canvas when horizontal view position changes."""
+        self.h_scrollbar.set(first, last)
+        self._update_pinned_headers()
+
+    def _update_pinned_headers(self) -> None:
+        """Keep left row badges and header title pinned in view during horizontal scrolling."""
+        curr_x = self.canvas.canvasx(0)
+        dx = curr_x - self._last_pinned_x
+        if dx != 0:
+            self.canvas.move("pinned_left", dx, 0)
+            self._last_pinned_x = curr_x
+
     def _bind_mousewheel(self) -> None:
         """Set up mouse wheel scrolling (vertical, horizontal with Shift, zoom with Ctrl)."""
 
@@ -148,6 +176,7 @@ class TimelineCanvas(tk.Frame):
             # Check for Shift modifier -> Horizontal scroll
             if event.state & 0x0001:
                 self.canvas.xview_scroll(-1 * (event.delta // 120), "units")
+                self._update_pinned_headers()
             else:
                 self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
 
@@ -158,10 +187,13 @@ class TimelineCanvas(tk.Frame):
         w = max(self.canvas.winfo_width(), self.coords.total_width)
         h = max(self.canvas.winfo_height(), self.coords.total_height)
         self.canvas.configure(scrollregion=(0, 0, w, h))
+        self._update_pinned_headers()
 
     def redraw(self) -> None:
         """Erase and redraw the complete timeline, sound rows, and constant row."""
         self.canvas.delete("all")
+        self._last_pinned_x = 0.0
+
         timeline = self.coords.timeline
         columns = timeline.build_columns()
         boundaries = timeline.extract_boundaries()
@@ -173,8 +205,13 @@ class TimelineCanvas(tk.Frame):
         # Update scrollregion
         self.canvas.configure(scrollregion=(0, 0, total_w, total_h))
 
-        # 1. Draw Top Header Background & Left Header Label
+        # Y bounds for Header and Row 1 (Constant Row)
         y_hdr_top, y_hdr_bot = self.coords.header_y_bounds()
+        y_const_top, y_const_bot = self.coords.constant_row_y_bounds()
+        rows = timeline.rows
+        timeline_bottom_y = total_h - self.coords.padding_bottom
+
+        # 1. Draw Top Header Background & Column Headers
         self.canvas.create_rectangle(
             0,
             y_hdr_top,
@@ -185,28 +222,6 @@ class TimelineCanvas(tk.Frame):
             width=1,
             tags=("header_bg",),
         )
-        self.canvas.create_text(
-            16,
-            (y_hdr_top + y_hdr_bot) / 2 - 8,
-            text="Temporary Rows",
-            font=FONT_HEADER,
-            fill=FG_HEADER,
-            anchor="w",
-            tags=("header_label",),
-        )
-        self.canvas.create_text(
-            16,
-            (y_hdr_top + y_hdr_bot) / 2 + 10,
-            text="Linked Time Columns →",
-            font=FONT_HEADER_SUB,
-            fill=FG_HEADER_SUB,
-            anchor="w",
-            tags=("header_sublabel",),
-        )
-
-        # 2. Draw Column Headers & Vertical Boundary Guidelines
-        y_const_top, y_const_bot = self.coords.constant_row_y_bounds()
-        timeline_bottom_y = y_const_bot + 6
 
         for col in columns:
             x0, x1 = self.coords.column_x_bounds(col)
@@ -248,22 +263,73 @@ class TimelineCanvas(tk.Frame):
                 tags=("col_duration",),
             )
 
-        # Vertical boundary guidelines across the full canvas height
-        for b_time in boundaries:
-            bx = self.coords.time_to_x(b_time)
-            self.canvas.create_line(
-                bx,
-                y_hdr_top,
-                bx,
-                timeline_bottom_y,
-                fill=GRID_LINE_COLOR,
-                dash=GRID_LINE_DASH,
+        # 2. Draw Row 1: Calculated Constant Musical Row (At Top Beneath Header)
+        # Constant row background lane
+        self.canvas.create_rectangle(
+            0,
+            y_const_top,
+            total_w,
+            y_const_bot,
+            fill=BG_CONSTANT_ROW,
+            outline=BORDER_CONSTANT_LABEL,
+            width=1,
+            tags=("constant_row_bg",),
+        )
+
+        # Constant Row Values per Column
+        for col in columns:
+            cx0, cx1 = self.coords.column_x_bounds(col)
+            val = constant_row[col.index]
+
+            cell_pad_x = 4
+            cell_pad_y = 6
+            cell_x0 = cx0 + cell_pad_x
+            cell_x1 = cx1 - cell_pad_x
+            cell_y0 = y_const_top + cell_pad_y
+            cell_y1 = y_const_bot - cell_pad_y
+
+            # Result card matching the column
+            self.canvas.create_rectangle(
+                cell_x0,
+                cell_y0,
+                cell_x1,
+                cell_y1,
+                fill=BG_CONSTANT_CELL,
+                outline=BORDER_CONSTANT_CELL,
                 width=1,
-                tags=("grid_line",),
+                tags=(f"const_cell_{col.index}", "const_cell"),
+            )
+            cell_center_x = (cell_x0 + cell_x1) / 2
+            self.canvas.create_text(
+                cell_center_x,
+                cell_y0 + 17,
+                text=str(val),
+                font=FONT_CONSTANT_VAL,
+                fill=FG_CONSTANT_VAL,
+                tags=(f"const_val_{col.index}", "const_val"),
+            )
+            active_note = f"{val} active row" + ("s" if val != 1 else "")
+            self.canvas.create_text(
+                cell_center_x,
+                cell_y0 + 34,
+                text=active_note,
+                font=FONT_CONSTANT_SUB,
+                fill="#78350f",
+                tags=("const_sub",),
             )
 
-        # 3. Draw Temporary Sound Rows & Continuous Sound Bars
-        rows = timeline.rows
+        # Separator line beneath Row 1
+        self.canvas.create_line(
+            0,
+            y_const_bot + 6,
+            total_w,
+            y_const_bot + 6,
+            fill="#d97706",
+            width=2,
+            tags=("const_separator",),
+        )
+
+        # 3. Draw Temporary Sound Rows (Row 2, Row 3, ...) Sequentially Below Row 1
         for row_idx, row in enumerate(rows):
             y_r_top, y_r_bot = self.coords.row_y_bounds(row_idx)
             row_bg = BG_ROW_EVEN if row_idx % 2 == 0 else BG_ROW_ODD
@@ -280,51 +346,15 @@ class TimelineCanvas(tk.Frame):
                 tags=(f"row_lane_{clean_tag(row.row_id)}", "row_lane"),
             )
 
-            # Left Row Header Badge
-            badge_x0 = 8
-            badge_x1 = self.coords.left_header_width - 12
-            badge_y0 = y_r_top + 8
-            badge_y1 = y_r_bot - 8
-
-            self.canvas.create_rectangle(
-                badge_x0,
-                badge_y0,
-                badge_x1,
-                badge_y1,
-                fill=BG_ROW_LABEL,
-                outline=BORDER_ROW_LABEL,
-                width=1,
-                tags=(f"row_badge_{clean_tag(row.row_id)}", "row_badge"),
-            )
-            self.canvas.create_text(
-                (badge_x0 + badge_x1) / 2,
-                badge_y0 + 14,
-                text=row.row_id,
-                font=FONT_ROW_LABEL,
-                fill=FG_ROW_LABEL,
-                tags=("row_label_text",),
-            )
-            sub_label = row.label if row.label else f"{len(row)} sound(s)"
-            self.canvas.create_text(
-                (badge_x0 + badge_x1) / 2,
-                badge_y0 + 32,
-                text=sub_label,
-                font=FONT_ROW_SUB,
-                fill=FG_ROW_LABEL,
-                tags=("row_sublabel_text",),
-            )
-
-            # Sound Events in this row
+            # Sound Events in this row (continuous colored bars)
             for event_idx, event in enumerate(row.events):
                 ex0, ex1 = self.coords.event_x_bounds(event)
                 ey0 = y_r_top + 10
                 ey1 = y_r_bot - 10
 
-                # Pick distinct color theme for this event
                 color_tuple = SOUND_COLORS[(row_idx * 3 + event_idx) % len(SOUND_COLORS)]
                 fill_color, border_color, text_color = color_tuple
 
-                # Continuous sound bar spanning from start to end
                 self.canvas.create_rectangle(
                     ex0,
                     ey0,
@@ -336,7 +366,6 @@ class TimelineCanvas(tk.Frame):
                     tags=(f"sound_bar_{clean_tag(event.event_id)}", "sound_bar"),
                 )
 
-                # Event Title & Duration inside the bar
                 bar_center_x = (ex0 + ex1) / 2
                 display_label = event.label if event.label else event.event_id
                 self.canvas.create_text(
@@ -356,103 +385,143 @@ class TimelineCanvas(tk.Frame):
                     tags=(f"sound_sub_{clean_tag(event.event_id)}", "sound_sub"),
                 )
 
-        # 4. Draw Constant Musical Row (Active Temporary Row Count) at Bottom
-        # Separator line
-        self.canvas.create_line(
-            0,
-            y_const_top - 6,
-            total_w,
-            y_const_top - 6,
-            fill="#d97706",
-            width=2,
-            tags=("const_separator",),
-        )
+        # 4. Vertical Column Boundary Guidelines (Across header, Row 1, and all temporary rows)
+        for b_time in boundaries:
+            bx = self.coords.time_to_x(b_time)
+            self.canvas.create_line(
+                bx,
+                y_hdr_top,
+                bx,
+                timeline_bottom_y,
+                fill=GRID_LINE_COLOR,
+                dash=GRID_LINE_DASH,
+                width=1,
+                tags=("grid_line",),
+            )
 
-        # Constant row background lane
+        # 5. Pinned Left Header & Badges (Stay visible during horizontal scrolling)
+        # Solid background covering left sidebar to prevent scrolling timeline from showing through
         self.canvas.create_rectangle(
             0,
-            y_const_top,
-            total_w,
-            y_const_bot,
-            fill=BG_CONSTANT_ROW,
-            outline=BORDER_CONSTANT_LABEL,
+            y_hdr_top,
+            self.coords.left_header_width,
+            timeline_bottom_y,
+            fill="#f1f5f9",
+            outline="#cbd5e1",
             width=1,
-            tags=("constant_row_bg",),
+            tags=("pinned_left", "pinned_sidebar_bg"),
+        )
+        self.canvas.create_line(
+            self.coords.left_header_width,
+            y_hdr_top,
+            self.coords.left_header_width,
+            timeline_bottom_y,
+            fill="#94a3b8",
+            width=2,
+            tags=("pinned_left", "pinned_sidebar_border"),
         )
 
-        # Constant row left header badge
-        badge_x0 = 8
-        badge_x1 = self.coords.left_header_width - 12
+        # Pinned Header Badge
+        self.canvas.create_rectangle(
+            8,
+            y_hdr_top + 4,
+            self.coords.left_header_width - 12,
+            y_hdr_bot - 4,
+            fill=BG_HEADER,
+            outline=BORDER_HEADER,
+            width=1,
+            tags=("pinned_left", "header_label_box"),
+        )
+        self.canvas.create_text(
+            16,
+            (y_hdr_top + y_hdr_bot) / 2 - 8,
+            text="Linked Columns",
+            font=FONT_HEADER,
+            fill=FG_HEADER,
+            anchor="w",
+            tags=("pinned_left", "header_label"),
+        )
+        self.canvas.create_text(
+            16,
+            (y_hdr_top + y_hdr_bot) / 2 + 10,
+            text="Time Axis (ms) →",
+            font=FONT_HEADER_SUB,
+            fill=FG_HEADER_SUB,
+            anchor="w",
+            tags=("pinned_left", "header_sublabel"),
+        )
+
+        # Pinned Row 1 Badge (Constant Musical Row)
         badge_y0 = y_const_top + 6
         badge_y1 = y_const_bot - 6
-
         self.canvas.create_rectangle(
-            badge_x0,
+            8,
             badge_y0,
-            badge_x1,
+            self.coords.left_header_width - 12,
             badge_y1,
             fill=BG_CONSTANT_LABEL,
             outline=BORDER_CONSTANT_LABEL,
             width=1,
-            tags=("constant_badge",),
+            tags=("pinned_left", "constant_badge"),
         )
         self.canvas.create_text(
-            (badge_x0 + badge_x1) / 2,
+            (8 + self.coords.left_header_width - 12) / 2,
             badge_y0 + 14,
-            text="Constant Row",
+            text="Row 1: Constant",
             font=FONT_CONSTANT_LABEL,
             fill=FG_CONSTANT_LABEL,
-            tags=("const_label",),
+            tags=("pinned_left", "const_label"),
         )
         self.canvas.create_text(
-            (badge_x0 + badge_x1) / 2,
+            (8 + self.coords.left_header_width - 12) / 2,
             badge_y0 + 32,
             text="(Active Row Count)",
             font=FONT_CONSTANT_SUB,
             fill=FG_CONSTANT_LABEL,
-            tags=("const_sublabel",),
+            tags=("pinned_left", "const_sublabel"),
         )
 
-        # Constant Row Values per Column
-        for col in columns:
-            cx0, cx1 = self.coords.column_x_bounds(col)
-            val = constant_row[col.index]
+        # Pinned Badges for Temporary Rows (Row 2, Row 3, ...)
+        for row_idx, row in enumerate(rows):
+            y_r_top, y_r_bot = self.coords.row_y_bounds(row_idx)
+            badge_y0 = y_r_top + 8
+            badge_y1 = y_r_bot - 8
 
-            cell_pad_x = 4
-            cell_pad_y = 6
-            cell_x0 = cx0 + cell_pad_x
-            cell_x1 = cx1 - cell_pad_x
-            cell_y0 = y_const_top + cell_pad_y
-            cell_y1 = y_const_bot - cell_pad_y
-
-            # White result card matching the column
             self.canvas.create_rectangle(
-                cell_x0,
-                cell_y0,
-                cell_x1,
-                cell_y1,
-                fill=BG_CONSTANT_CELL,
-                outline=BORDER_CONSTANT_CELL,
+                8,
+                badge_y0,
+                self.coords.left_header_width - 12,
+                badge_y1,
+                fill=BG_ROW_LABEL,
+                outline=BORDER_ROW_LABEL,
                 width=1,
-                tags=(f"const_cell_{col.index}", "const_cell"),
+                tags=("pinned_left", f"row_badge_{clean_tag(row.row_id)}", "row_badge"),
             )
-            # Prominent value text
-            cell_center_x = (cell_x0 + cell_x1) / 2
+
+            # Display "Row 2", "Row 3", etc. based on index or row_id
+            if row.row_id.lower().startswith("row "):
+                display_row_name = row.row_id
+            else:
+                display_row_name = f"Row {row_idx + 2}: {row.row_id}"
+
             self.canvas.create_text(
-                cell_center_x,
-                cell_y0 + 17,
-                text=str(val),
-                font=FONT_CONSTANT_VAL,
-                fill=FG_CONSTANT_VAL,
-                tags=(f"const_val_{col.index}", "const_val"),
+                (8 + self.coords.left_header_width - 12) / 2,
+                badge_y0 + 14,
+                text=display_row_name,
+                font=FONT_ROW_LABEL,
+                fill=FG_ROW_LABEL,
+                tags=("pinned_left", "row_label_text"),
             )
-            # Note below value
-            active_note = f"{val} active row" + ("s" if val != 1 else "")
+            sub_label = row.label if row.label else f"{len(row)} sound(s)"
             self.canvas.create_text(
-                cell_center_x,
-                cell_y0 + 34,
-                text=active_note,
-                font=FONT_CONSTANT_SUB,
-                fill="#78350f",
-                tags=("const_sub",),
+                (8 + self.coords.left_header_width - 12) / 2,
+                badge_y0 + 32,
+                text=sub_label,
+                font=FONT_ROW_SUB,
+                fill=FG_ROW_LABEL,
+                tags=("pinned_left", "row_sublabel_text"),
             )
+
+        # Raise all pinned items to ensure they float above scrolling sound bars
+        self.canvas.tag_raise("pinned_left")
+        self._update_pinned_headers()

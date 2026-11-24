@@ -6,6 +6,8 @@ Ensures that:
    x(t) = left_header_width + t * pixels_per_ms.
 3. Minimum readable column width is achieved by globally scaling pixels_per_ms,
    so no individual columns are artificially stretched or distorted relative to others.
+4. Row 1 (Constant Musical Row) is positioned at the top beneath the time header,
+   with temporary sound rows (Row 2, Row 3, ...) placed sequentially below it.
 """
 
 from __future__ import annotations
@@ -25,8 +27,9 @@ class TimelineCoordinates:
         left_header_width: Pixel width of the left label sidebar.
         header_height: Pixel height of the top time-column header.
         row_height: Pixel height of each temporary sound row lane.
-        constant_row_height: Pixel height of the bottom constant row lane.
+        constant_row_height: Pixel height of Row 1 (constant musical row lane).
         min_column_width: Minimum desired readable pixel width for any column.
+        constant_row_at_top: If True (default), Row 1 is placed at the top beneath the header.
     """
 
     def __init__(
@@ -42,40 +45,47 @@ class TimelineCoordinates:
         padding_top: int = 10,
         padding_bottom: int = 20,
         lane_gap: int = 14,
+        constant_row_at_top: bool = True,
     ) -> None:
         self.timeline: MusicTimeline = timeline
+        self.base_pixels_per_ms: float = float(base_pixels_per_ms)
         self.left_header_width: int = left_header_width
         self.header_height: int = header_height
         self.row_height: int = row_height
         self.constant_row_height: int = constant_row_height
-        self.min_column_width: float = min_column_width
+        self.min_column_width: float = float(min_column_width)
         self.padding_right: int = padding_right
         self.padding_top: int = padding_top
         self.padding_bottom: int = padding_bottom
         self.lane_gap: int = lane_gap
+        self.constant_row_at_top: bool = constant_row_at_top
 
         self._zoom_multiplier: float = 1.0
-        self._user_pixels_per_ms: float = base_pixels_per_ms
+
+    # --- Scale Factor Calculation ---
 
     @property
     def pixels_per_ms(self) -> float:
-        """Effective pixels per millisecond, uniformly scaled across all columns.
+        """Effective pixels-per-millisecond scale factor.
 
-        Calculated as:
-          effective_scale = max(user_scale, min_column_width / min_column_duration) * zoom_multiplier
-        This guarantees that even the shortest column is at least min_column_width wide,
-        while maintaining EXACT linear proportionality across the entire timeline.
+        Guarantees that the shortest column in the active timeline achieves
+        at least `min_column_width` pixels (before applying zoom multiplier),
+        while maintaining strict proportionality across ALL columns.
         """
         columns = self.timeline.build_columns()
         if not columns:
-            return self._user_pixels_per_ms * self._zoom_multiplier
+            return self.base_pixels_per_ms * self._zoom_multiplier
 
-        min_duration = min(c.duration_ms for c in columns)
-        needed_scale = (
-            self.min_column_width / min_duration if min_duration > 0 else self._user_pixels_per_ms
-        )
-        base_effective = max(self._user_pixels_per_ms, needed_scale)
-        return base_effective * self._zoom_multiplier
+        shortest_duration = min(col.duration_ms for col in columns)
+        if shortest_duration <= 0:
+            scale = self.base_pixels_per_ms
+        else:
+            required_scale = self.min_column_width / float(shortest_duration)
+            scale = max(self.base_pixels_per_ms, required_scale)
+
+        return scale * self._zoom_multiplier
+
+    # --- Zoom Controls ---
 
     def zoom_in(self, factor: float = 1.25) -> None:
         """Increase the horizontal time magnification."""
@@ -136,20 +146,44 @@ class TimelineCoordinates:
         y1 = y0 + float(self.header_height)
         return (y0, y1)
 
+    def constant_row_y_bounds(self) -> Tuple[float, float]:
+        """Return (y_top, y_bottom) for Row 1 (Constant Row)."""
+        if self.constant_row_at_top:
+            # Placed at top directly beneath the header
+            y_header_bottom = self.padding_top + self.header_height
+            y0 = float(y_header_bottom + 4)
+            y1 = y0 + float(self.constant_row_height)
+            return (y0, y1)
+        else:
+            # Legacy bottom placement
+            num_rows = self.timeline.row_count
+            y_rows_bottom = self.padding_top + self.header_height + num_rows * self.row_height
+            y0 = float(y_rows_bottom + self.lane_gap)
+            y1 = y0 + float(self.constant_row_height)
+            return (y0, y1)
+
     def row_y_bounds(self, row_index: int) -> Tuple[float, float]:
         """Return (y_top, y_bottom) for temporary row at row_index (0-based)."""
-        y_header_bottom = self.padding_top + self.header_height
-        y0 = float(y_header_bottom + row_index * self.row_height)
-        y1 = y0 + float(self.row_height)
-        return (y0, y1)
+        if self.constant_row_at_top:
+            # Placed below Row 1 (Constant Row)
+            y_const_bottom = self.padding_top + self.header_height + 4 + self.constant_row_height
+            y0 = float(y_const_bottom + self.lane_gap + row_index * self.row_height)
+            y1 = y0 + float(self.row_height)
+            return (y0, y1)
+        else:
+            # Legacy above constant row
+            y_header_bottom = self.padding_top + self.header_height
+            y0 = float(y_header_bottom + row_index * self.row_height)
+            y1 = y0 + float(self.row_height)
+            return (y0, y1)
 
-    def constant_row_y_bounds(self) -> Tuple[float, float]:
-        """Return (y_top, y_bottom) for the calculated constant row at the bottom."""
-        num_rows = self.timeline.row_count
-        y_rows_bottom = self.padding_top + self.header_height + num_rows * self.row_height
-        y0 = float(y_rows_bottom + self.lane_gap)
-        y1 = y0 + float(self.constant_row_height)
-        return (y0, y1)
+    def temporary_row_y_bounds(self, row_id: str) -> Tuple[float, float]:
+        """Return (y_top, y_bottom) for the temporary row identified by row_id."""
+        row_ids = self.timeline.row_ids
+        if row_id not in row_ids:
+            raise KeyError(f"Row {row_id!r} not found in timeline")
+        idx = row_ids.index(row_id)
+        return self.row_y_bounds(idx)
 
     # --- Total Workspace Dimensions for Scrollregion ---
 
@@ -164,5 +198,13 @@ class TimelineCoordinates:
     @property
     def total_height(self) -> int:
         """Total required canvas pixel height to encompass header, rows, and constant row."""
-        _, y_const_bottom = self.constant_row_y_bounds()
-        return int(y_const_bottom + self.padding_bottom)
+        num_rows = self.timeline.row_count
+        if self.constant_row_at_top:
+            if num_rows == 0:
+                _, y_const_bot = self.constant_row_y_bounds()
+                return int(y_const_bot + self.padding_bottom)
+            _, y_last_row_bot = self.row_y_bounds(num_rows - 1)
+            return int(y_last_row_bot + self.padding_bottom)
+        else:
+            _, y_const_bottom = self.constant_row_y_bounds()
+            return int(y_const_bottom + self.padding_bottom)

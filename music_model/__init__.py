@@ -14,6 +14,9 @@ from music_model.datasets import (
     create_stage_1_proof_timeline,
     create_variable_width_timeline,
     create_continuity_timeline,
+    create_progressive_stage_timeline,
+    create_dual_independent_songs,
+    create_32_column_timeline,
 )
 from music_model.song import (
     ProgressiveRefitter,
@@ -36,6 +39,9 @@ __all__ = [
     "create_stage_1_proof_timeline",
     "create_variable_width_timeline",
     "create_continuity_timeline",
+    "create_progressive_stage_timeline",
+    "create_dual_independent_songs",
+    "create_32_column_timeline",
     "SongTimeline",
     "ProgressiveRefitter",
     "RefitStep",
