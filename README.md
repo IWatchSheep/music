@@ -164,24 +164,28 @@ Suppose a song uses a fundamental unit $u = 100\text{ ms}$:
 
 ## 7. Implementation Status
 
-To maintain strict scientific integrity, the project distinguishes between committed code, uncommitted local work, and future development:
+To maintain strict scientific integrity, the project distinguishes between committed code, active local work, and future development:
 
-### A. Committed Repository (Protected Checkpoint `c55ce60`)
+### A. Committed Repository (Protected Checkpoint `d3d9793`)
 - **`music_model/timeline_engine.py`:** Event-boundary column refitting engine, two-song timeline independence, and active-row calculation.
 - **`music_model/development_profile.py`:** Exploratory low-to-high register tracking.
-- **`music_gui/timeline_canvas.py`:** Multi-row GUI displaying independent song timelines.
-- **`tests/`:** 49 automated unit tests verifying the baseline engine.
-
-### B. Local Uncommitted Working Tree (Stage 3 Verification)
 - **`music_model/midi_importer.py`:** Pure-Python Standard MIDI File (SMF Type 0/1) parser handling variable-length deltas, running status, overlapping notes, and exact rational tempo maps.
 - **`music_model/passage_format.py`:** Lossless JSON passage export/import format.
-- **`music_gui/` Updates:** Unified master gridlines, visual group boundary dividers, and note name displays.
-- **Local Test Suite:** All 71 automated tests passing locally (`tests/test_midi_and_passage.py`, `tests/test_master_columns_gui.py`).
+- **`music_model/midi_fixture.py`:** Programmatic synthetic orchestral flight passage (20 master columns).
+- **`music_gui/timeline_canvas.py`:** Multi-row GUI displaying unified master column boundaries, continuous sound event preservation, and register profiles.
+- **`tests/`:** 71 automated unit tests verifying the baseline engine and MIDI/passage importer.
 
-### C. Proposed Next Work (Statement 18 Implementation)
-- Implementation of the discrete fundamental cell grid with cyclical `0`–`9` indexing.
-- Standalone mathematical verification script (`verify_group_units.py`) modeling the 4-unit vs. 3-unit reconciliation over 12 cells.
+### B. Active Local Work (Milestone 4A Verification)
+- **`verify_group_units.py`:** Standalone mathematical proof script modeling Statement 18:
+  - 12 uniform fundamental cells with cyclic `0–9` indexing.
+  - Multi-unit sound groups (Row 2 with $4u$ groups, Row 3 with $3u$ groups).
+  - Derived composite Row 1 boundary segments $(3u, 1u, 2u, 2u, 1u, 3u)$.
+  - Multi-dimensional development metrics comparing ascending vs. flat passages.
+- **`tests/test_group_units.py`:** Automated test suite verifying group integrity, off-grid preservation, and song independence.
+
+### C. Proposed Next Work
 - GUI rendering toggle for uniform fundamental cells with composite group outlines.
+- Comparative testing of traditional vs. modern passages using empirical group-transition density.
 
 ---
 
@@ -198,9 +202,9 @@ The following questions remain open for experimental investigation and author gu
 
 1. **Milestone 1 (Committed):** Core refitting mathematics, independent songs, and 49 baseline tests.
 2. **Milestone 2 (Committed):** Baseline GUI displaying timelines and register profiles.
-3. **Milestone 3 (Local Verification):** Zero-dependency MIDI importer, JSON passage interchange, and 71 passing tests.
-4. **Milestone 4 (Next Proposed Step — Awaiting Author Approval):** Statement 18 Fundamental Column Engine:
-   - Step 4.1: Pure mathematical verification script for 4-unit and 3-unit group fitting.
+3. **Milestone 3 (Committed at `d3d9793`):** Zero-dependency MIDI importer, JSON passage interchange, master column GUI, and 71 passing tests.
+4. **Milestone 4 (Active):** Statement 18 Fundamental Column Engine:
+   - Step 4.1 (Authorized): Standalone mathematical verification script (`verify_group_units.py`) for 4-unit and 3-unit group fitting, comparing ascending vs. flat passages.
    - Step 4.2: GUI prototype displaying uniform fundamental cells with repeating `0`–`9` indices and distinct group outlines.
    - Step 4.3: Comparative testing of traditional vs. modern passages.
 
