@@ -2,7 +2,9 @@
 
 An experimental Python project for studying how groups of sounds create a musical timeline and a continuous, measurable musical pattern.
 
-**Original ideas:** See `music.txt`: statements 1–15 appear below, and statement 16 appears in the new appendix at the bottom. **Key distinction:** Row 1 is the musical structure carried across changing sound groups; active-row count is only an early diagnostic, not a full definition of that structure.
+**Original ideas:** See `music.txt`: statements 1–15 appear below, with statements 16–18 preserved in appendices at the bottom. **Key distinction:** Row 1 is the musical structure carried across changing sound groups; active-row count is only an early diagnostic, not a full definition of that structure.
+
+**Latest design clarification (Statement 18):** The author distinguishes a **shared fundamental column/cell unit** from **different-length sound-group spans** formed by joining those cells in each row. One group may occupy four units and another three; the groups must be reconciled into Row 1 without pretending they have the same duration or resizing a single cell to force a match. This is a proposed interpretation, not yet a complete alignment algorithm. Older variable-width and uniform-song-grid proposals below are preserved as the history of the idea; they are not definitive specifications.
 
 ## The author's ideas — corrected grammar and punctuation
 
@@ -386,7 +388,7 @@ When using floating-point timestamps, adopt a documented tolerance or an integer
 
 ## Project principles
 
-1. **Sounds determine the timeline.** Do not impose equal-width analysis columns in the core event model.
+1. **Sounds determine the timeline.** Earlier experiments used event-boundary-derived variable-width columns. The latest author clarification (Statement 18) proposes shared fundamental cells that can be grouped into differing row-specific spans. Preserve exact event times while investigating how the grouped spans should be fitted into Row 1; do not regard the earlier sizing rule as settled.
 2. **Events are linked intervals.** Store beginnings and endings; do not copy a sound for every column it spans.
 3. **Temporary rows create the constant row.** Derive continuous measurements from their contributions instead of inventing a constant track.
 4. **Define every measurement.** Low/high must refer to a specified measurable property.
@@ -398,11 +400,11 @@ When using floating-point timestamps, adopt a documented tolerance or an integer
 
 This repository begins as a **mathematical music-structure experiment**, not a full music editor, audio player, or genre classifier. The first goal is to prove that sound events can generate variable-width columns and that temporary rows can be combined into a meaningful, inspectable measurement over time.
 
-**Status (November 24, 2026):** The last user-confirmed pushed checkpoint is `bfae081` (low-to-high musical development), after a reported 49-test Phase 3 baseline. Google Antigravity subsequently reported a local, uncommitted Stage 3 MIDI importer with 62 passing tests; that report and screenshots do not establish musical-style distinctions. This README appendix records the latest author clarification for review before further development.
+**Status (November 24, 2026):** The last user-confirmed pushed checkpoint is `d7b462a` (README clarification following the low-to-high musical development commit), after a reported 49-test Phase 3 baseline. Google Antigravity subsequently reported a local, uncommitted Stage 3 MIDI importer with 62 passing tests; that report and screenshots do not establish musical-style distinctions. The appended statements record successive author clarifications for review before further development; Statement 18 further corrects the column-width premise by distinguishing fundamental units from row-group spans.
 
 ## Source of the author's wording
 
-The companion `music.txt` is the canonical, unedited record of all 16 original statements. Keep all original wording unchanged when extending this project; add further statements separately. The explanations in this README are interpretations, not quotations or replacements for the author's own words.
+The companion `music.txt` is the canonical, unedited record of all 18 original statements. Keep all original wording unchanged when extending this project; add further statements separately. The explanations in this README are interpretations, not quotations or replacements for the author's own words.
 
 ---
 
@@ -442,3 +444,84 @@ This appendix adds the author's latest clarification after inspecting the Stage 
 6. Preserve two-song independence and all existing tests when implementing changes. Do not change the calculator repository; do not commit or push without authorization.
 
 **Open research question:** Exactly which audible features and which kinds of connections between distinct groups make Row 1 carry a composition's recognizable low-to-high musical identity? The author has given a guiding analogy and structural constraints, but not a final numerical formula.
+
+---
+
+## New author clarification — Statement 17: Equal-width countable columns within each song
+
+This appendix documents a **newer clarification** from the author after inspecting the master-column GUI. It uses the same three-part structure as the earlier appendix: exact words, grammar-edited words, and an interpretation for AI collaborators. **At the time of Statement 17,** the author proposed an equally sized, countable column grid within each song. **Statement 18 below qualifies that reading:** the shared fundamental cells can combine into sound-group spans of different lengths (such as four units versus three). Do not silently treat this as equivalent to the former variable-duration master-column model.
+
+### Original statement 17 — Verbatim (no corrections)
+
+> look at the difference in column size for master column width. i think your not using a row and column you can fill in with the difference column size. counting column in row like base counting system 0 to 9, over and over to make one column width. and repeating this to make different songs column width for all columns the same size. instead i think your using one column and trying to resize it.
+
+### Edited statement 17 — Grammar and punctuation corrected (author's voice)
+
+> Look at the differences in the master column widths. I think you're not using rows and columns that can be filled with sounds while keeping a consistent column size. I imagine counting the columns in a row using a repeated base-ten-style sequence, from 0 to 9, over and over, to establish one consistent column width. The process would repeat for different songs, with each song having its own column width, but **all columns within that song being the same size**. Instead, I think the program is using one column and repeatedly resizing it.
+
+### Assistant interpretation for Claude, Grok, Google Antigravity, and other collaborators
+
+**Status:** This is an interpretation and proposed implementation direction—not an established mathematical model, and not a replacement for the author's exact statement. The precise meaning of “base counting system 0 to 9” remains to be worked out. Preserve this uncertainty rather than presenting the following as already proven.
+
+**A. The author is correcting the column *sizing rule*, not merely the gridline appearance.** The previous implementation uses **variable-width master time columns**: the distance from one sound boundary to the next determines each column's width. That made some columns wide and some narrow even within one song. The author now proposes the opposite for the displayed musical grid: **choose one column width for a song, then repeat equal-width cells across its rows**. Every cell in that song must have the same width; the songs themselves may choose different widths. Simply overlaying more visible gridlines on unequal-width columns does not meet this newer request.
+
+**B. The repeated 0–9 counting analogy.** The user likens the layout to counting columns with repeated 0–9 cycles. A reasonable *working hypothesis* is that the displayed cells are discrete, countable positions: 0, 1, 2, ..., 9, then 0, 1, 2, ..., 9 again, continuing for as many cells as needed. This is a **column-indexing analogy**, not yet a specification that each group must be exactly ten cells long, that the music must use base-ten timing, or that the ten positions must correspond to beats or notes. Ask or test which interpretation the author intends before fixing the musical counting rule.
+
+**C. A fixed song-specific cell width versus actual musical durations.** For example, a hypothetical Song A might have equal cells of 100 ms each, while Song B might have equal cells of 250 ms each. Within Song A all the cells have the same width and within Song B all the cells have the same width. These values are *illustrations only*, not the author's chosen durations. To preserve real music, retain original note/event start times, end times, and MIDI ticks separately. A sound may occupy many equal-size cells; it is still one continuous event. When note boundaries fall between grid positions, a future design must choose whether to show fractional-cell offsets, finer cells, or a separately overlaid precise-timing layer. Do not silently change note durations to fit the display.
+
+**D. Rows and Row 1 share the same grid within a song.** Rows 2, 3, 4, and onward contain distinct sound groups placed into cells of that song's equal-width grid. The cell at a given column index has the same position and width in Row 1 and every temporary row. These sounds and group relationships contribute to Row 1, the author's proposed *constant musical carrier*, including perceived low-to-high development (the duck running on water, whirring, flapping, and flying analogy). Active-row counts and mean MIDI pitch remain separate experimental measurements; neither fully defines musical identity.
+
+**E. Songs stay independent.** Song A and Song B may contain different numbers of equal-width columns and may select different cell widths. Do not force one song's grid size onto another. Comparison comes after each song's temporary groups and Row 1 have been represented on its own grid. Do not infer “curved” versus “linear” merely from the number of cells.
+
+**F. This supersedes earlier *interpretations* of variable-width cells, not earlier quotations.** Earlier sections describe a timeline whose columns are created by adjacent event boundaries and therefore can have unequal durations. That was a genuine earlier proposal and an implemented experimental architecture. **Statement 17 asks to revisit it.** Keep the old code and its regression tests intact until a separate equal-width-grid design is defined and verified. A potentially useful solution is two coexisting concepts: (1) exact event boundaries and durations in the data model; (2) an equally spaced, song-specific *display and grouping grid*. Whether the author wants those to remain separate is a design question, not an answered fact.
+
+**G. Proposed acceptance checks for the next design review (not yet implemented).**
+
+1. In a single song, choose one well-defined column width and show at least 30 consecutive columns, each with the **same rendered width**, under the same numbered columns across Row 1 and every temporary row.
+2. Show how the counting labels repeat from 0 to 9. Make it clear whether these are labels, groups of ten, or time subdivisions; seek clarification before assuming which musical role the numbers play.
+3. Display long sound events spanning several cells **without multiplying their underlying note objects**. Keep real note start/end times and source MIDI ticks unchanged.
+4. Display a second song whose *own* uniformly sized columns can differ in width or count from the first song.
+5. Test scrolling, zoom, and alignment of cell edges across all rows, and explain how a sound beginning or ending *between* two grid positions is shown.
+6. Compare the new equal-width approach against the existing variable-event-boundary view using the **same synthetic events**, so the user can judge which one represents their concept correctly before changing the analysis engine.
+7. Do not commit, push, or rewrite the protected calculator project without explicit authorization.
+
+**Key unresolved questions:** What exactly sets the width of a single column in a song? Does the 0–9 cycle label consecutive columns, ten subdivisions of a larger unit, or something else? When two notes start at irregular times, should a single cell contain multiple separate events? These answers matter before an implementation is considered faithful.
+
+---
+
+## New author clarification — Statement 18: Shared fundamental column units and different group widths
+
+This appendix follows the same three-part documentation convention: **the author's exact words**, **a grammar-and-punctuation correction in the author's voice**, and **an independent technical interpretation for Claude, Grok, Google Antigravity, and other AI collaborators**. It is the newest clarification and should be read before turning the earlier variable-width or equal-width proposals into code. Original Statements 1–17 and their edited text remain intact above.
+
+### Original statement 18 — Verbatim (no corrections)
+
+> did you rewrite your ideas before where the width was different to now the width is the same? the idea is the width is what groups together left to right in the row to fit the songs group sound, then you take that row of columns and a new row with different column width but both rows share the same fundamental column size making the two columns width. you have one row be a width column like 4 and another row with a width column of 3 and then you take the size 4 column and make it to size 3 column but that might not fit the sound so you make it work so the two columns share a same column design but they fit the song group that is a different length. then these multiple rows make up the top row the constant row column width that fits all rows. does that make sense?
+
+### Edited statement 18 — Grammar and punctuation corrected (author's voice)
+
+> Did you rewrite your earlier ideas, where the column widths were different, so that now the widths are all the same? My idea is that columns join together from left to right within a row to fit a song's group of sounds. Then you take that row of columns and another row whose group of sounds needs a different column width, but both rows share the same fundamental column size. That shared size is what lets us work with the two different group widths. For example, one row might have a group width of four columns, while another row has a group width of three. If you try to make the four-column group fit into three columns, it might not fit the sound correctly. So you need a way for the two groups to share a common column design while still fitting sounds of different lengths. Then these multiple rows together determine the column structure of the top, constant Row 1, which must fit all the rows. Does that make sense?
+
+### Assistant interpretation for Claude, Grok, Google Antigravity, and other collaborators
+
+**Interpretation, not quotation or finished mathematics.** The author's newest statement distinguishes **fundamental column units** from **larger musical group widths made from those units**. This resolves an oversimplification in the earlier assistant interpretation: saying every *group* or *column span* in a song must have exactly the same width was not faithful to the author's full concept. The author is describing a shared basic unit that can be repeated and combined into differently sized sound-group spans, and a procedure for reconciling those spans into the constant Row 1.
+
+**A. Two levels of width, not one resizable column.** Think of a smallest shared countable unit as a *fundamental cell*. A temporary group can occupy multiple such units, forming a larger *group span*. In the author's example, one row needs a group span of **4 units** while another needs **3 units**. The fundamental units can have the same underlying size or indexing rule, yet the grouped spans are different lengths. Do not implement this by changing the global pixel width of one cell whenever a new group appears. Conversely, do not force a four-unit group to become a three-unit group just because their drawn boxes should look alike.
+
+**B. What "fitting" means is the research problem.** The author wants the four-unit and three-unit group structures to **share a compatible column design**, even though their actual sound groups have different lengths. That may require subdivision, refinement, grouping, a common smaller unit, or another relationship between the group patterns. These are *candidate techniques*, not the author's approved algorithm. In particular, do **not** assume that 4 and 3 must be converted to a 12-cell grid or that the recorded sound must be time-stretched. Investigate and demonstrate options while keeping each group's true timing and sound identity intact.
+
+**C. An illustrative example of the distinction (not a specification).** With an abstract fundamental unit `u`, suppose a sound in Row 2 spans `4u` and a sound in Row 3 spans `3u`. Both use the same basic unit `u`, but their **group widths** are `4u` and `3u`. A larger passage can contain many such groups placed left-to-right. A shared song-level coordinate system can still mark the boundaries of the individual `u` units, while showing how sound-group boundaries and connections fall on that system. What counts as `u`—time, beats, a chosen count, or something else—is **not yet settled**. The 0–9 repeated count in Statement 17 can be used as *labels* for the units without assuming that ten is their musical duration or that all groups consist of ten cells.
+
+**D. Row 1 is formed from fitted groups.** Rows 2, 3, 4, and so on contain distinct sound groups and their own grouped spans. Their relationships determine the shared higher-level structure of **Row 1**, the constant musical carrier in the author's theory. Its purpose is to express the connected musical development, including the low whirring/water-contact to airborne/flapping/high sound analogy. Row 1 does not have to be a literal sound copied into each cell; its exact mathematical definition remains a research question. Active-row count and mean MIDI pitch are useful separate measurements, **not** a complete definition of the constant musical identity.
+
+**E. Shared design without false equivalence.** One row's group span of four units and another's span of three can coexist under a common basic unit. **Do not confuse** (1) equal-sized fundamental cells, (2) differently sized sound-group spans, (3) precise event start/end timestamps, and (4) the final Row 1 grouping. In a single song, common positions should align across rows; group boundaries need not occur at the same positions. Across different songs, the author still expects independent structures and possibly different appropriate fundamental units.
+
+**F. Proposed next steps for AI collaborators (not yet implemented or verified).**
+
+1. First demonstrate a pure model, without a large GUI rewrite: one row with a four-unit group, another with a three-unit group, both using the same fundamental unit, and an explicit explanation of how their group boundaries relate.
+2. Show at least two possible ways to fit the different-length groups into a shared Row 1 timeline **without shortening, duplicating, or stretching any sound**. State the tradeoffs and which assumptions each option introduces. Ask the author to choose only if the alternatives produce materially different musical meanings.
+3. Draw a visual mockup with a repeated count (0–9, then repeated), equal fundamental cell widths, and **larger group outlines** enclosing 4 cells in one row and 3 in another. Distinguish cell boundaries from group boundaries with different line styles.
+4. Preserve and display original event timestamps and MIDI ticks, including events that fall between unit boundaries. Never silently quantize or change their durations merely to simplify the drawing.
+5. Only after a grouping rule is selected should the program derive the joint Row 1 spans and test the model with more temporary rows and two independent songs.
+6. Preserve all existing working code and tests, and keep experimental group-fitting displays separate from the current event-boundary timeline until the author validates the interpretation. Do not change the calculator project or commit without authorization.
+
+**Current unresolved questions:** What determines the fundamental unit `u` within a song? Does "four columns" mean four countable cells, four beats, or another grouping? Must a four-unit and a three-unit phrase cover equal absolute musical time, or simply coexist along the same timeline? What exactly defines the final Row 1 group boundaries and shared musical identity? Avoid claiming these are already answered.
