@@ -7,7 +7,10 @@ Houses:
   2. Dual Independent Songs View: Song 1 vs Song 2 with independent columns and scrolling.
   3. Single Timeline View: Inspect any individual timeline or synthetic proof.
   4. 32-Column Stress Test: Validating wide many-column layouts.
-- Row 1 (Constant Musical Row) prominently displayed at the top beneath the time header.
+  5. Duck Flight Experiment (Stage 2B Phase 3): Low-to-high musical development (Arrangement A vs B).
+- Row 1 (Constant Musical Row) prominently displayed at the top beneath the time header:
+  - Active Temporary Row Count (Diagnostic Baseline).
+  - Low-to-High Development Profile (Experimental Continuous Measurement).
 - Temporary sound rows (Row 2, Row 3, ...) placed below Row 1.
 - Pinned left sidebar badges remaining visible during horizontal scrolling.
 """
@@ -34,10 +37,13 @@ from music_model.datasets import (
     create_32_column_timeline,
     create_continuity_timeline,
     create_dual_independent_songs,
+    create_duck_flight_experiment,
+    create_linear_many_columns_timeline,
     create_progressive_stage_timeline,
     create_stage_1_proof_timeline,
     create_variable_width_timeline,
 )
+from music_model.development_profile import calculate_development_constant_row
 from music_model.song import SongTimeline
 from music_model.timeline import MusicTimeline
 
@@ -53,8 +59,9 @@ class MusicGUI(tk.Tk):
         self.configure(bg=BG_WINDOW)
 
         # Current view states
-        self.current_view_mode: str = "progressive"  # 'progressive', 'single', 'dual', 'stress'
+        self.current_view_mode: str = "progressive"  # 'progressive', 'single', 'dual', 'stress', 'duck'
         self.current_stage: str = "A"               # 'A', 'B', 'C'
+        self.current_constant_row_mode: str = "active_rows"  # 'active_rows' or 'development'
         self.current_dataset_name: str = "Progressive Refitting — Stage A (Row 2 alone)"
 
         # Active timelines
@@ -111,6 +118,20 @@ class MusicGUI(tk.Tk):
             command=lambda: self.show_progressive_mode(self.current_stage),
         )
         self.btn_mode_progressive.pack(side="left", padx=2)
+
+        self.btn_mode_duck = tk.Button(
+            tier1,
+            text="Duck Flight (Low-to-High)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=8,
+            pady=2,
+            command=self.show_duck_mode,
+        )
+        self.btn_mode_duck.pack(side="left", padx=2)
 
         self.btn_mode_dual = tk.Button(
             tier1,
@@ -256,10 +277,20 @@ class MusicGUI(tk.Tk):
         self.content_holder.pack(fill="both", expand=True, padx=8, pady=(0, 4))
 
         # Single canvas view
-        self.timeline_view = TimelineCanvas(self.content_holder, self.timeline, constant_row_at_top=True)
+        self.timeline_view = TimelineCanvas(
+            self.content_holder,
+            self.timeline,
+            constant_row_at_top=True,
+            constant_row_mode=self.current_constant_row_mode,
+        )
 
         # Dual canvas view
-        self.dual_view = DualSongView(self.content_holder, self.song1, self.song2)
+        self.dual_view = DualSongView(
+            self.content_holder,
+            self.song1,
+            self.song2,
+            constant_row_mode=self.current_constant_row_mode,
+        )
 
     def _build_status_bar(self) -> None:
         """Create the bottom status bar."""
@@ -282,7 +313,14 @@ class MusicGUI(tk.Tk):
 
     def _set_active_mode_button(self, active_btn: tk.Button) -> None:
         """Update top-tier mode button styles."""
-        for b in (self.btn_mode_progressive, self.btn_mode_dual, self.btn_mode_single, self.btn_mode_stress):
+        all_buttons = (
+            self.btn_mode_progressive,
+            self.btn_mode_duck,
+            self.btn_mode_dual,
+            self.btn_mode_single,
+            self.btn_mode_stress,
+        )
+        for b in all_buttons:
             if b is active_btn:
                 b.configure(bg="#e0f2fe", fg="#0369a1", relief="sunken")
             else:
@@ -294,6 +332,8 @@ class MusicGUI(tk.Tk):
         """Display the progressive column refitting demonstration."""
         self.current_view_mode = "progressive"
         self.current_stage = stage.upper()
+        self.current_constant_row_mode = "active_rows"
+        self.timeline_view.set_constant_row_mode("active_rows")
         self._set_active_mode_button(self.btn_mode_progressive)
 
         # Show single canvas, hide dual view
@@ -361,12 +401,145 @@ class MusicGUI(tk.Tk):
         self.current_dataset_name = f"Progressive Refitting — Stage {self.current_stage}"
         self._update_summary()
 
-    # --- Mode 2: Dual Independent Songs View ---
+    # --- Mode 2: Duck Flight Experiment (Low-to-High Development) ---
+
+    def show_duck_mode(self) -> None:
+        """Display the duck running on water low-to-high experiment (Arrangement A vs B)."""
+        self.current_view_mode = "duck"
+        self._set_active_mode_button(self.btn_mode_duck)
+
+        song_a, song_b = create_duck_flight_experiment()
+        self.song1 = song_a
+        self.song2 = song_b
+        self.dual_view.set_songs(song_a, song_b)
+        self.dual_view.set_constant_row_mode(self.current_constant_row_mode)
+
+        self.timeline_view.pack_forget()
+        self.dual_view.pack(fill="both", expand=True)
+
+        self._clear_subcontrols()
+        tk.Label(
+            self.subcontrols_frame,
+            text="Duck Flight Experiment:",
+            font=FONT_TOOLBAR_BOLD,
+            bg=BG_TOOLBAR,
+            fg="#475569",
+        ).pack(side="left", padx=(4, 6))
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Dual Comparison (A vs B)",
+            font=FONT_TOOLBAR,
+            bg="#e0f2fe",
+            fg="#0369a1",
+            relief="sunken",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self.show_duck_mode,
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Inspect Arrangement A (Direct, 5 cols)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=lambda: self._show_solo_duck(song_a),
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Inspect Arrangement B (Connected, 11 cols)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=lambda: self._show_solo_duck(song_b),
+        ).pack(side="left", padx=2)
+
+        toggle_txt = "Mode: Active Rows" if self.current_constant_row_mode == "active_rows" else "Mode: Dev Profile"
+        tk.Button(
+            self.subcontrols_frame,
+            text=f"Toggle {toggle_txt}",
+            font=FONT_TOOLBAR_BOLD,
+            bg="#fef3c7",
+            fg="#92400e",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._toggle_constant_row_mode,
+        ).pack(side="left", padx=(8, 2))
+
+        self.current_dataset_name = "Duck Flight Experiment: Arrangement A (Direct) vs B (Connected)"
+        self.lbl_dataset.configure(text=f"Mode: {self.current_dataset_name}")
+        cols1 = self.song1.column_count
+        cols2 = self.song2.column_count
+        self.lbl_summary.configure(
+            text=f"Arrangement A: {cols1} cols, {self.song1.total_duration_ms} ms  |  Arrangement B: {cols2} cols, {self.song2.total_duration_ms} ms"
+        )
+        self._refresh_dual_constant_summary()
+
+    def _show_solo_duck(self, song: SongTimeline) -> None:
+        """Display a single arrangement in the full single-canvas view."""
+        self.timeline = song.timeline
+        self.timeline_view.set_constant_row_mode(self.current_constant_row_mode)
+        self.timeline_view.set_timeline(self.timeline)
+
+        self.dual_view.pack_forget()
+        self.timeline_view.pack(fill="both", expand=True)
+
+        self.current_dataset_name = song.title
+        self._update_summary()
+
+    def _toggle_constant_row_mode(self) -> None:
+        """Toggle Row 1 measurement between active_rows baseline and development profile."""
+        if self.current_constant_row_mode == "active_rows":
+            self.current_constant_row_mode = "development"
+        else:
+            self.current_constant_row_mode = "active_rows"
+
+        self.timeline_view.set_constant_row_mode(self.current_constant_row_mode)
+        self.dual_view.set_constant_row_mode(self.current_constant_row_mode)
+
+        if self.current_view_mode in ("duck", "dual"):
+            self._refresh_dual_constant_summary()
+        else:
+            self._update_summary()
+
+    def _refresh_dual_constant_summary(self) -> None:
+        """Update summary banner for dual views."""
+        if self.current_constant_row_mode == "development":
+            c1 = [round(v, 1) for v in calculate_development_constant_row(self.song1.timeline).values]
+            c2 = [round(v, 1) for v in calculate_development_constant_row(self.song2.timeline).values]
+            lbl = "Row 1 (Dev Profile)"
+        else:
+            c1 = list(self.song1.constant_row.values)
+            c2 = list(self.song2.constant_row.values)
+            lbl = "Row 1 (Constant)"
+
+        self.lbl_constant_summary.configure(
+            text=f"{lbl} S1: {c1}  |  S2: {c2}"
+        )
+
+    # --- Mode 3: Dual Independent Songs View ---
 
     def show_dual_mode(self) -> None:
         """Display two independent songs with separate timelines and scrollbars."""
         self.current_view_mode = "dual"
         self._set_active_mode_button(self.btn_mode_dual)
+
+        self.song1, self.song2 = create_dual_independent_songs()
+        self.dual_view.set_songs(self.song1, self.song2)
+        self.dual_view.set_constant_row_mode(self.current_constant_row_mode)
 
         # Show dual view, hide single view
         self.timeline_view.pack_forget()
@@ -388,11 +561,9 @@ class MusicGUI(tk.Tk):
         self.lbl_summary.configure(
             text=f"Song 1: {cols1} columns, {self.song1.total_duration_ms} ms  |  Song 2: {cols2} columns, {self.song2.total_duration_ms} ms"
         )
-        self.lbl_constant_summary.configure(
-            text=f"Row 1 (S1): {list(self.song1.constant_row.values)}  |  Row 1 (S2): {list(self.song2.constant_row.values)}"
-        )
+        self._refresh_dual_constant_summary()
 
-    # --- Mode 3: Single Timeline View ---
+    # --- Mode 4: Single Timeline View ---
 
     def show_single_mode(self) -> None:
         """Display single timeline with dataset picker."""
@@ -450,9 +621,35 @@ class MusicGUI(tk.Tk):
             command=self.load_continuity_proof,
         ).pack(side="left", padx=2)
 
+        tk.Button(
+            self.subcontrols_frame,
+            text="Duck Flight: Arr. A",
+            font=FONT_TOOLBAR,
+            bg="#e0f2fe",
+            fg="#0369a1",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self.load_duck_arrangement_a,
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Duck Flight: Arr. B",
+            font=FONT_TOOLBAR,
+            bg="#e0f2fe",
+            fg="#0369a1",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self.load_duck_arrangement_b,
+        ).pack(side="left", padx=2)
+
         self.load_stage_1_proof()
 
-    # --- Mode 4: 32-Column Stress Test ---
+    # --- Mode 5: 32-Column Stress Test ---
 
     def show_stress_mode(self) -> None:
         """Display the 32-column layout stress test."""
@@ -481,7 +678,15 @@ class MusicGUI(tk.Tk):
     def _update_summary(self) -> None:
         """Refresh summary metrics text from the active timeline."""
         columns = self.timeline.build_columns()
-        constant_row = calculate_constant_row(self.timeline)
+
+        if self.current_constant_row_mode == "development":
+            constant_row = calculate_development_constant_row(self.timeline)
+            c_vals = [round(v, 1) for v in constant_row.values]
+            r1_lbl = "Row 1 (Dev Profile)"
+        else:
+            constant_row = calculate_constant_row(self.timeline)
+            c_vals = list(constant_row.values)
+            r1_lbl = "Row 1 (Constant)"
 
         self.lbl_dataset.configure(text=f"Dataset: {self.current_dataset_name}")
         self.lbl_summary.configure(
@@ -493,7 +698,7 @@ class MusicGUI(tk.Tk):
             )
         )
         self.lbl_constant_summary.configure(
-            text=f"Row 1 (Constant): {list(constant_row.values)}"
+            text=f"{r1_lbl}: {c_vals}"
         )
 
     def load_stage_1_proof(self) -> None:
@@ -517,20 +722,36 @@ class MusicGUI(tk.Tk):
         self.timeline_view.set_timeline(self.timeline)
         self._update_summary()
 
+    def load_duck_arrangement_a(self) -> None:
+        """Load and display Duck Flight Arrangement A."""
+        song_a, _ = create_duck_flight_experiment()
+        self.current_dataset_name = song_a.title
+        self.timeline = song_a.timeline
+        self.timeline_view.set_timeline(self.timeline)
+        self._update_summary()
+
+    def load_duck_arrangement_b(self) -> None:
+        """Load and display Duck Flight Arrangement B."""
+        _, song_b = create_duck_flight_experiment()
+        self.current_dataset_name = song_b.title
+        self.timeline = song_b.timeline
+        self.timeline_view.set_timeline(self.timeline)
+        self._update_summary()
+
     def _on_zoom_in(self) -> None:
-        if self.current_view_mode == "dual":
+        if self.current_view_mode in ("dual", "duck"):
             self.dual_view.zoom_in()
         else:
             self.timeline_view.zoom_in()
 
     def _on_zoom_out(self) -> None:
-        if self.current_view_mode == "dual":
+        if self.current_view_mode in ("dual", "duck"):
             self.dual_view.zoom_out()
         else:
             self.timeline_view.zoom_out()
 
     def _on_zoom_reset(self) -> None:
-        if self.current_view_mode == "dual":
+        if self.current_view_mode in ("dual", "duck"):
             self.dual_view.reset_zoom()
         else:
             self.timeline_view.reset_zoom()

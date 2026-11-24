@@ -1,18 +1,19 @@
-"""Scrollable Tkinter Canvas rendering the Music Timeline.
+"""Interactive Tkinter timeline viewport widget.
 
-Visualizes:
-1. Horizontal time axis with exact boundaries and variable-width column durations.
-2. Row 1: The Calculated Constant Musical Row (Active Temporary Row Count) at the top.
+Displays:
+1. Linked time columns with duration and millisecond boundaries.
+2. Row 1: The Calculated Constant Musical Row (Active Temporary Row Count or Low-to-High Profile).
 3. Temporary sound rows (Row 2, Row 3, ...) placed sequentially below Row 1.
-4. Vertical column boundary guidelines extending through all rows and Row 1.
-5. Pinned left header badges that remain readable during horizontal scrolling.
+4. Continuous colored sound bars spanning across multi-column intervals.
+5. Vertical boundary guidelines indicating how temporary rows dictate time columns.
+6. Pinned left sidebar badges remaining visible during horizontal scrolling.
 """
 
 from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from music_gui.coordinates import TimelineCoordinates
 from music_gui.gui_style import (
@@ -22,18 +23,15 @@ from music_gui.gui_style import (
     BG_CONSTANT_ROW,
     BG_HEADER,
     BG_ROW_EVEN,
-    BG_ROW_LABEL,
     BG_ROW_ODD,
     BORDER_CONSTANT_CELL,
     BORDER_CONSTANT_LABEL,
     BORDER_DEFAULT,
     BORDER_HEADER,
-    BORDER_ROW_LABEL,
     FG_CONSTANT_LABEL,
     FG_CONSTANT_VAL,
     FG_HEADER,
     FG_HEADER_SUB,
-    FG_ROW_LABEL,
     FONT_CONSTANT_LABEL,
     FONT_CONSTANT_SUB,
     FONT_CONSTANT_VAL,
@@ -48,6 +46,7 @@ from music_gui.gui_style import (
     SOUND_COLORS,
 )
 from music_model.constant_row import calculate_constant_row
+from music_model.development_profile import calculate_development_constant_row
 from music_model.timeline import MusicTimeline
 
 
@@ -64,6 +63,7 @@ class TimelineCanvas(tk.Frame):
         parent: tk.Widget,
         timeline: MusicTimeline,
         constant_row_at_top: bool = True,
+        constant_row_mode: str = "active_rows",  # 'active_rows' or 'development'
         **kwargs,
     ) -> None:
         super().__init__(parent, bg=BG_CANVAS, **kwargs)
@@ -71,6 +71,7 @@ class TimelineCanvas(tk.Frame):
         self.coords: TimelineCoordinates = TimelineCoordinates(
             timeline, constant_row_at_top=constant_row_at_top
         )
+        self.constant_row_mode: str = constant_row_mode
         self._last_pinned_x: float = 0.0
 
         # Build scrollable canvas architecture (adapted from the calculator)
@@ -111,82 +112,94 @@ class TimelineCanvas(tk.Frame):
         self.coords.timeline = timeline
         self.redraw()
 
+    def set_constant_row_mode(self, mode: str) -> None:
+        """Set measurement mode for Row 1 ('active_rows' or 'development')."""
+        self.constant_row_mode = mode.lower().strip()
+        self.redraw()
+
     def zoom_in(self) -> None:
-        """Increase time scale magnification."""
+        """Magnify horizontal timeline resolution."""
         self.coords.zoom_in()
         self.redraw()
 
     def zoom_out(self) -> None:
-        """Decrease time scale magnification."""
+        """Demagnify horizontal timeline resolution."""
         self.coords.zoom_out()
         self.redraw()
 
     def reset_zoom(self) -> None:
-        """Reset time scale magnification to default."""
+        """Reset horizontal zoom to default resolution."""
         self.coords.reset_zoom()
         self.redraw()
 
-    # Query Helpers for Testing and Verification
+    # --- Element Query Helpers for Automated GUI Smoke Tests ---
+
     def find_sound_bar(self, event_id: str) -> List[int]:
-        """Find canvas item IDs for a sound event bar by event ID."""
+        """Find canvas item ID(s) for a sound event bar."""
         return list(self.canvas.find_withtag(f"sound_bar_{clean_tag(event_id)}"))
 
     def find_col_header(self, col_index: int) -> List[int]:
-        """Find canvas item IDs for a column header box by column index."""
+        """Find canvas item ID(s) for a column header box."""
         return list(self.canvas.find_withtag(f"col_header_{col_index}"))
 
     def find_const_cell(self, col_index: int) -> List[int]:
-        """Find canvas item IDs for a constant row cell box by column index."""
+        """Find canvas item ID(s) for a constant row cell."""
         return list(self.canvas.find_withtag(f"const_cell_{col_index}"))
 
     def find_const_val(self, col_index: int) -> List[int]:
-        """Find canvas item IDs for constant row value text by column index."""
+        """Find canvas text item ID(s) for a constant row value."""
         return list(self.canvas.find_withtag(f"const_val_{col_index}"))
 
+    # --- Pinned Left Sidebar Scroll Synchronization ---
+
     def _on_scrollbar_x(self, *args) -> None:
-        """Handle horizontal scrollbar interaction and keep left headers pinned."""
+        """Intercept horizontal scrollbar movement to keep left badges pinned."""
         self.canvas.xview(*args)
         self._update_pinned_headers()
 
     def _on_canvas_xscroll(self, first: str, last: str) -> None:
-        """Callback from canvas when horizontal view position changes."""
+        """Update horizontal scrollbar thumb and adjust pinned sidebar position."""
         self.h_scrollbar.set(first, last)
         self._update_pinned_headers()
 
     def _update_pinned_headers(self) -> None:
-        """Keep left row badges and header title pinned in view during horizontal scrolling."""
-        curr_x = self.canvas.canvasx(0)
-        dx = curr_x - self._last_pinned_x
-        if dx != 0:
+        """Reposition left sidebar items so they stay stationary during horizontal scrolling."""
+        target_x = self.canvas.canvasx(0)
+        dx = target_x - self._last_pinned_x
+        if abs(dx) > 0.001:
             self.canvas.move("pinned_left", dx, 0)
-            self._last_pinned_x = curr_x
+            self._last_pinned_x = target_x
+        self.canvas.tag_raise("pinned_left")
 
     def _bind_mousewheel(self) -> None:
-        """Set up mouse wheel scrolling (vertical, horizontal with Shift, zoom with Ctrl)."""
-
+        """Cross-platform mouse wheel scrolling."""
         def on_mousewheel(event: tk.Event) -> None:
-            # Check for Ctrl modifier -> Zoom
-            if event.state & 0x0004:
-                if event.delta > 0:
+            # Shift+Scroll = Horizontal scroll
+            # Ctrl+Scroll = Zoom
+            # Normal Scroll = Vertical scroll
+            state = getattr(event, "state", 0)
+            shift_pressed = bool(state & 0x0001)
+            ctrl_pressed = bool(state & 0x0004)
+
+            delta = -1 if event.delta < 0 else 1
+
+            if ctrl_pressed:
+                if delta > 0:
                     self.zoom_in()
                 else:
                     self.zoom_out()
-                return
-
-            # Check for Shift modifier -> Horizontal scroll
-            if event.state & 0x0001:
-                self.canvas.xview_scroll(-1 * (event.delta // 120), "units")
+            elif shift_pressed:
+                self.canvas.xview_scroll(-1 * delta, "units")
                 self._update_pinned_headers()
             else:
-                self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
+                self.canvas.yview_scroll(-1 * delta, "units")
 
         self.canvas.bind("<MouseWheel>", on_mousewheel)
+        self.canvas.bind("<Shift-MouseWheel>", on_mousewheel)
+        self.canvas.bind("<Control-MouseWheel>", on_mousewheel)
 
     def _on_configure(self, _event: Optional[tk.Event] = None) -> None:
-        """Update scrollregion to encompass all content and the viewport."""
-        w = max(self.canvas.winfo_width(), self.coords.total_width)
-        h = max(self.canvas.winfo_height(), self.coords.total_height)
-        self.canvas.configure(scrollregion=(0, 0, w, h))
+        """Re-check pinned header positioning on window resize."""
         self._update_pinned_headers()
 
     def redraw(self) -> None:
@@ -197,7 +210,11 @@ class TimelineCanvas(tk.Frame):
         timeline = self.coords.timeline
         columns = timeline.build_columns()
         boundaries = timeline.extract_boundaries()
-        constant_row = calculate_constant_row(timeline)
+
+        if self.constant_row_mode == "development":
+            constant_row = calculate_development_constant_row(timeline)
+        else:
+            constant_row = calculate_constant_row(timeline)
 
         total_w = self.coords.total_width
         total_h = self.coords.total_height
@@ -300,15 +317,22 @@ class TimelineCanvas(tk.Frame):
                 tags=(f"const_cell_{col.index}", "const_cell"),
             )
             cell_center_x = (cell_x0 + cell_x1) / 2
+
+            if self.constant_row_mode == "development":
+                val_text = f"{val:.1f}" if isinstance(val, float) else str(val)
+                active_note = f"height: {val_text}"
+            else:
+                val_text = str(val)
+                active_note = f"{val} active row" + ("s" if val != 1 else "")
+
             self.canvas.create_text(
                 cell_center_x,
                 cell_y0 + 17,
-                text=str(val),
+                text=val_text,
                 font=FONT_CONSTANT_VAL,
                 fill=FG_CONSTANT_VAL,
                 tags=(f"const_val_{col.index}", "const_val"),
             )
-            active_note = f"{val} active row" + ("s" if val != 1 else "")
             self.canvas.create_text(
                 cell_center_x,
                 cell_y0 + 34,
@@ -349,32 +373,43 @@ class TimelineCanvas(tk.Frame):
             # Sound Events in this row (continuous colored bars)
             for event_idx, event in enumerate(row.events):
                 ex0, ex1 = self.coords.event_x_bounds(event)
-                ey0 = y_r_top + 10
-                ey1 = y_r_bot - 10
+                ey0 = y_r_top + 8
+                ey1 = y_r_bot - 8
 
-                color_tuple = SOUND_COLORS[(row_idx * 3 + event_idx) % len(SOUND_COLORS)]
-                fill_color, border_color, text_color = color_tuple
+                color_idx = (row_idx * 3 + event_idx) % len(SOUND_COLORS)
+                bar_fill, bar_border, text_color = SOUND_COLORS[color_idx]
 
+                # Draw continuous colored bar
                 self.canvas.create_rectangle(
                     ex0,
                     ey0,
                     ex1,
                     ey1,
-                    fill=fill_color,
-                    outline=border_color,
+                    fill=bar_fill,
+                    outline=bar_border,
                     width=2,
                     tags=(f"sound_bar_{clean_tag(event.event_id)}", "sound_bar"),
                 )
 
+                # Sound Event label & duration
+                bar_w = ex1 - ex0
                 bar_center_x = (ex0 + ex1) / 2
-                display_label = event.label if event.label else event.event_id
+                label_text = event.label if event.label else event.event_id
+                if event.height is not None:
+                    label_text += f" (H: {event.height:.1f})"
+
+                if bar_w < 110:
+                    display_title = event.event_id
+                else:
+                    display_title = f"{event.event_id}: {label_text}"
+
                 self.canvas.create_text(
                     bar_center_x,
                     ey0 + 13,
-                    text=f"{event.event_id}: {display_label}",
+                    text=display_title,
                     font=FONT_EVENT_TITLE,
                     fill=text_color,
-                    tags=(f"sound_title_{clean_tag(event.event_id)}", "sound_title"),
+                    tags=(f"sound_label_{clean_tag(event.event_id)}", "sound_label"),
                 )
                 self.canvas.create_text(
                     bar_center_x,
@@ -464,10 +499,18 @@ class TimelineCanvas(tk.Frame):
             width=1,
             tags=("pinned_left", "constant_badge"),
         )
+
+        if self.constant_row_mode == "development":
+            badge_title = "Row 1: Development"
+            badge_sub = "(Low-to-High Profile)"
+        else:
+            badge_title = "Row 1: Constant"
+            badge_sub = "(Active Row Count)"
+
         self.canvas.create_text(
             (8 + self.coords.left_header_width - 12) / 2,
             badge_y0 + 14,
-            text="Row 1: Constant",
+            text=badge_title,
             font=FONT_CONSTANT_LABEL,
             fill=FG_CONSTANT_LABEL,
             tags=("pinned_left", "const_label"),
@@ -475,7 +518,7 @@ class TimelineCanvas(tk.Frame):
         self.canvas.create_text(
             (8 + self.coords.left_header_width - 12) / 2,
             badge_y0 + 32,
-            text="(Active Row Count)",
+            text=badge_sub,
             font=FONT_CONSTANT_SUB,
             fill=FG_CONSTANT_LABEL,
             tags=("pinned_left", "const_sublabel"),
@@ -492,36 +535,31 @@ class TimelineCanvas(tk.Frame):
                 badge_y0,
                 self.coords.left_header_width - 12,
                 badge_y1,
-                fill=BG_ROW_LABEL,
-                outline=BORDER_ROW_LABEL,
+                fill="#ffffff",
+                outline="#cbd5e1",
                 width=1,
-                tags=("pinned_left", f"row_badge_{clean_tag(row.row_id)}", "row_badge"),
+                tags=("pinned_left", f"badge_box_{clean_tag(row.row_id)}"),
             )
-
-            # Display "Row 2", "Row 3", etc. based on index or row_id
-            if row.row_id.lower().startswith("row "):
-                display_row_name = row.row_id
-            else:
-                display_row_name = f"Row {row_idx + 2}: {row.row_id}"
-
+            # Label
+            display_row_label = row.label if row.label else f"Sound Group {row_idx + 1}"
             self.canvas.create_text(
-                (8 + self.coords.left_header_width - 12) / 2,
+                16,
                 badge_y0 + 14,
-                text=display_row_name,
+                text=row.row_id,
                 font=FONT_ROW_LABEL,
-                fill=FG_ROW_LABEL,
-                tags=("pinned_left", "row_label_text"),
+                fill="#0f172a",
+                anchor="w",
+                tags=("pinned_left", f"badge_lbl_{clean_tag(row.row_id)}"),
             )
-            sub_label = row.label if row.label else f"{len(row)} sound(s)"
             self.canvas.create_text(
-                (8 + self.coords.left_header_width - 12) / 2,
-                badge_y0 + 32,
-                text=sub_label,
+                16,
+                badge_y0 + 30,
+                text=display_row_label,
                 font=FONT_ROW_SUB,
-                fill=FG_ROW_LABEL,
-                tags=("pinned_left", "row_sublabel_text"),
+                fill="#64748b",
+                anchor="w",
+                tags=("pinned_left", f"badge_sub_{clean_tag(row.row_id)}"),
             )
 
-        # Raise all pinned items to ensure they float above scrolling sound bars
-        self.canvas.tag_raise("pinned_left")
+        # Position pinned items over current scroll position
         self._update_pinned_headers()

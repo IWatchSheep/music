@@ -7,6 +7,8 @@ Includes:
 4. Progressive Refitting Stages (Stage A, Stage B, Stage C)
 5. Dual Independent Songs (Song 1 vs Song 2 with non-shared grids)
 6. 32-Column Stress Test Timeline
+7. Duck Flight Experiment: Low-to-high musical development (Arrangement A vs B)
+8. Linear Many-Columns Timeline: Proof that more columns do not imply curvature
 """
 
 from __future__ import annotations
@@ -138,5 +140,179 @@ def create_32_column_timeline() -> SongTimeline:
 
     # Row 4: Long pad [0, 6400) spanning all 32 columns
     song.add_event(SoundEvent("Pad_Long", "Row 4", 0, 6400, label="Master Pad [0, 6400) ms"))
+
+    return song
+
+
+def create_duck_flight_experiment() -> Tuple[SongTimeline, SongTimeline]:
+    """Create two comparative arrangements of the duck running on water experiment.
+
+    The user's theory:
+    - Row 2: Low whirring sound on water surface (experimental height = 20.0).
+    - Row 3: Transitional acceleration and liftoff sound (experimental height = 50.0).
+    - Row 4: High airborne flight sound (experimental height = 80.0 / 85.0).
+
+    Arrangement A: Direct low-to-high progression.
+      - 3 events with clean progressive handoffs.
+      - Produces 5 columns: [0, 1500), [1500, 2000), [2000, 3000), [3000, 3500), [3500, 5000) ms.
+      - Experimental Row 1 values: [20.0, 35.0, 50.0, 65.0, 80.0].
+      - Strictly monotonic, directness ratio = 1.0.
+
+    Arrangement B: Intermediate connected progression.
+      - 6 events with multiple intermediate transitions and recurring water contact.
+      - Produces 11 columns over 6000 ms.
+      - Experimental Row 1 values: [20.0, 32.5, 45.0, 35.0, 41.67, 40.0, 55.0, 65.0, 71.67, 70.0, 85.0].
+      - Shows recurring transitions before achieving sustained high flight.
+    """
+    # --- Arrangement A: Direct Progression ---
+    song_a = SongTimeline(
+        "arrangement_a",
+        "Arrangement A: Direct Low-to-High Development (5 Columns)",
+        tempo_bpm=120.0,
+        description="Direct transition from water run to liftoff to flight with clean progressive handoffs.",
+    )
+    song_a.add_event(
+        SoundEvent(
+            "A_Whir",
+            "Row 2",
+            0,
+            2000,
+            label="Low Whirring (Water Run)",
+            height=20.0,
+        )
+    )
+    song_a.add_event(
+        SoundEvent(
+            "A_Lift",
+            "Row 3",
+            1500,
+            3500,
+            label="Transitional Lift (Acceleration & Takeoff)",
+            height=50.0,
+        )
+    )
+    song_a.add_event(
+        SoundEvent(
+            "A_Flight",
+            "Row 4",
+            3000,
+            5000,
+            label="High Airborne Flight",
+            height=80.0,
+        )
+    )
+
+    # --- Arrangement B: More Intermediate Connections ---
+    song_b = SongTimeline(
+        "arrangement_b",
+        "Arrangement B: Intermediate Connected Development (11 Columns)",
+        tempo_bpm=100.0,
+        description="Complex transitions with recurring water kicks and gradual staged liftoff.",
+    )
+    # Row 2: Initial run + recurring water kick
+    song_b.add_event(
+        SoundEvent(
+            "B_Whir_1",
+            "Row 2",
+            0,
+            1600,
+            label="Initial Water Run",
+            height=20.0,
+        )
+    )
+    song_b.add_event(
+        SoundEvent(
+            "B_Whir_2",
+            "Row 2",
+            2000,
+            3000,
+            label="Water Kick & Trailing Splash",
+            height=25.0,
+        )
+    )
+
+    # Row 3: Early acceleration + secondary sustained lift
+    song_b.add_event(
+        SoundEvent(
+            "B_Lift_1",
+            "Row 3",
+            1000,
+            2400,
+            label="Early Acceleration Thrust",
+            height=45.0,
+        )
+    )
+    song_b.add_event(
+        SoundEvent(
+            "B_Lift_2",
+            "Row 3",
+            2200,
+            4200,
+            label="Main Ascent & Wing Flap",
+            height=55.0,
+        )
+    )
+
+    # Row 4: Tentative airborne wingbeat + sustained soaring flight
+    song_b.add_event(
+        SoundEvent(
+            "B_Flight_1",
+            "Row 4",
+            3200,
+            4000,
+            label="Tentative Airborne Glide",
+            height=75.0,
+        )
+    )
+    song_b.add_event(
+        SoundEvent(
+            "B_Flight_2",
+            "Row 4",
+            3800,
+            6000,
+            label="Sustained High Soaring Flight",
+            height=85.0,
+        )
+    )
+
+    return song_a, song_b
+
+
+def create_linear_many_columns_timeline(n_columns: int = 16) -> SongTimeline:
+    """Create a synthetic timeline with many columns whose development profile is perfectly linear.
+
+    Proves mathematically that having many derived columns does NOT imply curvature.
+    With constant rate of change dh/dt across all columns:
+      - Slope s_j = constant
+      - Second differences s_{j+1} - s_j = 0.0
+      - Curvature variance = 0.0
+    """
+    if n_columns < 2:
+        raise ValueError("n_columns must be at least 2")
+
+    song = SongTimeline(
+        f"linear_{n_columns}_col",
+        f"Linear Control Passage ({n_columns} Columns, Zero Curvature)",
+    )
+    step_duration = 500  # ms per column
+    h_start = 10.0
+    h_step = 5.0
+
+    for i in range(n_columns):
+        t0 = i * step_duration
+        t1 = (i + 1) * step_duration
+        h_val = h_start + i * h_step
+        # Stagger across Row 2 and Row 3 to maintain multiple rows
+        row_id = "Row 2" if i % 2 == 0 else "Row 3"
+        song.add_event(
+            SoundEvent(
+                f"Lin_E{i+1}",
+                row_id,
+                t0,
+                t1,
+                label=f"Step {i+1} ({h_val:.1f})",
+                height=h_val,
+            )
+        )
 
     return song

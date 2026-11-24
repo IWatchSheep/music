@@ -45,6 +45,7 @@ class SoundEvent:
         label: Optional human-readable description or title.
         sound_ref: Optional future reference to an audio recording, file, or buffer.
         attributes: Optional musical attributes (pitch, intensity, instrument, etc.).
+        height: Optional experimental low-to-high numeric value (e.g., 20.0, 50.0, 80.0).
     """
 
     event_id: str
@@ -54,6 +55,7 @@ class SoundEvent:
     label: str = ""
     sound_ref: Optional[str] = None
     attributes: Dict[str, Any] = field(default_factory=dict)
+    height: Optional[float] = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.event_id, str) or not self.event_id.strip():
@@ -76,6 +78,25 @@ class SoundEvent:
                 f"end_time_ms ({end_ms}) must be strictly greater than start_time_ms ({start_ms}). "
                 "Zero-duration or backward sound intervals are not allowed."
             )
+
+        # Validate optional experimental height
+        if self.height is not None:
+            if isinstance(self.height, bool) or not isinstance(self.height, (int, float)) or not math.isfinite(self.height):
+                raise ValueError(f"height must be a finite number or None, got {self.height!r}")
+            h_val = float(self.height)
+            object.__setattr__(self, "height", h_val)
+            if "height" not in self.attributes:
+                self.attributes["height"] = h_val
+        elif "height" in self.attributes:
+            attr_h = self.attributes["height"]
+            if isinstance(attr_h, bool) or not isinstance(attr_h, (int, float)) or not math.isfinite(attr_h):
+                raise ValueError(f"attributes['height'] must be a finite number, got {attr_h!r}")
+            object.__setattr__(self, "height", float(attr_h))
+
+    @property
+    def height_value(self) -> Optional[float]:
+        """Experimental low-to-high value, or None if not set."""
+        return self.height
 
     @property
     def duration_ms(self) -> int:

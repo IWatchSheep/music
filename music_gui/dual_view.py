@@ -15,6 +15,7 @@ from typing import Optional, Tuple
 
 from music_gui.gui_style import BG_CANVAS, BG_TOOLBAR, BG_WINDOW, FONT_TITLE
 from music_gui.timeline_canvas import TimelineCanvas
+from music_model.development_profile import calculate_development_constant_row
 from music_model.song import SongTimeline
 
 
@@ -26,12 +27,14 @@ class DualSongView(tk.Frame):
         parent: tk.Widget,
         song1: SongTimeline,
         song2: SongTimeline,
+        constant_row_mode: str = "active_rows",
         **kwargs,
     ) -> None:
         super().__init__(parent, bg=BG_WINDOW, **kwargs)
 
         self.song1: SongTimeline = song1
         self.song2: SongTimeline = song2
+        self.constant_row_mode: str = constant_row_mode
 
         # Grid: Upper pane for Song 1, lower pane for Song 2
         self.grid_rowconfigure(0, weight=1)
@@ -56,7 +59,12 @@ class DualSongView(tk.Frame):
         )
         self.lbl_s1_title.grid(row=0, column=0, sticky="ew")
 
-        self.canvas1 = TimelineCanvas(self.pane1, song1.timeline, constant_row_at_top=True)
+        self.canvas1 = TimelineCanvas(
+            self.pane1,
+            song1.timeline,
+            constant_row_at_top=True,
+            constant_row_mode=constant_row_mode,
+        )
         self.canvas1.grid(row=1, column=0, sticky="nsew")
 
         # Build Lower Pane (Song 2)
@@ -77,7 +85,12 @@ class DualSongView(tk.Frame):
         )
         self.lbl_s2_title.grid(row=0, column=0, sticky="ew")
 
-        self.canvas2 = TimelineCanvas(self.pane2, song2.timeline, constant_row_at_top=True)
+        self.canvas2 = TimelineCanvas(
+            self.pane2,
+            song2.timeline,
+            constant_row_at_top=True,
+            constant_row_mode=constant_row_mode,
+        )
         self.canvas2.grid(row=1, column=0, sticky="nsew")
 
         self._refresh_titles()
@@ -86,16 +99,24 @@ class DualSongView(tk.Frame):
         """Update pane header labels with song metadata and column statistics."""
         cols1 = self.song1.column_count
         dur1 = self.song1.total_duration_ms
-        const1 = list(self.song1.constant_row.values)
+
+        if self.constant_row_mode == "development":
+            c1_vals = [round(v, 1) for v in calculate_development_constant_row(self.song1.timeline).values]
+            c2_vals = [round(v, 1) for v in calculate_development_constant_row(self.song2.timeline).values]
+            r1_lbl = "Row 1 (Dev Profile)"
+        else:
+            c1_vals = list(self.song1.constant_row.values)
+            c2_vals = list(self.song2.constant_row.values)
+            r1_lbl = "Row 1 (Constant)"
+
         self.lbl_s1_title.configure(
-            text=f"🎵 Song 1: {self.song1.title}  |  Columns: {cols1}  |  Duration: {dur1} ms  |  Row 1 (Constant): {const1}"
+            text=f"🎵 Song 1: {self.song1.title}  |  Columns: {cols1}  |  Duration: {dur1} ms  |  {r1_lbl}: {c1_vals}"
         )
 
         cols2 = self.song2.column_count
         dur2 = self.song2.total_duration_ms
-        const2 = list(self.song2.constant_row.values)
         self.lbl_s2_title.configure(
-            text=f"🎶 Song 2: {self.song2.title}  |  Columns: {cols2}  |  Duration: {dur2} ms  |  Row 1 (Constant): {const2}"
+            text=f"🎶 Song 2: {self.song2.title}  |  Columns: {cols2}  |  Duration: {dur2} ms  |  {r1_lbl}: {c2_vals}"
         )
 
     def set_songs(self, song1: SongTimeline, song2: SongTimeline) -> None:
@@ -104,6 +125,13 @@ class DualSongView(tk.Frame):
         self.song2 = song2
         self.canvas1.set_timeline(song1.timeline)
         self.canvas2.set_timeline(song2.timeline)
+        self._refresh_titles()
+
+    def set_constant_row_mode(self, mode: str) -> None:
+        """Set measurement mode for Row 1 across both canvases ('active_rows' or 'development')."""
+        self.constant_row_mode = mode.lower().strip()
+        self.canvas1.set_constant_row_mode(self.constant_row_mode)
+        self.canvas2.set_constant_row_mode(self.constant_row_mode)
         self._refresh_titles()
 
     def zoom_in(self) -> None:

@@ -17,6 +17,15 @@ from music_model.datasets import (
     create_progressive_stage_timeline,
     create_dual_independent_songs,
     create_32_column_timeline,
+    create_duck_flight_experiment,
+    create_linear_many_columns_timeline,
+)
+from music_model.development_profile import (
+    DevelopmentAnalysis,
+    analyze_development_profile,
+    calculate_column_height,
+    calculate_development_constant_row,
+    get_event_height,
 )
 from music_model.song import (
     ProgressiveRefitter,
@@ -42,7 +51,14 @@ __all__ = [
     "create_progressive_stage_timeline",
     "create_dual_independent_songs",
     "create_32_column_timeline",
+    "create_duck_flight_experiment",
+    "create_linear_many_columns_timeline",
     "SongTimeline",
     "ProgressiveRefitter",
     "RefitStep",
+    "get_event_height",
+    "calculate_column_height",
+    "calculate_development_constant_row",
+    "DevelopmentAnalysis",
+    "analyze_development_profile",
 ]
