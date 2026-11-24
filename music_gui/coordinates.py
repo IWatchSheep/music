@@ -12,7 +12,7 @@ Ensures that:
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from music_model.sound_event import SoundEvent
 from music_model.timeline import MusicTimeline, TimeColumn
@@ -118,15 +118,25 @@ class TimelineCoordinates:
         """Convert a canvas X pixel coordinate back to millisecond timestamp."""
         return max(0.0, (x - self.left_header_width) / self.pixels_per_ms)
 
-    def column_x_bounds(self, column: TimeColumn) -> Tuple[float, float]:
-        """Return (x_left, x_right) for a time column."""
-        x0 = self.time_to_x(column.start_time_ms)
-        x1 = self.time_to_x(column.end_time_ms)
+    def column_x_bounds(self, column: Union[TimeColumn, int]) -> Tuple[float, float]:
+        """Return (x_left, x_right) for a time column or column index."""
+        if isinstance(column, int):
+            cols = self.timeline.build_columns()
+            col = cols[column]
+        else:
+            col = column
+        x0 = self.time_to_x(col.start_time_ms)
+        x1 = self.time_to_x(col.end_time_ms)
         return (x0, x1)
 
-    def column_width(self, column: TimeColumn) -> float:
+    def column_width(self, column: Union[TimeColumn, int]) -> float:
         """Pixel width of a time column (proportional to duration_ms)."""
-        return float(column.duration_ms * self.pixels_per_ms)
+        if isinstance(column, int):
+            cols = self.timeline.build_columns()
+            col = cols[column]
+        else:
+            col = column
+        return float(col.duration_ms * self.pixels_per_ms)
 
     def event_x_bounds(self, event: SoundEvent) -> Tuple[float, float]:
         """Return (x_left, x_right) for a sound event bar."""

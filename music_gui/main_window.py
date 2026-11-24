@@ -50,6 +50,11 @@ from music_model.midi_importer import MidiImporter
 from music_model.passage_format import load_song_from_file, save_song_to_file
 from music_model.song import SongTimeline
 from music_model.timeline import MusicTimeline
+from verify_group_units import (
+    build_ascending_passage,
+    build_flat_control_passage,
+    build_song_2_independent,
+)
 
 
 class MusicGUI(tk.Tk):
@@ -67,6 +72,8 @@ class MusicGUI(tk.Tk):
         self.current_stage: str = "A"               # 'A', 'B', 'C'
         self.current_constant_row_mode: str = "active_rows"  # 'active_rows' or 'development'
         self.current_dataset_name: str = "Progressive Refitting — Stage A (Row 2 alone)"
+        self.current_group_passage: str = "ascending"
+        self.current_group_song: str = "song1"
 
         # Active timelines
         self.timeline: MusicTimeline = (
@@ -151,6 +158,20 @@ class MusicGUI(tk.Tk):
             command=self.show_midi_mode,
         )
         self.btn_mode_midi.pack(side="left", padx=2)
+
+        self.btn_mode_groups = tk.Button(
+            tier1,
+            text="★ Fundamental Groups (Statement 18)",
+            font=FONT_TOOLBAR_BOLD,
+            bg="#fef3c7",
+            fg="#92400e",
+            relief="raised",
+            bd=1,
+            padx=8,
+            pady=2,
+            command=lambda: self.show_groups_mode(self.current_group_passage, self.current_group_song),
+        )
+        self.btn_mode_groups.pack(side="left", padx=2)
 
         self.btn_mode_dual = tk.Button(
             tier1,
@@ -310,6 +331,17 @@ class MusicGUI(tk.Tk):
         )
         self.lbl_status.pack(side="left", padx=8, pady=2)
 
+    def _update_status_bar(self) -> None:
+        """Update bottom status bar text based on active view mode."""
+        if self.current_view_mode == "groups":
+            self.lbl_status.configure(
+                text="Fundamental cells have equal width | Sound groups span multiple cells | Row 1 combines group boundaries"
+            )
+        else:
+            self.lbl_status.configure(
+                text="Row 1: Constant Musical Row (At Top) | Sounds dictate variable-width columns | Scroll: Wheel / Shift+Wheel / Ctrl+Wheel"
+            )
+
     def _clear_subcontrols(self) -> None:
         """Clear dynamic Tier 2 subcontrols."""
         for widget in self.subcontrols_frame.winfo_children():
@@ -321,6 +353,7 @@ class MusicGUI(tk.Tk):
             self.btn_mode_progressive,
             self.btn_mode_duck,
             self.btn_mode_midi,
+            self.btn_mode_groups,
             self.btn_mode_dual,
             self.btn_mode_single,
             self.btn_mode_stress,
@@ -340,6 +373,7 @@ class MusicGUI(tk.Tk):
         self.current_constant_row_mode = "active_rows"
         self.timeline_view.set_constant_row_mode("active_rows")
         self._set_active_mode_button(self.btn_mode_progressive)
+        self.timeline_view.clear_group_timeline()
 
         # Show single canvas, hide dual view
         self.dual_view.pack_forget()
@@ -412,6 +446,7 @@ class MusicGUI(tk.Tk):
         """Display the duck running on water low-to-high experiment (Arrangement A vs B)."""
         self.current_view_mode = "duck"
         self._set_active_mode_button(self.btn_mode_duck)
+        self.timeline_view.clear_group_timeline()
 
         song_a, song_b = create_duck_flight_experiment()
         self.song1 = song_a
@@ -492,9 +527,11 @@ class MusicGUI(tk.Tk):
             text=f"Arrangement A: {cols1} cols, {self.song1.total_duration_ms} ms  |  Arrangement B: {cols2} cols, {self.song2.total_duration_ms} ms"
         )
         self._refresh_dual_constant_summary()
+        self._update_status_bar()
 
     def _show_solo_duck(self, song: SongTimeline) -> None:
         """Display a single arrangement in the full single-canvas view."""
+        self.timeline_view.clear_group_timeline()
         self.timeline = song.timeline
         self.timeline_view.set_constant_row_mode(self.current_constant_row_mode)
         self.timeline_view.set_timeline(self.timeline)
@@ -511,6 +548,7 @@ class MusicGUI(tk.Tk):
         """Display an imported MIDI file or reproducible JSON passage."""
         self.current_view_mode = "midi"
         self._set_active_mode_button(self.btn_mode_midi)
+        self.timeline_view.clear_group_timeline()
 
         if song is None:
             song = create_synthetic_orchestral_song()
@@ -693,6 +731,7 @@ class MusicGUI(tk.Tk):
         """Display two independent songs with separate timelines and scrollbars."""
         self.current_view_mode = "dual"
         self._set_active_mode_button(self.btn_mode_dual)
+        self.timeline_view.clear_group_timeline()
 
         self.song1, self.song2 = create_dual_independent_songs()
         self.dual_view.set_songs(self.song1, self.song2)
@@ -745,9 +784,11 @@ class MusicGUI(tk.Tk):
             text=f"Song 1: {cols1} cols, {self.song1.total_duration_ms} ms  |  Song 2: {cols2} cols, {self.song2.total_duration_ms} ms"
         )
         self._refresh_dual_constant_summary()
+        self._update_status_bar()
 
     def _show_solo_song1(self) -> None:
         """Display Song 1 alone in single view."""
+        self.timeline_view.clear_group_timeline()
         self.timeline = self.song1.timeline
         self.timeline_view.set_timeline(self.timeline)
 
@@ -759,6 +800,7 @@ class MusicGUI(tk.Tk):
 
     def _show_solo_song2(self) -> None:
         """Display Song 2 alone in single view."""
+        self.timeline_view.clear_group_timeline()
         self.timeline = self.song2.timeline
         self.timeline_view.set_timeline(self.timeline)
 
@@ -774,6 +816,7 @@ class MusicGUI(tk.Tk):
         """Display single timeline mode with synthetic proof selection."""
         self.current_view_mode = "single"
         self._set_active_mode_button(self.btn_mode_single)
+        self.timeline_view.clear_group_timeline()
 
         self.dual_view.pack_forget()
         self.timeline_view.pack(fill="both", expand=True)
@@ -838,6 +881,7 @@ class MusicGUI(tk.Tk):
         """Display the 32-column layout stress test."""
         self.current_view_mode = "stress"
         self._set_active_mode_button(self.btn_mode_stress)
+        self.timeline_view.clear_group_timeline()
 
         self.dual_view.pack_forget()
         self.timeline_view.pack(fill="both", expand=True)
@@ -857,6 +901,98 @@ class MusicGUI(tk.Tk):
 
         self._update_summary()
 
+    # --- Mode 7: Statement 18 Fundamental Column Groups Mode ---
+
+    def show_groups_mode(self, passage_mode: str = "ascending", song_id: str = "song1") -> None:
+        """Display Statement 18 uniform fundamental cells, multi-unit groups, and composite Row 1."""
+        self.current_view_mode = "groups"
+        self.current_group_passage = passage_mode
+        self.current_group_song = song_id
+        self._set_active_mode_button(self.btn_mode_groups)
+
+        # Show single canvas, hide dual view
+        self.dual_view.pack_forget()
+        self.timeline_view.pack(fill="both", expand=True)
+
+        if song_id == "song2":
+            gt = build_song_2_independent(250)
+            desc_title = "Statement 18 — Song 2 Independent (5u vs 2u, u=250ms, 10 cells)"
+        elif passage_mode == "flat":
+            gt = build_flat_control_passage(100)
+            desc_title = "Statement 18 — Flat Control Passage (49.0 steady, 12 cells)"
+        else:
+            gt = build_ascending_passage(100)
+            desc_title = "Statement 18 — Ascending Takeoff Passage (48.0 -> 66.0, 12 cells)"
+
+        self.timeline_view.set_group_timeline(gt, passage_mode=passage_mode)
+
+        # Populate Tier 2 subcontrols
+        self._clear_subcontrols()
+
+        tk.Label(
+            self.subcontrols_frame,
+            text="Statement 18 Controls:",
+            font=FONT_TOOLBAR_BOLD,
+            bg=BG_TOOLBAR,
+            fg="#475569",
+        ).pack(side="left", padx=(4, 6))
+
+        is_asc = (song_id == "song1" and passage_mode == "ascending")
+        tk.Button(
+            self.subcontrols_frame,
+            text="Ascending Takeoff (48→66)",
+            font=FONT_TOOLBAR_BOLD if is_asc else FONT_TOOLBAR,
+            bg="#e0f2fe" if is_asc else "#f1f5f9",
+            fg="#0369a1" if is_asc else "#334155",
+            relief="sunken" if is_asc else "raised",
+            bd=1,
+            padx=8,
+            pady=2,
+            command=lambda: self.show_groups_mode("ascending", "song1"),
+        ).pack(side="left", padx=2)
+
+        is_flat = (song_id == "song1" and passage_mode == "flat")
+        tk.Button(
+            self.subcontrols_frame,
+            text="Flat Control (49 steady)",
+            font=FONT_TOOLBAR_BOLD if is_flat else FONT_TOOLBAR,
+            bg="#e0f2fe" if is_flat else "#f1f5f9",
+            fg="#0369a1" if is_flat else "#334155",
+            relief="sunken" if is_flat else "raised",
+            bd=1,
+            padx=8,
+            pady=2,
+            command=lambda: self.show_groups_mode("flat", "song1"),
+        ).pack(side="left", padx=2)
+
+        is_s2 = (song_id == "song2")
+        tk.Button(
+            self.subcontrols_frame,
+            text="Song 2 Independent (5u vs 2u)",
+            font=FONT_TOOLBAR_BOLD if is_s2 else FONT_TOOLBAR,
+            bg="#e0f2fe" if is_s2 else "#f1f5f9",
+            fg="#0369a1" if is_s2 else "#334155",
+            relief="sunken" if is_s2 else "raised",
+            bd=1,
+            padx=8,
+            pady=2,
+            command=lambda: self.show_groups_mode("ascending", "song2"),
+        ).pack(side="left", padx=2)
+
+        # Update Summary Bar
+        self.current_dataset_name = desc_title
+        self.lbl_dataset.configure(text=f"Dataset: {self.current_dataset_name}")
+        r1_segs = gt.derive_row1_segments()
+        widths = [s.width_units for s in r1_segs]
+        pitches = [round(s.mean_pitch, 1) for s in r1_segs]
+        self.lbl_summary.configure(
+            text=f"Grid: {gt.grid.total_cells} cells (u={gt.grid.u_ms}ms)  |  Row 1: {len(r1_segs)} segments (widths {widths})  |  Bounds: {gt.combined_boundaries()}"
+        )
+        self.lbl_constant_summary.configure(
+            text=f"Row 1 Pitches: {pitches}"
+        )
+        self._update_status_bar()
+
     # --- Helper & Utility Methods ---
 
     def _update_summary(self) -> None:
@@ -870,6 +1006,7 @@ class MusicGUI(tk.Tk):
         self.lbl_summary.configure(
             text=f"Rows: {row_count}  |  Columns: {col_count}  |  Duration: {dur_s:.2f}s ({dur_ms} ms)"
         )
+        self._update_status_bar()
 
         if self.current_constant_row_mode == "development":
             c_row = calculate_development_constant_row(self.timeline)
