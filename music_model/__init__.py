@@ -15,6 +15,11 @@ from music_model.datasets import (
     create_variable_width_timeline,
     create_continuity_timeline,
 )
+from music_model.song import (
+    ProgressiveRefitter,
+    RefitStep,
+    SongTimeline,
+)
 from music_model.sound_event import SoundEvent
 from music_model.temporary_row import TemporaryRow
 from music_model.timeline import MusicTimeline, TimeColumn
@@ -31,4 +36,7 @@ __all__ = [
     "create_stage_1_proof_timeline",
     "create_variable_width_timeline",
     "create_continuity_timeline",
+    "SongTimeline",
+    "ProgressiveRefitter",
+    "RefitStep",
 ]
