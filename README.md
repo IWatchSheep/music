@@ -2,45 +2,125 @@
 
 An experimental Python project for studying how groups of sounds create a musical timeline and a continuous, measurable musical pattern.
 
-## The author's idea — rewritten for clarity
+**Original ideas:** See `music.txt` and the 15 verbatim statements below. **Key distinction:** Row 1 is the musical structure carried across changing sound groups; active-row count is only an early diagnostic, not a full definition of that structure.
 
-*This section restates the author's ideas in clearer language for programmers and AI assistants. It is an interpretation, not a replacement for the original statements in the following section.*
+## The author's ideas — corrected grammar and punctuation
 
-### 1. Music as rows of sound and columns of time
+**Author's voice, edited for readability.** These fifteen statements correspond one-to-one with the numbered passages in `music.txt`. They keep the author's ideas, examples, first-person perspective, and uncertainty, while correcting spelling, grammar, and punctuation. They are **not** claimed scientific findings. The unedited text is preserved in the next original-words section.
 
-Music contains many sounds and repeating loops. I imagine organizing these sounds into **rows** and organizing time into **columns**. Each row holds a sound or a related group of sounds, including chunks that repeat. The rows can overlap because different groups may play at the same time.
+### Edited statement 1 — Repeating sounds in rows and columns
 
-### 2. Temporary sound groups and connections between groups
+With music, if you use rows and columns, you have loops of sound that repeat. Then you have other sounds that repeat. They all fit into the time during which the sounds are played. If that time is split into columns, each row can hold chunks of sound.
 
-Some rows exist only while a particular musical group is playing. When one group ends and another begins, a sound or musical idea may continue between them. That continuing element connects the groups. I want the system to represent both the sounds unique to each temporary group and the sounds or relationships shared across groups.
+### Edited statement 2 — Temporary groups and a constant connection
 
-### 3. The constant row is a musical identity, not necessarily a repeating recording
+I was thinking of using constant columns to show the time during which music is played, then filling the columns with sounds that belong to different groups. One group goes through its row and columns, and then the music moves to another group. There might be a single column that remains shared between two groups, perhaps in a separate row. Like mathematics, where we join rows, a row containing the constant sound between groups could stay connected to the columns containing each loop, while the next row contains sounds unique to the next group. The sound shared across rows could be constant, while each group is temporary and exists only for the time it is played.
 
-What remains recognizable across groups may be a **feeling or musical style**—for example, the suspense associated with *Jaws* or the powerful, sweeping character of *Ride of the Valkyries*. It does not have to be one identical note, loop, or instrument playing all the time. The connections among the changing sounds may create that recognizable musical identity.
+### Edited statement 3 — The shared feeling or style
 
-### 4. The constant row emerges from the temporary rows
+The constant sound could represent a style or feeling, such as something scary or happy: the feeling of *Jaws* in the water or the Valkyries in the sky. It does not have to be a literal sound repeated in every row. It is something that binds the rows together.
 
-I do not want to impose the constant row first. I think the sounds in the temporary rows **produce** it. By measuring how groups enter, overlap, repeat, connect, and move from low to high, we might be able to calculate one continuous line that describes the larger musical movement.
+### Edited statement 4 — My linear-versus-curved hypothesis
 
-### 5. A hypothesis about straight and curved musical movement
+I think the constant row is created by the temporary rows. When music is not blended with other musical styles, the temporary rows may create a linear graph line. When multiple styles are joined, that constant graph line may change from linear to curved. I suspect modern music may produce a curved constant line, while traditional rock, such as Led Zeppelin's *Stairway to Heaven*, the Beach Boys, and other older music, may produce a more linear line. Modern rap and other modern music might produce a curved line. I do not yet know how the temporary musical rows create this difference in the constant musical row.
 
-I suspect that some traditional musical passages move from low to high more directly, while passages combining several musical styles may stay at a lower level longer or move through more intermediate stages. On a graph, I imagine the first kind sometimes looking more linear and the second more curved. I think of examples such as *Stairway to Heaven*, the Beach Boys, orchestral music, and modern rap, but I do not yet know how to measure the difference. **These genre comparisons are questions for the experiment, not facts the program should assume.**
+### Edited statement 5 — Going from low to high
 
-### 6. The temporary rows determine the size and number of time columns
+I think music that can go from low to high more directly is traditional, while music that goes low, stays low for a while on the timeline, and then goes high may be a mixture of musical styles. By counting rows and columns, traditional music might move from a low row to a high point through fewer columns, while a mixture of styles may need several columns to establish or remain in the low part. I want to count the temporary rows and columns to measure how the music moves from low to high.
 
-The columns should **not** all have a fixed duration. Groups of sounds determine where useful time boundaries occur. A short, direct musical event may need a narrow column. A longer combination of overlapping sound events may span a larger interval or create several linked columns. We should count the columns, measure their actual durations, and count which temporary rows contribute to the low-to-high movement.
+### Edited statement 6 — *Ride of the Valkyries*
 
-### 7. Every sound links a beginning column to an ending column
+I think classical music such as *Ride of the Valkyries* has a clear movement from low to high. I imagine the conductor swinging a baton could show that movement easily.
 
-A sound is held between its starting and ending boundaries. Different sounds can start and end at different times, so their linked intervals overlap. Combining the boundaries from the temporary rows gives the music a shared column structure. The durations and contributions of those combined columns then determine how the constant row is measured.
+### Edited statement 7 — The rows create variable columns
 
-### 8. What I want to discover
+The temporary rows create the columns of time through which the constant row goes from low to high. The number of columns is not static; it can change to fit the sounds in the temporary rows. Music consists of groups of sounds that fit together, and these groups create the columns used by the constant row. Because the temporary rows change the columns, one column in classical or traditional music might be smaller than a column created by blended modern music.
 
-I want to find a mathematical rule that starts with **temporary groups of real sounds**, derives their **linked, variable-width time columns**, and calculates the **constant musical row** from them. Then I want to test whether the resulting line, and its low-to-high transitions, reveal meaningful differences between musical passages and styles. I do not yet know the correct musical measurements or combination rule; discovering them is the purpose of the project.
+### Edited statement 8 — Linking the beginning and end of sounds
+
+The sound in a row is held by linked columns. The beginning column and ending column hold the sound between them. These columns fit the temporary rows together, and the combined columns determine the column sizes of the constant row.
+
+### Edited statement 9 — A program to test the idea
+
+I would like Google Antigravity to help make a plan. First, temporary sounds must fit into columns. Then those columns must fit the constant row. We can compare one constant row with another to see whether differences in the columns relate to a more linear or curved graph—my initial idea is that fewer connections may mean linear and more may mean curved. Before testing that, we need to implement rows and columns. Perhaps we can reuse the calculator project's GUI design, adding a musical version where music can be placed into the rows and columns.
+
+### Edited statement 10 — Many columns, like sheet music
+
+I think the rows should extend across many, many columns. In those columns, we would fill in the sounds heard while the music is playing. The number of columns should relate to how sheet music organizes musical time. When I looked at the program, there were not enough columns, and the columns did not appear aligned.
+
+### Edited statement 11 — Refitting within each song, not across songs
+
+Row 2 makes the columns fit its musical group. Row 3 then makes the columns refit to accommodate its group. Row 1 fits the combined musical groups into its resulting structure. A second song repeats the process and may give Row 1 a different number of columns. Within each song, the columns fit Rows 1, 2, 3, and the other rows together; they do not have to match the columns in a different song. We can then compare the constant rows and investigate whether the different column connections explain linear and curved structures in traditional and modern music.
+
+### Edited statement 12 — More lower-row connections in my curved hypothesis
+
+The idea is that Row 1 is constant and connects with different rows as they are added, allowing the columns to blend the music together. The numbers of columns created by Rows 2, 3, and subsequent rows determine the column structure of Row 1. To compare modern music with classical, traditional, or older rock music, I want to measure whether modern music needs more columns to connect its groups. In my hypothesis, the curved structure involves more connections through lower rows and therefore more columns connected to Row 1, while the traditional structure is more linear.
+
+### Edited statement 13 — What I mean by linear
+
+By linear, I mean a structure that grows from the relationship between rows and columns. Groups of sounds fit their columns together, forming the structure of Row 1. Row 1 represents the sound that is carried from row to row.
+
+### Edited statement 14 — Distinct sounds sharing a musical identity
+
+The sound in one group is distinct from the sound in another group, but the groups share something through Row 1 that changes or connects the music. I think Row 1 can make the music develop from low to high. Without Row 1, the groups might not have a unique musical identity that connects their low-to-high development. For example, with *Ride of the Valkyries*, you could have one part and then another, but without the low-to-high relationship, you might lose what makes the composition recognizable. With that relationship, the parts become a song.
+
+### Edited statement 15 — The duck taking flight
+
+The sound at first is low, like a whirring noise. Imagine a duck running across the surface of water. Then, as the duck takes flight, the sound becomes high.
+
+## Interpretation for AI assistants and programmers
+
+**This section is the assistant's interpretation, not the author's exact wording.** Read the fifteen grammar-edited statements above and the fifteen unmodified originals below as the primary sources. The following explains a *working understanding* so Claude, Grok, Google Antigravity, or another collaborator does not have to reconstruct the intent from scattered conversation. If an implementation decision depends on an ambiguity, preserve it as an open question rather than pretending the author already defined it.
+
+### A. One-paragraph meaning
+
+The author imagines music as distinct, temporary sound groups distributed among Rows 2, 3, 4, and beyond. Each sound has a start and an end, and the timing of all sounds creates linked, potentially variable-width columns. As another temporary row is added, the column boundaries **refit** to accommodate both the existing and new sounds; existing sound intervals do not need to change. **Row 1**, called the *constant row*, represents the overall musical structure or identity created and carried through these distinct groups, including an audible development the author describes as going *low to high*. Every song forms its **own** Row 1 and column structure. The author proposes comparing those structures to investigate whether traditional/classical/older-rock passages connect more directly (*linear*) while some modern blended passages use more intermediate lower-row connections and columns (*curved*). This is a hypothesis, **not** a predetermined result or an assertion that column count proves curvature.
+
+### B. The intended roles of rows and columns
+
+| Element | Working interpretation | What must not be assumed |
+| --- | --- | --- |
+| **Rows 2, 3, 4, ...** | Temporary, distinct sound groups, possibly including loops and overlapping sounds. | Groups are not necessarily identical sounds, fixed instruments, or fixed genres. |
+| **Sound event** | One event or chunk with an actual start and end; it can span multiple derived columns. | Refitting the visual columns must not split or alter the event itself. |
+| **Time columns** | Adjacent time intervals formed by the groups' combined boundaries, refitted whenever groups are added. | They are not a universal fixed-width grid or required to match across songs. |
+| **Row 1 (constant row)** | The resulting, persistent **role** of a shared musical identity/development across the passage, represented using the combined column structure. | “Constant” does **not** necessarily mean an unchanging pitch, one repeated recording, or the count of active rows. |
+| **Low → high** | The author's analogy for musical transformation, like the duck running on water then taking flight. | The author has not yet reduced it to a single acoustic variable; pitch, register, energy, intensity, and texture are not interchangeable. |
+| **Linear / curved** | Hypothesized differences in how sound groups connect and develop through the columns into Row 1. | These terms have **not yet** been operationally defined as mathematical curvature or a regression score. |
+
+### C. What happens when musical rows are added
+
+1. Row 2 contributes its distinct sounds and their time boundaries, creating an initial column arrangement.
+2. Row 3 contributes another group; the union of the event boundaries refits the columns within **that same song**.
+3. Subsequent temporary rows add further sounds and may introduce more boundaries and connections.
+4. Row 1 uses the resulting arrangement to represent a shared musical development that links the groups, rather than merely listing their sounds independently.
+5. Song B starts its own process. Compare its final Row 1 and column relationships with Song A **without** forcing them onto identical boundaries.
+
+**Important distinction:** The software currently knows how to combine event boundaries and calculate diagnostic values. The author's proposed *musical identity carried from row to row* is not yet proven to be captured by any specific numerical formula. A proposed numeric development profile is an experimental proxy, not the definition of Row 1.
+
+### D. What the duck example adds
+
+The duck analogy describes a **recognizable transformation**: low whirring while running across water, intermediate movement as it lifts, then a higher sound while flying. The author uses this to explain why separate musical groups may still belong to one continuously developing song. In a test program, a synthetic low/intermediate/high signal can illustrate this progression. Such assigned numbers must be labeled experimental; they do not, by themselves, explain perceived musical identity or establish what actually changes acoustically in the example.
+
+### E. How to test the linear/curved idea without presuming it is true
+
+Record, separately for each passage, its musical groups and exact event timing; then measure its derived column counts and durations, which rows contribute to each column, when additional rows introduce boundaries, and a clearly named experimental measure of development through Row 1. Compare passages using consistent definitions and appropriate controls for passage duration, number of events, and row count. Test a counterexample in which **many columns still form a direct or mathematically straight development**. Do not label any result “traditional = linear” or “modern = curved” until actual recordings and a well-defined measure support that conclusion. Also distinguish the author's *structural meaning* of linear/curved from ordinary graph geometry.
+
+### F. Instructions for a new AI collaborator
+
+- **Preserve the author's voice:** Do not rewrite the verbatim originals. If creating user-facing summaries, distinguish edited wording from assistant interpretation.
+- **Honor the current model:** Row 1 is the resulting musical continuity; temporary rows provide the groups and the boundaries that refit columns. A count of active rows is a diagnostic, not an explanation of identity.
+- **Keep each song independent:** Similar timestamps may occur naturally, but no common column grid should be imposed across songs.
+- **Reuse verified work:** Preserve existing model classes, mathematical tests, and GUI behavior unless there is an explicit, reviewed reason to change them.
+- **Make assumptions visible:** Any low/high aggregation, transition rule, or row-connection formula is a candidate measurement and needs tests and limitations.
+- **Protect the repositories:** Music and calculator are separate projects. Obtain authorization before staging, committing, or pushing implementation changes.
+
+### G. Questions still open
+
+The author has not yet specified a unique algorithm for how a *shared musical identity* is carried between groups, which audible characteristics best represent low-to-high change, or how exactly the structural *linear* and *curved* forms should be calculated. These are **research questions**, not omissions that an AI should silently fill with guesses.
 
 ## Original explanation — author's own words
 
-The following eight statements are preserved **verbatim and in the order originally given**, including the author's wording, spelling, and punctuation. They are the source ideas for the technical model below. The comparisons between musical styles are hypotheses to be investigated, not established findings.
+The following fifteen statements reproduce the complete supplied `music.txt` **verbatim and in the order given**, including the author's wording, spelling, and punctuation. The first eight were already present in this README; statements 9–15 are later clarifications. The comparisons between musical styles are hypotheses to be investigated, not established findings.
 
 ### Original statement 1
 
@@ -73,6 +153,34 @@ The following eight statements are preserved **verbatim and in the order origina
 ### Original statement 8
 
 > the sound in the row is made from linked columns the beginning column the ending column hold the sound the columns fit the temporary rows together. these columns fit together to create the constant row column size.
+
+### Original statement 9
+
+> you should ask google antigravity for help coming up with a plan. first there is the temporary sounds that fit columns and these columns fit the constant row and constant row is compared to constant row to find the column different with less = linear and more = curved graph. but before all that we need to use the rows and columns and for that maybe we need to reuse the calculator project. to get the gui and rows and columns. just add a musical variation on it to plug in music to the rows and columns.
+
+### Original statement 10
+
+> i think the rows are supposed to be many many columns wide and in those many columns we fill in the sounds hear from the music playing. the idea is the number of columns functions with the musical sheet music. i look at the rows now and they are not many columns and the columns are not aligned.
+
+### Original statement 11
+
+> the row 2 makes columns fit the music group. row 3 makes the columns refit the musical group. then row 1 fits rows 1 and 2 musical group. music 2 repeats the process making row 1 a different number of columns. in both music songs the columns fit rows 1, 2, 3, but not across music songs. this way you can measure the linear and curved by seeing the traditional vs the non-traditional/modern, to see the column number reasoning the columns fit together across constant rows but they don't share the linear or curved structure.
+
+### Original statement 12
+
+> the idea is row 1 is constant and goes into different rows as row addition so the columns blend music together. then column numbers in rows 2 and 3 etc setup the column size for row 1. then to show the difference between modern and classical traditional rock music, vs modern music you measure to see if the columns in the modern are more to connect to the old. the curved has more on the lower row hence it has more columns connecting to the row vs the traditional that goes in linear.
+
+### Original statement 13
+
+> its the meaning of linear which grows from the row and column and is formed from the groups of sounds fitting columns together to form the structure of the row 1 that is the sound carried from row to row.
+
+### Original statement 14
+
+> the sound in a group is distinct from a different sound in a group but they share something from the row 1 that changes the music somehow. i think the fact that row one can change the music to go low to high. without row 1 the groups don't have a unique id to go from low to high like ride of the valkyries.you have one part of ride of the valkyries and another but there is no low to high and then the song is lost but with low to high you have the song.
+
+### Original statement 15
+
+> the sound before is low its like the whirring sound imaging a duck running on water then as the duck takes flight that is the high sound.
 
 ## Simple explanation — what this project should do
 
@@ -290,4 +398,9 @@ When using floating-point timestamps, adopt a documented tolerance or an integer
 
 This repository begins as a **mathematical music-structure experiment**, not a full music editor, audio player, or genre classifier. The first goal is to prove that sound events can generate variable-width columns and that temporary rows can be combined into a meaningful, inspectable measurement over time.
 
-**Status:** Design proposal — implementation not yet started.
+**Status (November 24, 2026):** The music repository has a tested Python timeline and Tkinter visualization. The most recently confirmed pushed checkpoint is `19ed531` (progressive column refitting and independent song GUI), with 41 tests passing at that checkpoint. A later local Stage 2B Phase 3 experiment for low-to-high development has been reported by Google Antigravity with 49 tests passing, but **its changes have not yet been independently confirmed or committed**. These experiments do not establish the proposed musical-style distinctions.
+
+## Source of the author's wording
+
+The companion `music.txt` is the canonical, unedited record of all 15 original statements. Keep that file unchanged when extending this project. The explanations in this README are interpretations, not quotations or replacements for the author's own words.
+
