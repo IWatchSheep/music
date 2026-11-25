@@ -551,7 +551,7 @@ Both synthetic trajectories used the same 100 ms grid (12 columns), with reporte
 
 ## Section 6 — Project Roadmap
 
-In accordance with author instructions, all experimental development is suspended until the comprehensive README documentation review is fully approved:
+In accordance with author instructions, all experimental development is suspended until the comprehensive README documentation review is fully approved. For the complete, permanent start-to-finish implementation plan, see **Section 8 — Complete Start-to-Finish Engineering Job List** and **Section 9 — Statement Traceability, Job Completion Records, and Final Application Acceptance**.
 
 ### Stage 1: Documentation Consolidation & Review (Active Priority)
 - [x] Preserve all 30 original author statements verbatim.
@@ -594,3 +594,416 @@ To maintain scientific integrity across all human and AI contributors, the follo
 7. **No Unprompted Git Commits:** Do not stage, commit, or push changes without explicit authorization from the author.
 8. **Accurate Tracking of Local Workspace State:** Acknowledge all untracked files honestly; do not claim the working tree is clean when local experimental or draft files are present.
 9. **Documentation First Principle:** All experimental work remains suspended until documentation is approved and the author separately authorizes resumption. Do not modify production code during documentation work. Future assistants must read the README before interpreting the theory, distinguish source statements from their own guesses, and avoid asking the author to repeat settled concepts.
+
+
+---
+
+## Section 8 — Complete Start-to-Finish Engineering Job List
+
+```
+Status Legend:
+[COMPLETED]          - Fully implemented, verified, and passing regression tests in the codebase.
+[PARTIALLY COMPLETE] - Baseline or prototype component exists; requires formal research, expansion, or review.
+[NOT STARTED]        - Planned engineering or research task; implementation has not yet begun.
+[BLOCKED]            - Downstream task waiting on the resolution of an upstream research milestone.
+```
+
+### Phase 1: Input Ingestion & Transport Engine
+
+#### `JOB-01`: Multi-Source Music Ingestion & Non-Destructive Event Model
+- **Purpose:** Parse standard MIDI files and JSON passage files into discrete `SoundEvent` streams, preserving exact source MIDI ticks and rational tempo information without destructive quantization.
+- **Relevant Statements:** 1, 8, 10, 18.
+- **Predecessor Jobs:** None.
+- **Existing Files Reused:** `music_model/sound_event.py`, `music_model/midi_importer.py`, `music_model/passage_format.py`.
+- **Expected Deliverable:** Validated event ingestion pipeline outputting immutable `SoundEvent` objects.
+- **Verification Procedure:** Run `tests/test_midi_and_passage.py` and `verify_midi_import.py`.
+- **Completion Criteria:** Exact preservation of raw ticks and rational tempo maps; derived floating-point timestamps accurate within numerical tolerance ($\le 10^{-6}\text{ seconds}$); clean rejection of malformed files.
+- **Current Status:** **[COMPLETED]** (Part of 91-test historical baseline).
+
+#### `JOB-02`: Continuous Audio & Sheet Music Ingestion Specifications and Adapters
+- **Purpose:** Define technical interface requirements and implement prototype adapters for ingesting recorded audio (via onset/pitch detection) and digital sheet music (MusicXML) without altering source timing, clearly distinguishing required production formats from exploratory adapters.
+- **Relevant Statements:** 1, 3, 7, 18.
+- **Predecessor Jobs:** `JOB-01`.
+- **Existing Files Reused:** `music_model/sound_event.py`.
+- **Expected Deliverable:** Research specification (`docs/audio_sheet_adapter_spec.md`) and prototype adapter modules (`music_model/audio_importer.py`, `music_model/musicxml_importer.py`) detailing supported formats, onset detection thresholds, pitch tracking limits, polyphony mapping, and explicit operational limitations.
+- **Verification Procedure:** Unit tests comparing ground-truth synthetic audio onsets against detected timestamps; round-trip MusicXML timing validation.
+- **Completion Criteria:** Clear specification of supported formats, polyphony handling, and known limitations; prototype adapters demonstrate reproducible onset extraction on test passages without destructive quantization; prototype adapters not claimed as completed production support.
+- **Current Status:** **[NOT STARTED]**.
+
+#### `JOB-03`: Real-Time Audio Playback & Synchronized Visual Transport
+- **Purpose:** Implement real-time audio playback synchronized with an advancing visual playhead cursor on the timeline canvas.
+- **Relevant Statements:** 1, 2, 8, 9.
+- **Predecessor Jobs:** `JOB-01`.
+- **Existing Files Reused:** `music_gui/timeline_canvas.py`, `music_gui/main_window.py`.
+- **Expected Deliverable:** `music_gui/audio_playback.py` providing Start, Pause, Seek, and Loop transport controls.
+- **Verification Procedure:** Automated callback timestamp tests and interactive manual playback validation across benchmark passages; playback latency measured by hardware/software loopback or timestamp delta logging.
+- **Completion Criteria:** Playhead smoothly tracks audio; pause halts audio immediately without buffer overrun; engineering target of $\le 20\text{ ms}$ synchronization latency evaluated and documented as a performance target rather than an author requirement.
+- **Current Status:** **[NOT STARTED]**.
+
+---
+
+### Phase 2: Sound Group Discovery
+
+#### `JOB-04`: Sifter Discovery Engine for Recurring Loops & Melodic Phrases
+- **Purpose:** Algorithmically evaluate candidate methods (including n-gram matching, interval contour sifting, and repetition detectors) to discover recurring sound groups and phrases across time, preserving comparison controls.
+- **Relevant Statements:** 1, 2, 4, 10, 13, 14.
+- **Predecessor Jobs:** `JOB-01`.
+- **Existing Files Reused:** `music_model/group_discovery.py` (local untracked prototype).
+- **Expected Deliverable:** `music_model/group_discovery.py` providing configurable `discover_sound_groups()` sifter algorithms alongside baseline comparison controls.
+- **Verification Procedure:** Run `tests/test_group_discovery.py` and `verify_group_discovery.py`.
+- **Completion Criteria:** Automated sifting evaluated against ground-truth repeated phrases; boundary indices reported transparently; existing 15 regression tests preserved as regression evidence (not proof of general discovery); candidate algorithms and limitations documented.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Prototyped in untracked files; requires independent source verification and author authorization).
+
+#### `JOB-05`: Acoustic Phrasing, Speech Cadence, & Breath Pause Discovery
+- **Purpose:** Evaluate candidate classifiers for acoustic phrase boundaries, speech cadence pauses, and breathing intervals that delineate natural sound groups.
+- **Relevant Statements:** 19, 20.
+- **Predecessor Jobs:** `JOB-04`.
+- **Existing Files Reused:** `music_model/timeline.py` (inter-event gap logic).
+- **Expected Deliverable:** `music_model/phrase_boundary.py` implementing candidate pause classifiers with configurable, documented threshold ranges.
+- **Verification Procedure:** Synthetic vocal passages with variable silent gaps tested against human-annotated speech and melodic cadences.
+- **Completion Criteria:** Silence thresholds treated as exploratory candidates requiring empirical validation; natural phrase pauses classified without fragmenting tied notes; limitations documented.
+- **Current Status:** **[NOT STARTED]**.
+
+#### `JOB-06`: Storyboard Action & Animated-Character Turn-Taking Binding
+- **Purpose:** Bind sound groups to physical character actions, conversational turn-taking, and character hand-offs based on the author's storyboard analogies.
+- **Relevant Statements:** 15, 20, 21.
+- **Predecessor Jobs:** `JOB-04`, `JOB-05`.
+- **Existing Files Reused:** `music_model/sound_event.py` (metadata tags).
+- **Expected Deliverable:** `music_model/storyboard_binding.py` supporting character action tagging, turn-taking state tracking, and cross-character transition hand-offs ($A \rightarrow B$).
+- **Verification Procedure:** Multi-character test passage evaluating cross-character transition hand-offs and action-arc boundaries.
+- **Completion Criteria:** Storyboard annotations cleanly bound to sound group intervals; character turn-taking states recorded without corrupting audio timestamps; annotations distinguished from automatically discovered actions.
+- **Current Status:** **[NOT STARTED]**.
+
+---
+
+### Phase 3: Temporary Row Construction & Stage A Independent Column Fitting
+
+#### `JOB-07`: Multi-Row Assignment & Allocation Engine
+- **Purpose:** Allocate discovered sound groups into temporary horizontal rows (Row 2, Row 3, and higher temporary rows as musical density demands) while maintaining event integrity.
+- **Relevant Statements:** 1, 2, 7, 8, 11, 14.
+- **Predecessor Jobs:** `JOB-04`, `JOB-05`.
+- **Existing Files Reused:** `music_model/temporary_row.py`, `music_model/song.py`.
+- **Expected Deliverable:** `music_model/row_allocator.py` routing sound groups to temporary rows dynamically.
+- **Verification Procedure:** Unit tests in `tests/test_timeline_model.py` and `tests/test_song_timeline.py`.
+- **Completion Criteria:** Sound groups allocated to temporary rows without event loss or ID collisions; polyphonic overlap cleanly handled; distinction between data containers and allocation logic maintained.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Historical `TemporaryRow` container exists; dynamic multi-group allocation engine is not started).
+
+#### `JOB-08`: Stage A Native Uniform Column Discovery & Fitting Engine ($w_2, w_3$)
+- **Purpose:** Investigate and implement candidate methods (e.g., event density, periodicities, rational pulse fitting) to automatically discover and fit an internally uniform column width for Row 2 ($w_2$) and Row 3 ($w_3$) across each row's entire sound set.
+- **Relevant Statements:** 7, 10, 11, 13, 16, 18, 28, 29, 30.
+- **Predecessor Jobs:** `JOB-07`.
+- **Existing Files Reused:** `verify_row_merger.py` (local untracked prototype).
+- **Expected Deliverable:** `music_model/row_column_fitter.py` discovering native uniform widths and verifying that intra-row width variance is zero ($\sigma^2_{\text{intra}} = 0$).
+- **Verification Procedure:** Unit tests verifying that Row 2 has uniform $w_2$, Row 3 has uniform $w_3$, and each row has zero intra-row width variance; verification tests musical fit to the sounds independently of column uniformity.
+- **Completion Criteria:** Widths discovered automatically from each row's sound set (distinguishing discovery from supplied-width experiments); musical fit defined and verified independently of column uniformity; zero intra-row width variance proven.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Evaluated with supplied widths in `verify_row_merger.py`; automatic discovery from entire sound sets remains an active research requirement).
+
+#### `JOB-09`: Shared Reference Grid Mapping ($u$) without Destructive Snapping
+- **Purpose:** Map sound events and uniform row columns onto an illustrative base reference grid ($u$, e.g., $100\text{ ms}$ or rational tick divisions) to facilitate calculation without destructive quantization.
+- **Relevant Statements:** 10, 16, 17, 18.
+- **Predecessor Jobs:** `JOB-08`.
+- **Existing Files Reused:** `music_model/datasets.py`, `music_model/song.py`.
+- **Expected Deliverable:** Proposed `music_model/reference_grid.py` providing continuous-to-reference-unit coordinate conversion, explicit numerical tolerance tracking ($\le 10^{-6}\text{ seconds}$), and repeated 0–9 reference counting labels (Statement 17).
+- **Verification Procedure:** Precision tests verifying that derived representations map back to source timestamps within numerical precision.
+- **Completion Criteria:** Native column widths $w_2$ and $w_3$ expressed accurately as rational or integer multiples of $u$; base cell count does not alter underlying event timing; distinction between base reference cells, native uniform columns, and merged columns preserved.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Timing math exists in baseline; standalone `reference_grid.py` and 0–9 labeling module planned).
+
+---
+
+### Phase 4: Stage B Uniform Column Merger & Stage C Constant Row 1
+
+#### `JOB-10`: Candidate Merger Mathematical Engine (Stage B)
+- **Purpose:** Implement and evaluate candidate mathematical operations to merge Row 2 ($w_2$) and Row 3 ($w_3$) into uniform columns ($w_{\text{merged}}$) that fit both rows' sounds, separating candidate evaluation from discovering a verified successful merger.
+- **Relevant Statements:** 28, 29, 30.
+- **Predecessor Jobs:** `JOB-08`, `JOB-09`.
+- **Existing Files Reused:** `verify_row_merger.py` (local untracked prototype).
+- **Expected Deliverable:** `music_model/row_merger.py` supporting candidate merger algorithms:
+  - Candidate 1: Harmonic Mean / Continuous Alignment
+  - Candidate 2: Common Submultiple / Synchronizing Unit (GCD)
+  - Candidate 3: Shared Enclosing Macro-Cycle (LCM)
+  - Candidate 4: Exact Boundary Union (Historical comparison control)
+- **Verification Procedure:** Standalone test suite evaluating candidates against aligned, offset, polyphonic, and silent-gap passages.
+- **Completion Criteria:** Validation criteria established prior to evaluation; candidate performance evaluated against positive uniform width, preservation of native row structures, fit to both sound sets, handling of offsets, rests, overlapping events, and fractional intervals; all failed candidates retained in test logs; candidate comparison distinguished from completed merger solution.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Candidate comparison prototyped in `verify_row_merger.py`; successful general merger remains an open research requirement).
+
+#### `JOB-11`: Merger Uniformity & Fit Verification Sifter ($\sigma^2 = 0$)
+- **Purpose:** Arithmetically and statistically verify that candidate mergers produce strictly uniform columns ($\sigma^2_{\text{merged}} = 0$) and fit both rows' sounds without residual error.
+- **Relevant Statements:** 11, 28, 29, 30.
+- **Predecessor Jobs:** `JOB-10`.
+- **Existing Files Reused:** `verify_row_merger.py`.
+- **Expected Deliverable:** `validate_uniform_merger(merged_columns)` returning exact arithmetic variance, population variance, and division proofs.
+- **Verification Procedure:** Mathematical verification proving $\sigma^2 = 0$ for uniform candidates, and reporting exact non-zero variance for historical controls (e.g., $[3, 1, 2, 2, 1, 3]$ yields $\sigma^2 = \frac{2}{3} \approx 0.6667\text{ u}^2$).
+- **Completion Criteria:** Column uniformity verified with exact arithmetic; musical fit to both rows verified independently of uniformity; preservation of original timing and handling of crossing events proven; unsupported cases rejected transparently; completed comparison of unsuccessful candidates not marked as completed Stage B.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Variance calculations verified in prototype; general fit verification requires authorized research).
+
+#### `JOB-12`: Stage C Constant Row 1 Column Structure & Musical Identity Binding
+- **Purpose:** Transfer the verified uniform merged columns into constant Row 1, establishing Row 1's time grid and recording overarching expressive and structural identity metadata.
+- **Relevant Statements:** 2, 3, 4, 7, 11, 12, 14, 22, 28, 30.
+- **Predecessor Jobs:** `JOB-10`, `JOB-11`.
+- **Existing Files Reused:** `music_model/constant_row.py`.
+- **Expected Deliverable:** Refactored `ConstantRow` receiving Stage B merged columns rather than imposing an arbitrary width on temporary rows.
+- **Verification Procedure:** Unit tests in `tests/test_timeline_model.py`.
+- **Completion Criteria:** Row 1 column boundaries match Stage B merged column boundaries exactly; structural column transfer verified; expressive identity metadata separated from structural transfer and labeled as exploratory hypothesis.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Baseline container exists; refactoring to receive Stage B output planned).
+
+---
+
+### Phase 5: Musical Journey, Terminal Outcome, & Stage D 2D Graph
+
+#### `JOB-13`: Journey ($1 + 1$) to Target ($= 2$) Milestone Engine
+- **Purpose:** Model the progression across Rows 2 and 3 as a two-stage journey ($1 + 1$ or $a + b$) culminating in Row 1's target ($= 2$).
+- **Relevant Statements:** 5, 12, 13, 22, 24, 28.
+- **Predecessor Jobs:** `JOB-07`, `JOB-12`.
+- **Existing Files Reused:** `music_model/development_profile.py`, `verify_development.py`.
+- **Expected Deliverable:** `music_model/journey_tracker.py` tracking progression from Point A to Point B across temporary rows into Row 1.
+- **Verification Procedure:** Run `tests/test_development_profile.py` and `verify_development.py`.
+- **Completion Criteria:** Start state (Point A) and terminal state (Point B) logged; row occupancy and stage hand-offs verified across time; cumulative event density separated from the author's $1+1 \rightarrow =2$ hypothesis.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Historical cumulative density exists; journey-milestone tracking is planned).
+
+#### `JOB-14`: Terminal Punctuation Mark & Boolean Outcome Modeling
+- **Purpose:** Identify the localized low-to-high sound at the tail end of the action (Statement 23), record exploratory outcome states (`bool = true` / success vs. `bool = false` / disappointment), and support repeated action cycles.
+- **Relevant Statements:** 3, 6, 14, 15, 22, 23, 24, 25, 28.
+- **Predecessor Jobs:** `JOB-13`.
+- **Existing Files Reused:** None (new research module).
+- **Expected Deliverable:** `music_model/terminal_outcome.py` evaluating candidate features for terminal gestures, supporting repeated action cycles (Statement 23) and recording boolean outcome flags.
+- **Verification Procedure:** Unit tests with ascending vs. descending terminal cadences; analysis of the terminal cadence in Wagner's *Ride of the Valkyries*.
+- **Completion Criteria:** Terminal low-to-high gesture evaluated at the tail end of the action; terminal gesture detection separated from Boolean outcome determination; pitch-energy inflection treated as candidate feature; successful, unsuccessful, absent, and indeterminate states permitted; repeated action cycles supported.
+- **Current Status:** **[NOT STARTED]**.
+
+#### `JOB-15`: Stage D Two-Dimensional Row-to-Column Terminal Graph Engine
+- **Purpose:** Generate the terminal 2D row-to-column graph plotting row progression against time columns, evaluating whether the trajectory is linear or curved while leaving the coordinate mapping and classification method open.
+- **Relevant Statements:** 4, 5, 12, 13, 23, 24, 26, 27, 30.
+- **Predecessor Jobs:** `JOB-12`, `JOB-13`, `JOB-14`.
+- **Existing Files Reused:** `verify_row_merger.py` (local untracked prototype).
+- **Expected Deliverable:** `music_model/terminal_graph.py` computing $(x, y)$ coordinates derived from the eventually validated Row 1 coordinate mapping (treating row activity, cumulative density, and regression as candidate approaches rather than established mathematical requirements) and evaluating curvature against mathematical controls.
+- **Verification Procedure:** Evaluation against exact straight and curved mathematical controls and authentic passage data.
+- **Completion Criteria:** Graph coordinates rigorously defined before classification; mathematical controls validated; curvature and regression metrics reported transparently without predetermined genre classifications; ambiguous, unsupported, or indeterminate shapes permitted; terminal state *"then that is the end"* signaled.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Prototyped in `verify_row_merger.py`; formal coordinate specification and validation planned).
+
+#### `JOB-16`: Cross-Piece Comparative Benchmarking Engine
+- **Purpose:** Process distinct pieces of music independently through Stages A–D, comparing their resulting Row 1 column sizes and terminal graph shapes without forcing equal grids.
+- **Relevant Statements:** 4, 9, 11, 26, 27, 30.
+- **Predecessor Jobs:** `JOB-15`.
+- **Existing Files Reused:** `music_model/datasets.py`.
+- **Expected Deliverable:** `music_model/cross_piece_comparator.py` executing batch comparison across independent musical pieces, reporting duration, tempo, row count, reference unit, native widths, merged width, and graph coordinates.
+- **Verification Procedure:** Comparative run across authentic rock, rap, and classical benchmark selections.
+- **Completion Criteria:** Independent column sizes and graph shapes reported for each piece; grid resolution effects separated from audible timing; identical widths permitted where natural; differences in display scale distinguished from calculated structural differences.
+- **Current Status:** **[NOT STARTED]**.
+
+---
+
+### Phase 6: Visual Machine — Complete GUI & Inspection Tools
+
+#### `JOB-17`: Multi-Panel Timeline & Row-to-Column Grid Display
+- **Purpose:** Render the primary visual interface showing horizontal temporary rows (Row 2, Row 3), sound event blocks, independent columns, and constant Row 1.
+- **Relevant Statements:** 1, 2, 7, 8, 9, 10, 17, 18.
+- **Predecessor Jobs:** `JOB-07`, `JOB-08`, `JOB-12`.
+- **Existing Files Reused:** `music_gui/timeline_canvas.py`, `music_gui/coordinates.py`, `music_gui/gui_style.py`.
+- **Expected Deliverable:** Canvas rendering temporary rows, independent column dividers, sound blocks, repeated 0–9 column labels (Statement 17), and constant Row 1.
+- **Verification Procedure:** Run `tests/test_gui_smoke.py`, `tests/test_gui_phase2.py`, and `verify_group_units.py`.
+- **Completion Criteria:** High-DPI canvas rendering with smooth pan/zoom; zero visual distortion; crisp display of row-and-column structures.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Historical GUI canvas functional; integration of Stages A–D pipeline planned).
+
+#### `JOB-18`: Interactive Stage B Merger & Alignment Visualizer
+- **Purpose:** Provide an interactive panel displaying how Row 2's uniform columns and Row 3's uniform columns align, subdivide, and merge into uniform columns fitting both rows.
+- **Relevant Statements:** 16, 18, 28, 29, 30.
+- **Predecessor Jobs:** `JOB-10`, `JOB-11`, `JOB-17`.
+- **Existing Files Reused:** `music_gui/dual_view.py`.
+- **Expected Deliverable:** `music_gui/merger_panel.py` rendering validated merger steps, alignment markers, and the resulting uniform column grid.
+- **Verification Procedure:** Step-through visual validation verifying alignment markers and common subdivisions.
+- **Completion Criteria:** Clear visual demonstration of both row structures combining into the merged Row 1 grid; visualizations strictly follow validated model outputs.
+- **Current Status:** **[NOT STARTED]**.
+
+#### `JOB-19`: Stage D 2D Graph Interactive Visualization Panel
+- **Purpose:** Display the 2D row-to-column terminal graph inside the GUI, plotting the calculated trajectory and showing linear vs. curved progression.
+- **Relevant Statements:** 4, 5, 12, 13, 30.
+- **Predecessor Jobs:** `JOB-15`, `JOB-17`.
+- **Existing Files Reused:** `music_gui/timeline_canvas.py`.
+- **Expected Deliverable:** `music_gui/graph_panel.py` embedding a 2D coordinate plot with calculated points, fitted curves, and terminal outcome indicators.
+- **Verification Procedure:** Automated GUI tests verifying canvas item generation for graph points and curves.
+- **Completion Criteria:** Graph plots accurately alongside the timeline; toggling pieces updates curvature display; calculated points match source data without forced shapes.
+- **Current Status:** **[NOT STARTED]**.
+
+#### `JOB-20`: Storyboard Animation & Character Action Visualizer
+- **Purpose:** Display character action cards (two dolls interacting, cat scratching itch, duck flight) synchronized with sound group transitions and row hand-offs.
+- **Relevant Statements:** 6, 15, 20, 21, 23, 26.
+- **Predecessor Jobs:** `JOB-03`, `JOB-06`, `JOB-14`, `JOB-17`.
+- **Existing Files Reused:** `music_gui/dual_view.py`.
+- **Expected Deliverable:** `music_gui/storyboard_view.py` rendering animated character state transitions, action cycle restarts (Statement 23), and action-release indicators.
+- **Verification Procedure:** Interactive playback test verifying character visual state updates in sync with audio.
+- **Completion Criteria:** Character cards transition at sound group boundaries; terminal release cue highlights only when a verified terminal gesture is detected; annotations distinguished from model-discovered actions.
+- **Current Status:** **[NOT STARTED]**.
+
+#### `JOB-21`: Mathematical Calculation Inspector & Audit Log Panel
+- **Purpose:** Provide an in-app transparency inspector allowing the author to click any sound, row, or column to see exact timestamps, math steps, candidate evaluations, and assistant hypotheses.
+- **Relevant Statements:** 9, 16, 17, 25, Research Rules.
+- **Predecessor Jobs:** `JOB-10`, `JOB-15`, `JOB-17`.
+- **Existing Files Reused:** `music_gui/main_window.py` (status bar and side inspector frame).
+- **Expected Deliverable:** `music_gui/inspector_panel.py` displaying underlying math, variances, and explicit `"I guess ..."` hypothesis disclosures.
+- **Verification Procedure:** Click events on canvas elements populate the inspector with verified arithmetic data.
+- **Completion Criteria:** Every calculation fully auditable to source formulas; assistant hypotheses clearly labeled; zero hidden assumptions.
+- **Current Status:** **[NOT STARTED]**.
+
+---
+
+### Phase 7: Verification, Controls, & End-to-End Acceptance
+
+#### `JOB-22`: Continuous Regression Suite & Verification Gates
+- **Purpose:** Enforce continuous verification across all 91 historical baseline tests (`ad3a9d3`) and all new tests before, during, and after every implementation milestone.
+- **Relevant Statements:** Research Rules 3, 4.
+- **Predecessor Jobs:** Active continuously across all jobs.
+- **Existing Files Reused:** All suites in `tests/`.
+- **Expected Deliverable:** Continuous test runner script enforcing a 100% test pass rate before any stage is considered complete.
+- **Verification Procedure:** Continuous test execution logging exact test counts and execution times.
+- **Completion Criteria:** 100% test pass rate maintained unconditionally; zero regressions on historical baseline; calculator repository verified 100% untouched; verification active as an ongoing gate; distinction between existing test suite and proposed continuous harness maintained.
+- **Current Status:** **[PARTIALLY COMPLETE]** (Historical 91-test baseline verified; continuous harness integration is planned and suspended pending author authorization).
+
+#### `JOB-23`: Authentic Musical Validation & Control Battery
+- **Purpose:** Test the finished system against lawfully available, source-attributed authentic musical pieces (Led Zeppelin, Beach Boys, Wagner's *Valkyries*, Rap selections) and synthetic mathematical controls.
+- **Relevant Statements:** 3, 4, 6, 7, 27, Research Rule 6.
+- **Predecessor Jobs:** `JOB-15`, `JOB-16`, `JOB-22`.
+- **Existing Files Reused:** `music_model/datasets.py`, `music_model/midi_fixture.py`.
+- **Expected Deliverable:** `tests/test_benchmark_battery.py` running comparative evaluations across authentic and synthetic passages.
+- **Verification Procedure:** Automated execution logging curvature metrics, R² fits, uncertainty, and listening evaluation notes.
+- **Completion Criteria:** Evaluation criteria defined prior to examining results; transparent reporting of both confirming and non-confirming results; synthetic controls clearly distinguished from authentic audio; scientific validation separated from engineering acceptance.
+- **Current Status:** **[NOT STARTED]**.
+
+#### `JOB-24`: Final End-to-End Application Demonstration & Author Acceptance
+- **Purpose:** Conduct the definitive end-to-end demonstration of the complete visual music machine for the author.
+- **Relevant Statements:** 9, 30, All Statements 1–30 (Global Acceptance Requirement).
+- **Predecessor Jobs:** `JOB-01` through `JOB-23`.
+- **Existing Files Reused:** `main.py`.
+- **Expected Deliverable:** Fully integrated standalone application launched via `python main.py`.
+- **Verification Procedure:** Live interactive walkthrough performed by the author in PyCharm.
+- **Completion Criteria:** The author loads music, observes sound groups, sees independent rows merge into uniform columns in Row 1, inspects the terminal 2D graph (linear vs. curved), and reviews mathematical calculations; application demonstrates a full Stage A–D run on supported musical material while handling unsupported inputs, unsuccessful mergers, and indeterminate graphs transparently; prototype adapters clearly distinguished from completed production formats; architectural research not claimed complete if merger or graph mapping remains unresolved.
+- **Current Status:** **[NOT STARTED]**.
+
+---
+
+## Section 9 — Statement Traceability, Job Completion Records, and Final Application Acceptance
+
+### 9.1 Traceability Matrix: Mapping All 30 Author Statements to Engineering Jobs
+
+| # | Actual Statement Subject in README | Role in Theory | Primary Engineering Jobs |
+|:---:|:---|:---|:---|
+| **1** | Repeated sound chunks arranged in rows and time columns | Direct Implementation | `JOB-01`, `JOB-02`, `JOB-03`, `JOB-04`, `JOB-07`, `JOB-17` |
+| **2** | Temporary sound groups and the constant connecting row | Direct Implementation | `JOB-03`, `JOB-04`, `JOB-07`, `JOB-12`, `JOB-17` |
+| **3** | Shared style, feeling and musical identity | Empirical Hypothesis | `JOB-02`, `JOB-12`, `JOB-14`, `JOB-23` |
+| **4** | Temporary rows create linear or curved constant-row relationships | Empirical Hypothesis | `JOB-04`, `JOB-12`, `JOB-15`, `JOB-16`, `JOB-19`, `JOB-23` |
+| **5** | Low-to-high movement, lower-row dwelling and column counts | Empirical Hypothesis | `JOB-13`, `JOB-15`, `JOB-19` |
+| **6** | Ride of the Valkyries and conductor movement | Analogy / Hypothesis | `JOB-14`, `JOB-20`, `JOB-23` |
+| **7** | Temporary rows determine column sizes and counts | Direct Implementation | `JOB-02`, `JOB-07`, `JOB-08`, `JOB-12`, `JOB-17`, `JOB-23` |
+| **8** | Linked beginning and ending columns contain sound | Constraint | `JOB-01`, `JOB-03`, `JOB-07`, `JOB-17` |
+| **9** | Development plan, comparative analysis and calculator GUI reference | Development Requirement | `JOB-03`, `JOB-16`, `JOB-17`, `JOB-21`, `JOB-24` *(protected calculator: `17be078d`)* |
+| **10** | Numerous columns corresponding to music and proper alignment | Direct Implementation | `JOB-01`, `JOB-04`, `JOB-08`, `JOB-09`, `JOB-17` |
+| **11** | Independent song structures and order of row fitting | Core Architectural Spec | `JOB-07`, `JOB-08`, `JOB-11`, `JOB-12`, `JOB-16` |
+| **12** | Row 1 column structure and greater lower-row column involvement | Empirical Hypothesis | `JOB-12`, `JOB-13`, `JOB-15`, `JOB-19` |
+| **13** | Linearity emerging from sound groups and fitted columns | Empirical Hypothesis | `JOB-04`, `JOB-08`, `JOB-13`, `JOB-15`, `JOB-19` |
+| **14** | Row 1 connecting distinct groups through musical identity | Conceptual Model | `JOB-04`, `JOB-07`, `JOB-12`, `JOB-14` |
+| **15** | Duck running across water and taking flight | Analogy | `JOB-06`, `JOB-14`, `JOB-20` |
+| **16** | Different column widths across rows, fitted to entire sound groups | Core Architectural Spec | `JOB-08`, `JOB-09`, `JOB-18`, `JOB-21` |
+| **17** | Fundamental column counting using repeated 0–9 labels | Direct Implementation | `JOB-09`, `JOB-17`, `JOB-21` *(repeated 0–9 reference labels)* |
+| **18** | Shared fundamental reference design with different row widths | Constraint / Grid Model | `JOB-01`, `JOB-02`, `JOB-08`, `JOB-09`, `JOB-17`, `JOB-18` |
+| **19** | Breathing and speech intervals for sound-group discovery | Conceptual Model | `JOB-05` |
+| **20** | Breathing, speech and animated-character action duration | Conceptual Model | `JOB-05`, `JOB-06`, `JOB-20` |
+| **21** | Musical accompaniment to animated-character actions | Analogy | `JOB-06`, `JOB-20` |
+| **22** | Association of Rows 2 and 3 with the journey and Row 1 with the ending | Conceptual Model | `JOB-12`, `JOB-13`, `JOB-14` |
+| **23** | Localized terminal low-to-high sound and restarting the action cycle | Constraint / Direct Impl. | `JOB-14`, `JOB-15`, `JOB-20` *(action cycle restart)* |
+| **24** | Journey and result analogy: 1 + 1 = 2 | Conceptual Model | `JOB-13`, `JOB-14`, `JOB-15` |
+| **25** | Boolean success and disappointment | Conceptual Model / Hypo. | `JOB-14`, `JOB-21` |
+| **26** | Race analogy and possible linear versus curved outcomes | Analogy / Hypothesis | `JOB-15`, `JOB-16`, `JOB-20` |
+| **27** | Same expression represented through different column sizes | Conceptual Model / Hypo. | `JOB-15`, `JOB-16`, `JOB-23` |
+| **28** | Independent fitting, merger, Row 1 and journey/result relationship | Core Architectural Spec | `JOB-08`, `JOB-10`, `JOB-11`, `JOB-12`, `JOB-13`, `JOB-14`, `JOB-18` |
+| **29** | Independently uniform column structures fitted to entire row sound sets | Core Architectural Spec | `JOB-08`, `JOB-10`, `JOB-11`, `JOB-18` |
+| **30** | Uniform merged columns transferred into Row 1 for the terminal 2D graph | Core Architectural Spec | `JOB-08`, `JOB-10`, `JOB-11`, `JOB-12`, `JOB-15`, `JOB-16`, `JOB-18`, `JOB-19`, `JOB-24` |
+
+*(Note: `JOB-24` covers all 30 statements as a global application acceptance requirement.)*
+
+---
+
+### 9.2 Permanent Job Completion Record Schema
+
+To guarantee scientific rigor, auditability, and continuity across contributors, every completed engineering job must record a permanent entry matching this template before being marked `[COMPLETED]`:
+
+```markdown
+### Job Completion Record: JOB-XX — [Job Name]
+
+- **Starting Validated Checkpoint:** `[commit hash]`
+- **Files Modified / Added:** `[relative repository paths]`
+- **Mathematical Methods & Formulas:** `[exact equations, algorithms, and definitions]`
+- **Verification Commands Executed:** `[exact shell commands]`
+- **Exact Test Counts & Results:** `[e.g., 106/106 tests passing in 2.65s]`
+- **Successful Approaches:** `[verified technical implementation details]`
+- **Unsuccessful Approaches & Controls:** `[failed candidates, negative controls, and boundary conditions]`
+- **Known Limitations & Edge Cases:** `[unsupported formats, numerical precision limits, open questions]`
+- **Google Antigravity Review:** `[assessment summary and signature]`
+- **ChatGPT Independent Review:** `[independent audit summary and signature]`
+- **Author Approval:** `[explicit authorization record]`
+- **Final Validated Checkpoint:** `[commit hash]`
+- **Next Authorized Job:** `[JOB-YY]`
+```
+
+---
+
+### 9.3 Dependency-Ordered Implementation Sequence & Research Gates
+
+Development proceeds strictly through five dependency-ordered milestones. No downstream milestone begins until upstream research gates are verified and approved:
+
+```
+[Continuous Gate: JOB-22 (Regression Verification active throughout all milestones)]
+
+Milestone 1: Audio Playback, Ingestion, & Sound Group Sifting
+├── JOB-01: Ingestion & Non-Destructive Event Model [COMPLETED]
+├── JOB-02: Audio & Sheet Music Specifications [NOT STARTED]
+├── JOB-03: Real-Time Audio Playback & Transport [NOT STARTED]
+├── JOB-04: Sifter Discovery Engine [PARTIALLY COMPLETE]
+├── JOB-05: Phrase Boundary & Pause Classifier [NOT STARTED]
+└── JOB-06: Storyboard Action & Turn-Taking Binding [NOT STARTED]
+    └── Research Gate 1: Verified sound-group discovery without destructive quantization.
+
+Milestone 2: Stage A Native Uniform Column Fitting
+├── JOB-07: Multi-Row Allocation Engine [PARTIALLY COMPLETE]
+├── JOB-08: Native Uniform Column Discovery Engine (w2, w3) [PARTIALLY COMPLETE]
+└── JOB-09: Shared Reference Grid Mapping (u) [PARTIALLY COMPLETE]
+    └── Research Gate 2: Automated discovery of native widths; musical fit verified; zero intra-row variance (sigma^2 = 0).
+
+Milestone 3: Stage B Uniform Column Merger & Stage C Row 1
+├── JOB-10: Candidate Merger Mathematical Engine [PARTIALLY COMPLETE]
+├── JOB-11: Merger Uniformity & Fit Verification Sifter [PARTIALLY COMPLETE]
+└── JOB-12: Stage C Constant Row 1 Column Transfer [PARTIALLY COMPLETE]
+    └── Research Gate 3: Merged columns are uniform (sigma^2 = 0), fit both rows, and preserve timing.
+
+Milestone 4: Stage D 2D Terminal Graph & Cross-Piece Benchmarking
+├── JOB-13: Journey Milestone Engine [PARTIALLY COMPLETE]
+├── JOB-14: Terminal Gesture & Boolean Outcome Modeling [NOT STARTED]
+├── JOB-15: Stage D 2D Terminal Graph Engine [PARTIALLY COMPLETE]
+└── JOB-16: Cross-Piece Comparative Benchmarking [NOT STARTED]
+    └── Research Gate 4: Coordinates rigorously defined; straight vs. curved controls validated.
+
+Milestone 5: The Visual Machine — Complete GUI, Controls, & Final Demonstration
+├── JOB-17: Multi-Panel Timeline & Row-to-Column Grid Display [PARTIALLY COMPLETE]
+├── JOB-18: Stage B Merger Visualizer [NOT STARTED]
+├── JOB-19: Stage D 2D Graph Visualizer [NOT STARTED]
+├── JOB-20: Storyboard Animation Visualizer [NOT STARTED]
+├── JOB-21: Calculation Inspector & Audit Log Panel [NOT STARTED]
+├── JOB-23: Authentic Validation & Control Battery [NOT STARTED]
+└── JOB-24: Final Application Demonstration & Author Acceptance [NOT STARTED]
+    └── Acceptance Gate: Live walkthrough fulfilling all 30 README requirements.
+```
+
+---
+
+### 9.4 Final Application Acceptance Demonstration
+
+The completed application will be accepted when the author can perform the following live end-to-end demonstration via `python main.py`:
+
+1. **Multi-Source Loading:** Load authentic MIDI passages and reproducible JSON passage files into the application.
+2. **Synchronized Playback:** Play audio smoothly with an advancing playhead synchronized with visual sound events.
+3. **Sound Group Visualization:** Visually inspect discovered sound groups highlighted cleanly in distinct colors across temporary rows.
+4. **Stage A Uniformity Verification:** Observe Row 2 and Row 3 independently, confirming that each row displays its own internally uniform column width ($\sigma^2_{\text{intra}} = 0$) and fits its sound set.
+5. **Stage B Step-Through Merger:** Open the merger panel, step through the mathematical merger, and confirm the derivation of uniform columns fitting both rows' sounds ($\sigma^2_{\text{merged}} = 0$).
+6. **Stage C Transfer to Row 1:** Observe the verified uniform columns transferred directly into constant Row 1.
+7. **Stage D Terminal 2D Graph:** View the 2D row-to-column graph displaying the terminal progression, evaluating straight vs. curved trajectories and the terminal punctuation mark.
+8. **Independent Cross-Piece Comparison:** Load a second piece independently in a split view, confirming that each piece establishes its own Row 1 column structure and graph shape without forced uniformity.
+9. **In-App Mathematical Audit:** Click any cell, row, or column in the Calculation Inspector to review exact source timestamps, arithmetic proofs, candidate evaluations, and explicit hypothesis labels.
+10. **Graceful Edge-Case Handling:** Confirm that unsupported inputs, non-fitting structures, and indeterminate graph shapes are reported transparently without application crashes.
