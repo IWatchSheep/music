@@ -114,3 +114,8 @@ row 2 uniform columns merges with row 3 columns both have uniform columns that f
 i was thinking, if the doll moving from row to row to make the end of their movement in row 1 the down to up, the sum of addition, then that is given music to play along, what if books were given music. then you could id the doll and music algorithm and make new books which just moves dolls and play music that makes sense, first make a catalogue so new books made with new music is logical like previous books and music moving dolls around. then the lack of books for ai to use to learn from is fixed and ai can make books with music for ai to learn from and ai gets smarter. but that is after we get this program running and then maybe that is what we do in the next repository. an idea for the future when this project gets finished.
 "
 
+"
+IF THE REIMANN HYPOTHESIS uses prime numbers. if the end point from point a to b = 1, 1 point the end point, and the low to high in row 1 is the columns that can't be divided by anything but itself then row 1 low to high is like the prime number. the rows 2 and 3 idk how they would fit the riemann hypothesus though but this is just a thought while we wait for google antigravity to finish.
+
+i wrote to chatgpt the idea of the reimann hypothesus. the idea of the prime number being row 1 columns that make the linear 2d line on the graph, and that row 1 starts when rows 2 and 3 get the doll to the finish line the finish line can be the number 1 that a prime number can be divided by 1 and itself. the 1 and the low to high share the same spot and so act like a prime number, but how would the rows 2 and 3 fit the riemann hypothesus?
+"
