@@ -53,12 +53,16 @@ from music_model.song import (
     RefitStep,
     SongTimeline,
 )
-from music_model.sound_event import SoundEvent
+from music_model.sound_event import (
+    SoundEvent,
+    get_authoritative_exact_timing,
+)
 from music_model.temporary_row import TemporaryRow
 from music_model.timeline import MusicTimeline, TimeColumn
 
 __all__ = [
     "SoundEvent",
+    "get_authoritative_exact_timing",
     "TemporaryRow",
     "TimeColumn",
     "MusicTimeline",

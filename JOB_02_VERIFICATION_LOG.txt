@@ -1,0 +1,416 @@
+================================================================================
+MUSIC PROJECT: JOB-02 FOURTH AUDIT VERIFICATION LOG
+Timestamp: 2026-11-24T23:05:18.018023
+Authoritative Starting Checkpoint: 2a4b261
+Current Documentation Checkpoint: 66dfc53
+Historical Implementation Baseline: ad3a9d3
+Protected Calculator Repository: 17be078d (unmodified, 100% read-only)
+================================================================================
+
+--- STEP 1: AUTOMATED UNIT TEST SUITE (python -m unittest discover tests -v) ---
+
+test_8bit_and_16bit_depths (test_audio_and_musicxml.TestAudioImporter.test_8bit_and_16bit_depths)
+Verify support for both 8-bit unsigned and 16-bit signed PCM. ... ok
+test_ambiguous_and_unpitched_signal_handling (test_audio_and_musicxml.TestAudioImporter.test_ambiguous_and_unpitched_signal_handling)
+Verify that ambiguous or unpitched white noise reports pitch_midi as None without crashing. ... ok
+test_authoritative_exact_timing_audio_and_validation (test_audio_and_musicxml.TestAudioImporter.test_authoritative_exact_timing_audio_and_validation)
+Verify authoritative timing retrieval for audio events, JSON roundtrip, and validation. ... ok
+test_defect_08_pitch_estimation_controls (test_audio_and_musicxml.TestAudioImporter.test_defect_08_pitch_estimation_controls)
+Verify DEFECT-08: 10 Hz negative control, DC, 60 Hz, 200 Hz, 440 Hz, and short signals. ... ok
+test_defect_09_truncated_pcm_wav_all_depths (test_audio_and_musicxml.TestAudioImporter.test_defect_09_truncated_pcm_wav_all_depths)
+Verify DEFECT-09: truncated PCM WAV data is rejected cleanly across all bit depths. ... ok
+test_defect_13_high_frequency_pitch_estimation_controls (test_audio_and_musicxml.TestAudioImporter.test_defect_13_high_frequency_pitch_estimation_controls)
+Verify DEFECT-13: 2000 Hz accuracy and clean rejection of out-of-band signals (2400 Hz, 3000 Hz). ... ok
+test_malformed_and_unsupported_wav_rejection (test_audio_and_musicxml.TestAudioImporter.test_malformed_and_unsupported_wav_rejection)
+Verify that corrupted bytes or non-WAV data raise AudioFormatError cleanly. ... ok
+test_multiple_pitch_frequencies_and_amplitudes (test_audio_and_musicxml.TestAudioImporter.test_multiple_pitch_frequencies_and_amplitudes)
+Verify autocorrelation pitch estimation across diverse musical pitches and amplitudes. ... ok
+test_non_window_aligned_and_closely_spaced_events (test_audio_and_musicxml.TestAudioImporter.test_non_window_aligned_and_closely_spaced_events)
+Verify detection of events at arbitrary millisecond offsets and close spacing. ... ok
+test_silence_detection (test_audio_and_musicxml.TestAudioImporter.test_silence_detection)
+Verify that an entirely silent audio buffer produces zero sound events. ... ok
+test_single_sound_event_timing_and_exact_rationals (test_audio_and_musicxml.TestAudioImporter.test_single_sound_event_timing_and_exact_rationals)
+Verify single tone burst detection and preservation of exact rational timing. ... ok
+test_variable_sample_rates (test_audio_and_musicxml.TestAudioImporter.test_variable_sample_rates)
+Verify timing accuracy across 22050 Hz and 44100 Hz audio buffers. ... ok
+test_authoritative_exact_timing_and_json_roundtrip (test_audio_and_musicxml.TestMusicXMLImporter.test_authoritative_exact_timing_and_json_roundtrip)
+Verify authoritative exact rational timing survives JSON serialization/deserialization. ... ok
+test_defect_01_tempo_changes_within_a_measure (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_01_tempo_changes_within_a_measure)
+Verify DEFECT-01: mid-measure tempo changes apply at their exact musical positions. ... ok
+test_defect_02_forward_and_backup_operations (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_02_forward_and_backup_operations)
+Verify DEFECT-02: forward and backup score-position cursor operations. ... ok
+test_defect_03_trailing_rests_in_total_duration (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_03_trailing_rests_in_total_duration)
+Verify DEFECT-03: trailing rests are included in the score's total duration. ... ok
+test_defect_04_exact_fraction_tie_continuity (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_04_exact_fraction_tie_continuity)
+Verify DEFECT-04: exact zero-gap Fraction continuity for ties (rejects 1ms gap coalescing). ... ok
+test_defect_05_three_note_tie_chain_and_continuation (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_05_three_note_tie_chain_and_continuation)
+Verify DEFECT-05: 3-note tie chain coalescing without orphaned stop warnings. ... ok
+test_defect_06_unsupported_notations_and_directions (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_06_unsupported_notations_and_directions)
+Verify DEFECT-06: glissando, ornaments, lyrics, and repeats are disclosed as unfaithful. ... ok
+test_defect_07_invalid_ordinary_note_duration (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_07_invalid_ordinary_note_duration)
+Verify DEFECT-07: ordinary note with duration 0 is rejected/flagged without fabricating 1ms. ... ok
+test_defect_10_shared_score_tempo_between_parts (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_10_shared_score_tempo_between_parts)
+Verify DEFECT-10: multi-part shared score tempo and conflicting tempo diagnosis. ... ok
+test_defect_11_out_of_order_tempo_changes_and_score_timeline (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_11_out_of_order_tempo_changes_and_score_timeline)
+Verify DEFECT-11: ScoreTimeline insertion rebuild and out-of-order XML tempo handling. ... ok
+test_defect_12_unsupported_features_nested_dynamics_metronome_microtonal_invalid_backup (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_12_unsupported_features_nested_dynamics_metronome_microtonal_invalid_backup)
+Verify DEFECT-12: nested dynamics, metronome beat units, microtonal alterations, and invalid backups. ... ok
+test_defect_14_measure_duration_and_reach_controls (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_14_measure_duration_and_reach_controls)
+Verify DEFECT-14: Mid-measure divisions change, backup with shorter voice, pickup measures, and incomplete measures. ... ok
+test_defect_15_invalid_or_unsupported_timing_inputs (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_15_invalid_or_unsupported_timing_inputs)
+Verify DEFECT-15: Non-positive rests/forwards/backups, direction offsets, and transpositions. ... ok
+test_defect_16_incomplete_and_inconsistent_exact_timing (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_16_incomplete_and_inconsistent_exact_timing)
+Verify DEFECT-16: Incomplete, unpaired, malformed, or inconsistent exact rational timing raises ValueError. ... ok
+test_defect_17_invalid_tempo_metadata_validation (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_17_invalid_tempo_metadata_validation)
+Verify DEFECT-17: Non-positive, non-finite, and malformed tempo directives are diagnosed/rejected. ... ok
+test_defect_18_tempo_positions_before_score_beginning (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_18_tempo_positions_before_score_beginning)
+Verify DEFECT-18: Negative offsets/positions before score beginning (beat < 0) are rejected. ... ok
+test_defect_19_complete_exact_rational_timing_metadata_validation (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_19_complete_exact_rational_timing_metadata_validation)
+Verify DEFECT-19: Comprehensive rational timing metadata validation across MusicXML, Audio, and Fallback. ... ok
+test_fractional_timing_triplets (test_audio_and_musicxml.TestMusicXMLImporter.test_fractional_timing_triplets)
+Verify that fractional triplet durations preserve exact rational fractions. ... ok
+test_malformed_xml_rejected (test_audio_and_musicxml.TestMusicXMLImporter.test_malformed_xml_rejected)
+Verify that corrupted XML raises MusicXMLParseError cleanly. ... ok
+test_single_note_timing_and_exact_rationals (test_audio_and_musicxml.TestMusicXMLImporter.test_single_note_timing_and_exact_rationals)
+Verify single note timing and preservation of exact rational milliseconds. ... ok
+test_step_octave_to_midi (test_audio_and_musicxml.TestMusicXMLImporter.test_step_octave_to_midi)
+Verify note name and octave conversion to MIDI pitch numbers. ... ok
+test_tied_notes_coalescing_and_interrupted_ties (test_audio_and_musicxml.TestMusicXMLImporter.test_tied_notes_coalescing_and_interrupted_ties)
+Verify tied note coalescing, and transparent handling of interrupted ties. ... ok
+test_unsupported_notation_disclosure (test_audio_and_musicxml.TestMusicXMLImporter.test_unsupported_notation_disclosure)
+Verify that unsupported features cause is_complete_faithful_representation to become False. ... ok
+test_variable_chord_durations (test_audio_and_musicxml.TestMusicXMLImporter.test_variable_chord_durations)
+Verify chords where individual notes have different durations. ... ok
+test_column_height_aggregation_and_silent_gaps (test_development_profile.TestLowToHighDevelopment.test_column_height_aggregation_and_silent_gaps)
+Verify arithmetic mean across overlapping events and silent column handling. ... ok
+test_deterministic_measurements (test_development_profile.TestLowToHighDevelopment.test_deterministic_measurements)
+Verify calculations produce identical bit-for-bit output across repeated runs. ... ok
+test_duck_flight_arrangement_a_direct_development (test_development_profile.TestLowToHighDevelopment.test_duck_flight_arrangement_a_direct_development)
+Verify Arrangement A (Direct progression) column layout and Row 1 profile. ... ok
+test_duck_flight_arrangement_b_connected_development (test_development_profile.TestLowToHighDevelopment.test_duck_flight_arrangement_b_connected_development)
+Verify Arrangement B (Intermediate connections) column layout and Row 1 profile. ... ok
+test_gui_duck_flight_mode_and_measurement_toggle (test_development_profile.TestLowToHighDevelopment.test_gui_duck_flight_mode_and_measurement_toggle)
+Verify GUI Duck Flight mode and Row 1 measurement toggle (Active Rows vs Dev Profile). ... ok
+test_more_columns_do_not_imply_greater_curvature (test_development_profile.TestLowToHighDevelopment.test_more_columns_do_not_imply_greater_curvature)
+Prove mathematically that having many columns does NOT imply curvature. ... ok
+test_sound_event_height_attributes_and_validation (test_development_profile.TestLowToHighDevelopment.test_sound_event_height_attributes_and_validation)
+Verify height storage, getter helper, and validation on SoundEvent. ... ok
+test_sound_event_identity_and_interval_preservation (test_development_profile.TestLowToHighDevelopment.test_sound_event_identity_and_interval_preservation)
+Verify sound events retain exact interval boundaries and object identity. ... ok
+test_controls_fixed_and_random (test_group_discovery.TestGroupDiscoveryEngine.test_controls_fixed_and_random)
+Test Control 1 (Fixed-Width) and Control 2 (Random Baseline). ... ok
+test_derive_composite_row1_segments (test_group_discovery.TestGroupDiscoveryEngine.test_derive_composite_row1_segments)
+Test composite Row 1 segments derivation from discovered groups. ... ok
+test_empty_reference_scoring_transparency (test_group_discovery.TestGroupDiscoveryEngine.test_empty_reference_scoring_transparency)
+Test transparent handling of negative control where ground truth has 0 internal boundaries. ... ok
+test_evaluation_metrics_precision_recall_f1 (test_group_discovery.TestGroupDiscoveryEngine.test_evaluation_metrics_precision_recall_f1)
+Test evaluation metrics against reference ground truth. ... ok
+test_extract_note_timing_polymorphic (test_group_discovery.TestGroupDiscoveryEngine.test_extract_note_timing_polymorphic)
+Test extraction across SoundEvent, MockNote, and float timings. ... ok
+test_fractional_units_and_sub_unit_detection (test_group_discovery.TestGroupDiscoveryEngine.test_fractional_units_and_sub_unit_detection)
+Test that sub-unit intervals (e.g. 50ms) are NOT rounded down to 0u. ... ok
+test_internal_boundaries_evaluation (test_group_discovery.TestGroupDiscoveryEngine.test_internal_boundaries_evaluation)
+Test evaluating internal boundaries separately from edge boundaries (0 < t < T). ... ok
+test_maximum_cardinality_bipartite_matching (test_group_discovery.TestGroupDiscoveryEngine.test_maximum_cardinality_bipartite_matching)
+Test that bipartite matching finds maximum cardinality where greedy could block. ... ok
+test_monte_carlo_random_baseline (test_group_discovery.TestGroupDiscoveryEngine.test_monte_carlo_random_baseline)
+Test Monte Carlo baseline across multiple seeds. ... ok
+test_sifter_a_breath_rests (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_a_breath_rests)
+Test Sifter A identifies boundaries at rests >= threshold. ... ok
+test_sifter_b_motoric_rhythm_and_negative_case (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_b_motoric_rhythm_and_negative_case)
+Test Sifter B identifies periodic spans and reports negative when non-repeating. ... ok
+test_sifter_c_melodic_contour (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_c_melodic_contour)
+Test Sifter C identifies turning points in melodic contour. ... ok
+test_sifter_d_cross_row_handoffs (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_d_cross_row_handoffs)
+Test Sifter D identifies cross-row entry cues without circular credit. ... ok
+test_timing_diagnostics_silence_overlap_offgrid (test_group_discovery.TestGroupDiscoveryEngine.test_timing_diagnostics_silence_overlap_offgrid)
+Test diagnostic accounting of silence, overlap, and off-grid events. ... ok
+test_two_song_isolation (test_group_discovery.TestGroupDiscoveryEngine.test_two_song_isolation)
+Test that two separate passages processed sequentially do not share state. ... ok
+test_ascending_vs_flat_control_comparison (test_group_units.TestFundamentalGridAndGroupUnits.test_ascending_vs_flat_control_comparison)
+Verify algorithm distinguishes ascending passage from flat control passage. ... ok
+test_combined_boundaries_and_row1_segments (test_group_units.TestFundamentalGridAndGroupUnits.test_combined_boundaries_and_row1_segments)
+Verify combined boundary set and Row 1 segment widths [3, 1, 2, 2, 1, 3]. ... ok
+test_fundamental_grid_cyclic_labels (test_group_units.TestFundamentalGridAndGroupUnits.test_fundamental_grid_cyclic_labels)
+Verify fundamental grid has uniform duration and cyclic 0-9 labels. ... ok
+test_meeting_points_and_boundary_handoffs (test_group_units.TestFundamentalGridAndGroupUnits.test_meeting_points_and_boundary_handoffs)
+Verify Guess C: specific meeting points where sound groups transition. ... ok
+test_row_boundaries_derivation (test_group_units.TestFundamentalGridAndGroupUnits.test_row_boundaries_derivation)
+Verify row boundaries match Statement 18 specification. ... ok
+test_sound_preservation_and_off_grid_precision (test_group_units.TestFundamentalGridAndGroupUnits.test_sound_preservation_and_off_grid_precision)
+Verify float input preservation and exact rational precision. ... ok
+test_statement_18_group_widths (test_group_units.TestFundamentalGridAndGroupUnits.test_statement_18_group_widths)
+Verify Row 2 has 4-unit groups and Row 3 has 3-unit groups. ... ok
+test_two_song_independence (test_group_units.TestFundamentalGridAndGroupUnits.test_two_song_independence)
+Verify two songs can have different fundamental units, cell counts, and boundaries. ... ok
+test_01_gui_opens_groups_mode (test_group_units_gui.TestGroupUnitsGUI.test_01_gui_opens_groups_mode)
+Verify GUI cleanly switches to Statement 18 Fundamental Groups view mode. ... ok
+test_02_fundamental_grid_cells_rendered (test_group_units_gui.TestGroupUnitsGUI.test_02_fundamental_grid_cells_rendered)
+Verify 12 uniform cells are rendered with cyclic 0-9 labels and equal widths. ... ok
+test_03_sound_group_box_geometry_and_counts (test_group_units_gui.TestGroupUnitsGUI.test_03_sound_group_box_geometry_and_counts)
+Verify Row 2 (4u) and Row 3 (3u) sound groups render with exact unit spans. ... ok
+test_04_row1_composite_segments_geometry (test_group_units_gui.TestGroupUnitsGUI.test_04_row1_composite_segments_geometry)
+Verify Row 1 displays 6 composite segments with widths [3, 1, 2, 2, 1, 3] units. ... ok
+test_05_development_trend_curve_nodes (test_group_units_gui.TestGroupUnitsGUI.test_05_development_trend_curve_nodes)
+Verify development trend nodes are horizontally centered and rise in pitch. ... ok
+test_06_flat_control_passage_mode (test_group_units_gui.TestGroupUnitsGUI.test_06_flat_control_passage_mode)
+Verify Flat Control mode displays horizontal trend nodes at identical y-coordinates. ... ok
+test_07_meeting_point_markers_and_highlight_lines (test_group_units_gui.TestGroupUnitsGUI.test_07_meeting_point_markers_and_highlight_lines)
+Verify meeting markers and vertical highlight lines appear at combined boundaries. ... ok
+test_08_song2_independence_toggle (test_group_units_gui.TestGroupUnitsGUI.test_08_song2_independence_toggle)
+Verify Song 2 displays 10 fundamental cells with u = 250 ms and independent groups. ... ok
+test_09_zoom_controls_in_groups_mode (test_group_units_gui.TestGroupUnitsGUI.test_09_zoom_controls_in_groups_mode)
+Verify horizontal zoom in, zoom out, and reset work properly in groups mode. ... ok
+test_10_mode_switching_cleans_group_timeline (test_group_units_gui.TestGroupUnitsGUI.test_10_mode_switching_cleans_group_timeline)
+Verify switching between groups mode and standard modes clears and restores group state. ... ok
+test_11_row1_no_visual_overlap_and_adaptive_text (test_group_units_gui.TestGroupUnitsGUI.test_11_row1_no_visual_overlap_and_adaptive_text)
+Verify pitch text, notes, and development line never overlap, and narrow cells adapt. ... ok
+test_12_unit_0_meeting_badge_no_clipping (test_group_units_gui.TestGroupUnitsGUI.test_12_unit_0_meeting_badge_no_clipping)
+Verify Unit 0 meeting badge is clamped so its left edge is never clipped by the sidebar. ... ok
+test_32_column_stress_test_mode (test_gui_phase2.TestStage2BPhase2GUI.test_32_column_stress_test_mode)
+Verify 32-column layout stress test generates >= 32 columns and renders without error. ... ok
+test_dual_independent_songs_view (test_gui_phase2.TestStage2BPhase2GUI.test_dual_independent_songs_view)
+Verify Dual Independent Songs view displays two songs with separate grids & scrollbars. ... ok
+test_interactive_mode_switching_and_zoom (test_gui_phase2.TestStage2BPhase2GUI.test_interactive_mode_switching_and_zoom)
+Verify switching between all 4 modes and zooming operates cleanly. ... ok
+test_progressive_stage_a_gui_display (test_gui_phase2.TestStage2BPhase2GUI.test_progressive_stage_a_gui_display)
+Verify Stage A GUI: 1 column, Row 1 = [1], Sound A [0, 3000) ms. ... ok
+test_progressive_stage_b_gui_display (test_gui_phase2.TestStage2BPhase2GUI.test_progressive_stage_b_gui_display)
+Verify Stage B GUI: 3 columns, Row 1 = [1, 2, 1], Sound A [0, 3000) preserved. ... ok
+test_progressive_stage_c_gui_display (test_gui_phase2.TestStage2BPhase2GUI.test_progressive_stage_c_gui_display)
+Verify Stage C GUI: 5 columns, Row 1 = [1, 2, 3, 2, 1], Sound A [0, 3000) preserved. ... ok
+test_row_1_placement_at_top_above_temporary_rows (test_gui_phase2.TestStage2BPhase2GUI.test_row_1_placement_at_top_above_temporary_rows)
+Verify Row 1 (Constant Row) is positioned above temporary rows. ... ok
+test_dynamic_dataset_switching (test_gui_smoke.TestGUISmoke.test_dynamic_dataset_switching)
+Verify switching between datasets dynamically updates columns and constant values. ... ok
+test_gui_renders_stage_1_proof (test_gui_smoke.TestGUISmoke.test_gui_renders_stage_1_proof)
+Verify canvas elements for Stage 1 Proof (Events A, B, C). ... ok
+test_sound_bar_spans_multiple_columns_continuously (test_gui_smoke.TestGUISmoke.test_sound_bar_spans_multiple_columns_continuously)
+Verify Sound A [0, 3000) renders as a continuous rectangle spanning Col 0, 1, 2. ... ok
+test_column_proportionality (test_gui_smoke.TestTimelineCoordinates.test_column_proportionality)
+Verify column pixel widths strictly reflect millisecond durations. ... ok
+test_linear_timestamp_mapping (test_gui_smoke.TestTimelineCoordinates.test_linear_timestamp_mapping)
+Verify strict linear 1-to-1 mapping x(t) = x0 + t * s. ... ok
+test_sound_event_span_matches_duration (test_gui_smoke.TestTimelineCoordinates.test_sound_event_span_matches_duration)
+Verify sound event bar pixel width matches (end - start) * scale. ... ok
+test_zoom_scaling (test_gui_smoke.TestTimelineCoordinates.test_zoom_scaling)
+Verify zoom scaling scales pixels_per_ms uniformly without altering proportions. ... ok
+test_active_row_count_diagnostic_preservation (test_master_columns_gui.TestMasterColumnsGUI.test_active_row_count_diagnostic_preservation)
+Verify Row 1 baseline active-row count diagnostic values remain preserved. ... ok
+test_exact_gridline_alignment_across_all_rows (test_master_columns_gui.TestMasterColumnsGUI.test_exact_gridline_alignment_across_all_rows)
+Verify that every master boundary aligns to the exact same x-coordinate across all rows. ... ok
+test_internal_column_dividers_on_continuous_sound_bars (test_master_columns_gui.TestMasterColumnsGUI.test_internal_column_dividers_on_continuous_sound_bars)
+Verify crisp internal column dividers appear over multi-column sound events. ... ok
+test_many_column_orchestral_example (test_master_columns_gui.TestMasterColumnsGUI.test_many_column_orchestral_example)
+Verify that the synthetic orchestral passage renders 20 master columns with aligned gridlines. ... ok
+test_note_name_correctness (test_master_columns_gui.TestMasterColumnsGUI.test_note_name_correctness)
+Verify scientific pitch notation formatting across standard octaves. ... ok
+test_row_1_development_trend_rendering (test_master_columns_gui.TestMasterColumnsGUI.test_row_1_development_trend_rendering)
+Verify Row 1 displays the development trend line when in development mode. ... ok
+test_sound_event_identity_and_duration_preservation (test_master_columns_gui.TestMasterColumnsGUI.test_sound_event_identity_and_duration_preservation)
+Verify that visual dividers NEVER split, clone, or modify SoundEvent objects. ... ok
+test_two_song_independence (test_master_columns_gui.TestMasterColumnsGUI.test_two_song_independence)
+Verify two songs in Dual View maintain independent master column systems. ... ok
+test_variable_width_column_rendering (test_master_columns_gui.TestMasterColumnsGUI.test_variable_width_column_rendering)
+Verify variable-width columns reflect exact durations in pixel proportions. ... ok
+test_coordinate_collapse_minimum_one_millisecond (test_midi_and_passage.TestMidiParsingAndTiming.test_coordinate_collapse_minimum_one_millisecond)
+Verify that extremely short notes (rounding to start_ms == end_ms) are given duration 1 ms. ... ok
+test_malformed_midi_rejection (test_midi_and_passage.TestMidiParsingAndTiming.test_malformed_midi_rejection)
+Verify that corrupt or unsupported MIDI files are cleanly rejected. ... ok
+test_note_on_velocity_zero_acts_as_note_off (test_midi_and_passage.TestMidiParsingAndTiming.test_note_on_velocity_zero_acts_as_note_off)
+Verify that note-on with velocity 0 is treated as note-off. ... ok
+test_polyphonic_and_overlapping_notes (test_midi_and_passage.TestMidiParsingAndTiming.test_polyphonic_and_overlapping_notes)
+Verify overlapping polyphony where two notes sound simultaneously. ... ok
+test_repeated_notes_of_same_pitch (test_midi_and_passage.TestMidiParsingAndTiming.test_repeated_notes_of_same_pitch)
+Verify that repeated notes of the same pitch are matched FIFO. ... ok
+test_running_status_handling (test_midi_and_passage.TestMidiParsingAndTiming.test_running_status_handling)
+Verify that running status byte persistence works correctly. ... ok
+test_tempo_map_exact_rational_arithmetic (test_midi_and_passage.TestMidiParsingAndTiming.test_tempo_map_exact_rational_arithmetic)
+Verify tempo map conversion from ticks to microseconds and milliseconds. ... ok
+test_vlq_read_write (test_midi_and_passage.TestMidiParsingAndTiming.test_vlq_read_write)
+Verify variable-length quantity encoding and decoding for standard MIDI values. ... ok
+test_json_deserialization_validation (test_midi_and_passage.TestReproduciblePassageFormat.test_json_deserialization_validation)
+Verify that malformed JSON passage structures raise ValueError. ... ok
+test_json_roundtrip_fidelity (test_midi_and_passage.TestReproduciblePassageFormat.test_json_roundtrip_fidelity)
+Verify that a SongTimeline round-trips through JSON with identical structure. ... ok
+test_gui_midi_mode_interactive (test_midi_and_passage.TestStage3IntegrationAndGUI.test_gui_midi_mode_interactive)
+Verify Tkinter GUI cleanly switches to MIDI mode and updates summary labels. ... ok
+test_song_independence (test_midi_and_passage.TestStage3IntegrationAndGUI.test_song_independence)
+Verify that two songs imported from the same MIDI bytes do not share state. ... ok
+test_synthetic_orchestral_many_columns (test_midi_and_passage.TestStage3IntegrationAndGUI.test_synthetic_orchestral_many_columns)
+Verify synthetic orchestral fixture produces >= 16 columns and low-to-high progression. ... ok
+test_deterministic_boundary_derivation (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_deterministic_boundary_derivation)
+Verify boundary derivation produces identical output regardless of run count. ... ok
+test_duplicate_ids_rejected_within_same_song (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_duplicate_ids_rejected_within_same_song)
+Verify duplicate event IDs inside the same song raise ValueError. ... ok
+test_empty_song_behavior (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_empty_song_behavior)
+Verify empty song returns empty boundaries and 0 columns without crashing. ... ok
+test_id_isolation_between_songs (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_id_isolation_between_songs)
+Verify identical row_ids and event_ids in different songs do not collide. ... ok
+test_independent_song_timelines_no_grid_sharing (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_independent_song_timelines_no_grid_sharing)
+Verify two songs calculate columns independently without sharing grids or state. ... ok
+test_progressive_refitting_sequence (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_progressive_refitting_sequence)
+Verify the exact 3-stage progressive refitting sequence from the specification. ... ok
+test_refitter_intermediate_inspection (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_refitter_intermediate_inspection)
+Verify every intermediate refitting state can be inspected individually. ... ok
+test_sound_event_identity_and_duration_preservation (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_sound_event_identity_and_duration_preservation)
+Verify Sound A retains its exact interval and object identity throughout all refits. ... ok
+test_01_one_event_one_column (test_timeline_model.TestMusicTimelineModel.test_01_one_event_one_column)
+1. One event creates exactly one time column covering its interval. ... ok
+test_02_full_abc_mathematical_proof (test_timeline_model.TestMusicTimelineModel.test_02_full_abc_mathematical_proof)
+2. Full A/B/C mathematical proof from Stage 0. ... ok
+test_03_multiple_sounds_simultaneous_starts (test_timeline_model.TestMusicTimelineModel.test_03_multiple_sounds_simultaneous_starts)
+3. Multiple sounds beginning simultaneously create one shared start boundary. ... ok
+test_04_multiple_sounds_simultaneous_ends (test_timeline_model.TestMusicTimelineModel.test_04_multiple_sounds_simultaneous_ends)
+4. Multiple sounds ending simultaneously create one shared end boundary. ... ok
+test_05_two_sounds_touching_without_overlapping (test_timeline_model.TestMusicTimelineModel.test_05_two_sounds_touching_without_overlapping)
+5. Two sounds touching at a boundary [0, 1000) and [1000, 2000) do not overlap. ... ok
+test_06_silent_gap_between_sounds (test_timeline_model.TestMusicTimelineModel.test_06_silent_gap_between_sounds)
+6. A gap between sounds creates a valid column with zero active rows. ... ok
+test_07_multiple_events_same_temporary_row (test_timeline_model.TestMusicTimelineModel.test_07_multiple_events_same_temporary_row)
+7. Multiple sequential sound events can reside in the same temporary row. ... ok
+test_08_overlapping_events_within_same_row (test_timeline_model.TestMusicTimelineModel.test_08_overlapping_events_within_same_row)
+8. Multiple events within the same row may overlap without error. ... ok
+test_09_duplicate_event_ids_rejected (test_timeline_model.TestMusicTimelineModel.test_09_duplicate_event_ids_rejected)
+9. Duplicate event IDs are rejected both in TemporaryRow and in MusicTimeline. ... ok
+test_10_negative_start_time_rejected (test_timeline_model.TestMusicTimelineModel.test_10_negative_start_time_rejected)
+10. Negative start time raises ValueError. ... ok
+test_11_zero_duration_sound_rejected (test_timeline_model.TestMusicTimelineModel.test_11_zero_duration_sound_rejected)
+11. Zero-duration sound (start == end) raises ValueError. ... ok
+test_12_end_time_before_start_time_rejected (test_timeline_model.TestMusicTimelineModel.test_12_end_time_before_start_time_rejected)
+12. End time before start time raises ValueError. ... ok
+test_13_invalid_or_non_finite_timestamps_rejected (test_timeline_model.TestMusicTimelineModel.test_13_invalid_or_non_finite_timestamps_rejected)
+13. Non-finite or non-integer timestamps raise ValueError. ... ok
+test_14_variable_width_columns (test_timeline_model.TestMusicTimelineModel.test_14_variable_width_columns)
+14. Variable-width columns reflect event boundaries with different durations. ... ok
+test_15_sound_spanning_multiple_columns_not_duplicated (test_timeline_model.TestMusicTimelineModel.test_15_sound_spanning_multiple_columns_not_duplicated)
+15. A long sound spanning several columns remains a single object in the row. ... ok
+test_16_reproducible_output_ordering (test_timeline_model.TestMusicTimelineModel.test_16_reproducible_output_ordering)
+16. Output ordering is deterministic and independent of insertion order. ... ok
+test_17_empty_timeline_behavior (test_timeline_model.TestMusicTimelineModel.test_17_empty_timeline_behavior)
+17. Empty timeline returns empty boundaries, columns, and constant row without error. ... ok
+test_18_distinct_active_row_count_vs_active_event_count (test_timeline_model.TestMusicTimelineModel.test_18_distinct_active_row_count_vs_active_event_count)
+18. Explicitly verify distinct active row count vs event count. ... ok
+test_19_mismatched_row_id_rejected (test_timeline_model.TestMusicTimelineModel.test_19_mismatched_row_id_rejected)
+19. TemporaryRow rejects sound event with mismatched row_id. ... ok
+
+----------------------------------------------------------------------
+Ran 142 tests in 38.274s
+
+OK
+
+Exit Code: 0
+
+--- STEP 2: STANDALONE ADAPTER BENCHMARK SUITE (python verify_audio_and_sheet_adapters.py) ---
+MUSIC PROJECT: STANDALONE ADAPTER VERIFICATION SUITE (JOB-02)
+Authoritative Starting Checkpoint: 2a4b261 | Historical Baseline: ad3a9d3
+--------------------------------------------------------------------------------
+================================================================================
+JOB-02 BENCHMARK SUITE A: CONTINUOUS AUDIO ADAPTER (PCM WAV)
+================================================================================
+  [A1] Pure Silence Buffer (500ms):
+       Detected Events: 0 (Expected: 0) -> PASS
+  [A2] Single Tone Burst Ground Truth [200, 600) ms:
+       Observed Interval: [190, 610) ms (Onset Err: 10ms, Offset Err: 10ms)
+       Exact Rational Start: 19/100 sec -> PASS
+  [A3] Three-Event Sequence Segmentation:
+       Event 1: Exp [100, 300) ms | Obs [90, 310) ms (Err: s=10ms, e=10ms) -> PASS
+       Event 2: Exp [450, 650) ms | Obs [440, 660) ms (Err: s=10ms, e=10ms) -> PASS
+       Event 3: Exp [750, 950) ms | Obs [740, 960) ms (Err: s=10ms, e=10ms) -> PASS
+  [A4] Non-Window-Aligned (123ms) & Close Spacing (60ms gap):
+       Evt 1: [110, 340) ms | Evt 2: [370, 600) ms -> PASS
+  [A5] Sample Rate Invariance (22050 Hz vs 44100 Hz):
+       Rate 22050 Hz: Observed [140, 469) ms -> PASS
+       Rate 44100 Hz: Observed [140, 460) ms -> PASS
+  [A6] Multi-Pitch Autocorrelation Estimation:
+       Tone C4 (261.63 Hz): Detected MIDI 60 (Exp: 60) -> PASS
+       Tone A4 (440.0 Hz): Detected MIDI 69 (Exp: 69) -> PASS
+       Tone D5 (587.33 Hz): Detected MIDI 74 (Exp: 74) -> PASS
+  [A7] Ambiguous White Noise Pitch Rejection:
+       Detected Event: Yes, Pitch: None (Exp: None) -> PASS
+  [A8] Malformed Audio Rejection: AudioFormatError cleanly raised -> PASS
+  [A9] Pitch Estimation Controls (DEFECT-08):
+       10 Hz Infrasonic Negative Control: Pitch=None (Exp: None) -> PASS
+       60 Hz Tone (Lower Bound): Pitch=34 (Exp: 34 or 35) -> PASS
+       Pure DC Offset Signal: Pitch=None (Exp: None) -> PASS
+       Short 15ms Tone (< 2 cycles of 100Hz): Pitch=None (Exp: None) -> PASS
+  [A10] Truncated PCM WAV Validation Across 8, 16, 24, 32-bit depths (DEFECT-09):
+       8-bit PCM (1 ch) Truncated: AudioFormatError -> PASS
+       16-bit PCM (1 ch) Truncated: AudioFormatError -> PASS
+       32-bit PCM (1 ch) Truncated: AudioFormatError -> PASS
+       24-bit PCM (1 ch) Truncated: AudioFormatError -> PASS
+  [A11] High-Frequency Pitch Controls & Out-of-Band Rejection (DEFECT-13):
+       2000 Hz Tone (Upper Bound): Detected MIDI 95 (Exp: 95) -> PASS
+       2400 Hz Out-of-Band Signal: Detected MIDI None (Exp: None) -> PASS
+       3000 Hz Out-of-Band Signal: Detected MIDI None (Exp: None) -> PASS
+  [A12] Audio Authoritative Exact Timing & JSON Round-Trip:
+       Exact Rational Seconds: [242/2205, 7481/22050) sec, Round-Trip: [242/2205, 7481/22050) sec -> PASS
+
+================================================================================
+JOB-02 BENCHMARK SUITE S: DIGITAL SHEET MUSIC ADAPTER (MUSICXML)
+================================================================================
+  [S1] Single Note at 120 BPM (divisions=1):
+       Interval: [0, 500) ms, Exact Frac: [0, 500) ms -> PASS
+  [S2] Sequential Notes with Rest:
+       Note 1: [0, 500) ms | Note 2: [1000, 2000) ms -> PASS
+  [S3] Fractional Triplet Durations (exact Fraction):
+       End Fracs: ['500/3', '1000/3', '500'] -> PASS
+  [S4] Variable Chord Note Durations:
+       C4 Note (Half): [0, 1000) ms | E4 Note (Quarter): [0, 500) ms -> PASS
+  [S5] Tied Note Coalescing Across Measures:
+       Coalesced Interval: [0, 2000) ms -> PASS
+  [S6] Interrupted Tie Detection:
+       Events: 2 (Exp: 2), Warning: 'Part P1, Measure 1: Interrupted tie detected for pitch 60 (temporal gap: 500ms). Emitted as separate events.' -> PASS
+  [S7] Unsupported Notation Disclosure:
+       has_unsupported_features: True, is_complete_faithful: False -> PASS
+  [S8] Malformed XML Syntax Rejection: MusicXMLParseError cleanly raised -> PASS
+  [S9] Mid-Measure Tempo Changes (120 BPM -> 60 BPM):
+       Note 1: [0, 500) ms | Note 2: [500, 1500) ms -> PASS
+  [S10] Forward & Backup Score-Position Navigation:
+       Forward Target D4: 1000ms (Exp: 1000ms) | Backup Target E4: 500ms (Exp: 500ms) -> PASS
+  [S11] Trailing Rests in Total Score Duration:
+       Total Duration: 1000ms (Rational: 1000) (Exp: 1000ms) -> PASS
+  [S12] Three-Note Continuous Tie Chain Coalescing:
+       Coalesced Events: 1 (Exp: 1), Interval: [0, 1500) ms -> PASS
+  [S13] Notation Disclosure & Zero Duration Rejection:
+       Accepted Events: 1 (Exp: 1), Flagged Features: 5 -> PASS
+  [S14] Authoritative Exact Timing & JSON Passage Round-Trip:
+       Original Triplet End Frac: 500/3 ms | Restored Round-Trip: 500/3 ms -> PASS
+  [S15] Multi-Part Shared Score Tempo (DEFECT-10):
+       Shared Tempo (60 BPM): P1 End=1000ms, P2 End=1000ms (Exp: 1000ms) -> PASS
+  [S16] Out-of-Order Tempo Changes & ScoreTimeline (DEFECT-11):
+       ScoreTimeline(q=2)=2500ms (Exp: 2500ms) | V1 N2=[500, 1500) ms -> PASS
+  [S17] Unsupported Features: Nested Dynamics, Metronome Units, Microtonal, Invalid Backup (DEFECT-12):
+       Eighth Metronome Dur=1000ms (Exp: 1000ms), Flagged Features=3 -> PASS
+  [S18] Measure Duration & Reach Controls (DEFECT-14):
+       Control A (Divs Change): [0, 500), [500, 1000), [1000, 1500) ms | Control B (Backup Reach): M2 Start=1000ms -> PASS
+  [S19] Invalid Timing Inputs, Direction Offset & Transposition (DEFECT-15):
+       Neg Rest Handled, Offset Tempo [1000, 2000) ms, Transposition Flagged -> PASS
+  [S20] Incomplete Exact Timing Metadata & Fallback Integrity (DEFECT-16):
+       Incomplete Metadata Raises ValueError, Genuine Absence Fallback Exact -> PASS
+  [S21] Invalid Tempo Metadata & Out-of-Bound Positions (DEFECT-17 & DEFECT-18):
+       Non-positive Tempo Flagged, Negative Offset Position Diagnosed, Timeline Position Validated -> PASS
+  [S22] Complete Exact Rational Timing Metadata Validation (DEFECT-19):
+       Conflicting Metadata Rejected, Sample Count Consistency Validated -> PASS
+
+================================================================================
+JOB-02 VERIFICATION ACCOUNTING SUMMARY
+================================================================================
+  Suite A (Continuous Audio):      25/25 assertions passed
+  Suite S (Digital Sheet Music):   22/22 assertions passed
+  Total Assertions Evaluated:      47/47 PASSED (100%)
+  Total Benchmark Scenarios:       34/34 PASSED (12 Audio + 22 MusicXML)
+================================================================================
+RESULT: SUCCESS (EXIT CODE 0) — ALL JOB-02 PROTOTYPE CAPABILITIES VERIFIED
+
+
+Exit Code: 0
+
+--- STEP 3: BASELINE VERIFICATION SCRIPTS ---
+  verify_development.py: PASS (code 0)
+  verify_group_discovery.py: PASS (code 0)
+  verify_group_units.py: PASS (code 0)
+  verify_midi_import.py: PASS (code 0)
+  verify_progressive.py: PASS (code 0)
+  verify_proof.py: PASS (code 0)
+  verify_row_merger.py: PASS (code 0)

@@ -1,0 +1,116 @@
+"
+with music if you use rows and columns. you have loops of sound that's repeated. then you have other sound that's repeated. they all fit into the time the sound is played. if the time the sound is played is split into columns then the row can hold the chunks of sound
+"
+
+"
+i was thinking of constant columns to show the time the music is played. then filling in the columns with sound that belongs in groups. then the single group goes through the row and columns and then it goes to a different group and there might be a single column that stays in the two groups maybe in a separate row where like math we join rows the row with the constant sound between groups stays in the columns with sound each loop and the next row is the group filling the columns with sound unique to the group. then you could have the row with the sound in every row be constant but the group be temporary for the time the group is played.
+"
+
+"
+the constant sound could be the style or feeling scary or happy jaws in water or valkyries in the sky sound, not just a constant sound in every row. that binds the rows together.
+"
+
+"
+i think the constant row is created by the temporary rows. the temporary rows create a linear graph line when the music is not blended with other kinds of musical styles but when its joined with multiple musical styles the constant graph line changes from linear to curved. this is why modern music is curved constant line but traditional rock music like led zeplin stairway to heaven or the beach boys or old fashioned music like that has a linear constant line and modern rap and music has a curved constant line. but to see how the musical rows that are temporary function to create this difference in the constant musical row idk how to do yet.
+"
+
+"
+i think music that's able to go low to high is traditional, but a music that has to go low stay low on the time line to go high is a mixture of musical styles. counting columns and rows the traditional music can go low row to single column but a mixture of musical style has to go several columns to go as low. then you count the temporary rows to find the column count on how row to column low to high is measured.
+"
+
+"
+classical music ride of  valkyries has the sound of low to high. the orchestrator swinging his stick would show that sound easily i think.
+"
+
+"
+the columns of time from low row to high row is made by the temporary rows. but the number of columns is not static its able to be changed by the temporary rows to fit the sound of the temporary rows. look at the temporary rows music is groups of sound that fit together, these create the columns that the row that is constant goes from low to high and because the columns are changed by the temporary rows one classical traditional column might be smaller than a mixed column made from modern music.
+"
+
+"
+the sound in the row is made from linked columns the beginning column the ending column hold the sound the columns fit the temporary rows together. these columns fit together to create the constant row column size.
+"
+
+"
+you should ask google antigravity for help coming up with a plan. first there is the temporary sounds that fit columns and these columns fit the constant row and constant row is compared to constant row to find the column different with less = linear and more = curved graph. but before all that we need to use the rows and columns and for that maybe we need to reuse the calculator project. to get the gui and rows and columns. just add a musical variation on it to plug in music to the rows and columns.
+"
+
+"
+i think the rows are supposed to be many many columns wide and in those many columns we fill in the sounds hear from the music playing. the idea is the number of columns functions with the musical sheet music. i look at the rows now and they are not many columns and the columns are not aligned.
+"
+
+"
+the row 2 makes columns fit the music group. row 3 makes the columns refit the musical group. then row 1 fits rows 1 and 2 musical group. music 2 repeats the process making row 1 a different number of columns. in both music songs the columns fit rows 1, 2, 3, but not across music songs. this way you can measure the linear and curved by seeing the traditional vs the non-traditional/modern, to see the column number reasoning the columns fit together across constant rows but they don't share the linear or curved structure.
+"
+
+"
+the idea is row 1 is constant and goes into different rows as row addition so the columns blend music together. then column numbers in rows 2 and 3 etc setup the column size for row 1. then to show the difference between modern and classical traditional rock music, vs modern music you measure to see if the columns in the modern are more to connect to the old. the curved has more on the lower row hence it has more columns connecting to the row vs the traditional that goes in linear.
+"
+
+"
+its the meaning of linear which grows from the row and column and is formed from the groups of sounds fitting columns together to form the structure of the row 1 that is the sound carried from row to row.
+"
+
+"
+the sound in a group is distinct from a different sound in a group but they share something from the row 1 that changes the music somehow. i think the fact that row one can change the music to go low to high. without row 1 the groups don't have a unique id to go from low to high like ride of the valkyries.you have one part of ride of the valkyries and another but there is no low to high and then the song is lost but with low to high you have the song.
+"
+
+"
+the sound before is low its like the whirring sound imaging a duck running on water then as the duck takes flight that is the high sound.
+"
+"
+it looks like the columns are different sizes on different rows. and not all the same size and fit into the music they describe. the columns fit the entire group of sound in the song and then multiple groups fit together and this is how they form the contstant row 1 that blends into the rows 2 and 3 etc by being able to go from low to high sound similar to a duck running on water then with a whirrring foot on water sound to flapping in the air and flying sound similar to the ride of the valkyries sound.
+"
+
+"
+look at the difference in column size for master column width. i think your not using a row and column you can fill in with the difference column size. counting column in row like base counting system 0 to 9, over and over to make one column width. and repeating this to make different songs column width for all columns the same size. instead i think your using one column and trying to resize it.
+"
+
+"
+did you rewrite your ideas before where the width was different to now the width is the same? the idea is the width is what groups together left to right in the row to fit the songs group sound, then you take that row of columns and a new row with different column width but both rows share the same fundamental column size making the two columns width. you have one row be a width column like 4 and another row with a width column of 3 and then you take the size 4 column and make it to size 3 column but that might not fit the sound so you make it work so the two columns share a same column design but they fit the song group that is a different length. then these multiple rows make up the top row the constant row column width that fits all rows. does that make sense?
+"
+
+"
+fyi i think sound especially music fits into intervals the person can speak and breath. if you measure the time of breath and speaking and estimate how that is being conveyed to the listener you might be able to group sound better.
+"
+"
+if you imagine the breathing speech time fitting in a doll going from point a to point b this might be the duration of the music being expressed as a group.
+"
+"
+yes, as dolls move and are animated they are given a band to play music to them to enhance the effect being displayed. if you can find the doll you can be sure the music that portrays them is near there and ends when the doll has move to point b or done what they set out to do maybe have a conversation.
+"
+"
+maybe the low to high sound marks the end of the doll going from point a to b or the music playing for the doll there. then there is a association with low to high being in the constant row 1, and then rows 2 and 3 might be point a to point b that fixes row 1.
+"
+"
+no, the low to high is at the tail end of the music. it signifies the end of the music playing for the doll. then you start over at the group a sound playing into group b sound playing that blends into the end of the doll action that is the low to high sound. if you see a animal bite a itch like a cat they jerk at the itch they nibble on it then they are done. like that.
+"
+"
+is the music in rows 2 and 3 repeating to show motion from point a to point b. 1 + 1 is 2. the logic translates to sound. the 2 is low to high, the 1 and 1 is what leads to the high of 2 low to 2 at = 2. if not 1 and 1 then a + b = 2 the high from low to high is 2. make up something for a and b.
+"
+"
+the sound of 1 and 1 is a journey from point a to point b. the = 2 is the fruit the harvest the win of getting to point b. it is a bool = true. but if its bool = true then some sad songs could also be bool = false to show getting to point b results in a sad note. like the aww sound.
+"
+"
+maybe the good ending is linear low to high and the sad is curved low to high. you can start a track race equal to everyone but end way behind and be curved low to high at the end but linear at the start and during training.
+"
+
+"
+the idea was the same thing was being expressed but the point a and b created different column sizes that shows the linear from curved low to high.
+"
+
+"
+row 2 and 3 fit together first using columns that divide into each row music group evenly. the columns uniform in size fit the row 2, then row 3 then they merge so the uniform column size fits rows 2 and 3 then this uniform column size goes into row 1 the constant row size. the row 2 and 3 is the point a and b the 1 plus 1 then the row 1 is the goal target the sum of 1 and 1 it is the low to high crescendo heard in ride of the valkyries song.
+"
+
+"
+no, i said the rows 2 and 3 each have their own unique set of uniform columns that fit the entire set of sounds in the row. not that the column size is random large or small in the rows 2 and 3 and row 1 fits a uniform column size to fit both rows. the rows 2 and 3 fit together first using each of their uniform column size then this translates into the row 1.
+"
+
+"
+row 2 uniform columns merges with row 3 columns both have uniform columns that fit both rows sounds. and these uniform columns that fits into rows 2 and 3 goes into row 1 to use for the row and column linear from row to column in a 2d graph showing linear. then that is the end. and this shows that the row 1 column size differs between music and one row and column in row 1 on linear is actually linear and one is curved low to high. 
+"
+
+"
+i was thinking, if the doll moving from row to row to make the end of their movement in row 1 the down to up, the sum of addition, then that is given music to play along, what if books were given music. then you could id the doll and music algorithm and make new books which just moves dolls and play music that makes sense, first make a catalogue so new books made with new music is logical like previous books and music moving dolls around. then the lack of books for ai to use to learn from is fixed and ai can make books with music for ai to learn from and ai gets smarter. but that is after we get this program running and then maybe that is what we do in the next repository. an idea for the future when this project gets finished.
+"
+

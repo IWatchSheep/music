@@ -1,0 +1,11 @@
+# Music Project Dependencies
+# The project runtime and test suite strictly use the Python 3.10+ Standard Library:
+# - wave (WAV parsing)
+# - struct (binary packing/unpacking)
+# - fractions (exact rational arithmetic)
+# - math (trigonometry, logarithms)
+# - xml.etree.ElementTree (MusicXML parsing)
+# - tkinter (GUI timeline and development profile rendering)
+# - unittest (unit test and verification suite)
+#
+# No external third-party dependencies are required.
