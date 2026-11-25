@@ -11,22 +11,22 @@
 
 This project investigates the author's theory of musical architecture: sound groups occupy temporary rows, and the organization of those rows translates into the constant Row 1.
 
-**Current author-approved design direction (Statements 28 and 29):**
+**Current author-approved design direction (Statements 28–30):**
 
 1. Row 2 has its own uniform column width, fitted to the entire set of sounds in Row 2.
 2. Row 3 independently has its own uniform column width, fitted to the entire set of sounds in Row 3. Its width may differ from Row 2's width.
-3. Rows 2 and 3 fit together using their respective uniform column structures, preserving both structures and the original musical timing.
-4. The result of fitting the two rows together translates into constant Row 1. The mathematical translation rule and resulting Row 1 column structure remain open research questions; no greatest-common-divisor, boundary-union, or single uniform Row 1 rule is assumed.
+3. Rows 2 and 3 merge using their respective independently fitted uniform column structures. The merger produces uniform columns that fit the sounds of both rows, without altering source musical timing.
+4. The resulting uniform columns are carried into constant Row 1. Row 1 uses its row and column structure in a two-dimensional graph to express the terminal low-to-high movement. The column size of Row 1 can differ from one piece of music to another. The author proposes that one piece shows a straight linear relationship and another a curved low-to-high relationship. The merger algorithm, graph coordinates and classification rule remain to be determined; no GCD, LCM or boundary union is assumed as the solution.
 5. A finer shared reference grid can be used to express timing, as in Statement 18, but it must not replace the independently fitted column structure of either temporary row.
 6. In the author's expressive hypothesis, Rows 2 and 3 represent the journey (1 + 1), while Row 1 represents the goal or result (= 2), associated with the terminal low-to-high sound described in *Ride of the Valkyries*. Statement 23 locates that sound at the tail end of the action.
 
-The relationship of this architecture to musical identity, breathing and speech, linear versus curved expression, and Boolean outcomes remains a research hypothesis. The published implementation is a historical baseline; it has not yet been shown to implement Statement 29.
+The relationship of this architecture to musical identity, breathing and speech, linear versus curved expression, and Boolean outcomes remains a research hypothesis. The published implementation is a historical baseline; it has not yet been shown to implement Statements 29 and 30.
 
 ---
 
-## Section 2 — The Author's 29 Original Statements
+## Section 2 — The Author's 30 Original Statements
 
-The following 29 statements are drawn directly from the authoritative source file `music.txt`. Each statement is presented in three parts:
+The following 30 statements are drawn directly from the authoritative source file `music.txt`. Each statement is presented in three parts:
 - **A. Original Statement — Author's Exact Words:** Copied verbatim without alterations, omissions, or spelling corrections.
 - **B. Grammar-Corrected Version:** Rewritten for grammatical clarity while strictly preserving the author's meaning and terminology.
 - **C. Proposed Interpretation — Awaiting Joint Review:** A newly written explanation distinguishing verified mathematics from hypotheses, with tentative ideas explicitly labeled as guesses.
@@ -57,7 +57,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > I was thinking of constant columns to show the time during which music is played, and then filling those columns with sounds that belong in groups. A single group moves through the row and columns, and then transitions to a different group. A single column might stay constant between two groups—perhaps in a separate row where, like in mathematics, we join rows together. The row holding the constant sound between groups remains in the columns across each loop, while the next row contains groups filling the columns with sounds unique to that group. Thus, the row with sound in every column remains constant, while the groups are temporary for the duration they are played.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** The author distinguishes between two distinct kinds of rows: **temporary rows** that contain finite, changing groups of sound, and a **constant row** that persists across the piece and mathematically joins the rows together.
 - **Role of Rows & Columns:** Temporary rows (Rows 2, 3, etc.) hold localized sound events that begin and end. The constant row (Row 1) remains active across all columns, unifying the separate temporary groups through a process analogous to mathematical row addition.
 - **Status:** Established architectural foundation. Implemented as Row 1 (constant carrier) and Rows 2+ (temporary voice rows).
@@ -132,7 +132,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > The columns of time from low row to high row are created by the temporary rows. The number of columns is not static; it can be changed by the temporary rows to fit their sound. Looking at the temporary rows, music consists of groups of sound that fit together. These create the columns through which the constant row progresses from low to high. Because columns are refitted by the temporary rows, a classical or traditional column might be smaller than a mixed column in modern music.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** Column boundaries are dynamic rather than rigid. They are derived from the sound groups present in the temporary rows. As groups change length, the resulting column boundaries adapt.
 - **Status:** Verified mathematical property of progressive refitting. Implemented in `music_model/timeline.py`.
 
@@ -147,7 +147,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > The sound within a row is formed from linked columns: the beginning column and ending column contain the sound, fitting the temporary rows together. These columns combine to establish the column dimensions of the constant row.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** Every sound event has an onset boundary (beginning column) and an offset boundary (ending column). The collection of these intervals across temporary rows defines the composite column widths of Row 1.
 - **Status:** Verified mathematical foundation.
 
@@ -188,14 +188,14 @@ The following 29 statements are drawn directly from the authoritative source fil
 > "the row 2 makes columns fit the music group. row 3 makes the columns refit the musical group. then row 1 fits rows 1 and 2 musical group. music 2 repeats the process making row 1 a different number of columns. in both music songs the columns fit rows 1, 2, 3, but not across music songs. this way you can measure the linear and curved by seeing the traditional vs the non-traditional/modern, to see the column number reasoning the columns fit together across constant rows but they don't share the linear or curved structure."
 
 #### B. Grammar-Corrected Version
-> Row 2 creates columns to fit its musical group. Row 3 then refits the columns to fit its own musical group. Then Row 1 fits the musical groups of Rows 2 and 3 [clarified by the author in Statements 28 and 29; original statement retained]. Song 2 repeats the process, giving its Row 1 a different number of columns. In both songs, the columns fit Rows 1, 2, and 3, but not across different songs. This way you can measure linear versus curved by seeing traditional versus non-traditional/modern music, to see the column number reasoning where columns fit together across constant rows, but they do not share the same linear or curved structure.
+> Row 2 creates columns to fit its musical group. Row 3 then refits the columns to fit its own musical group. Then Row 1 fits the musical groups of Rows 2 and 3 [clarified by the author in Statements 28–30; original statement retained]. Song 2 repeats the process, giving its Row 1 a different number of columns. In both songs, the columns fit Rows 1, 2, and 3, but not across different songs. This way you can measure linear versus curved by seeing traditional versus non-traditional/modern music, to see the column number reasoning where columns fit together across constant rows, but they do not share the same linear or curved structure.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** The author specifies two vital principles:
   1. **Progressive Refitting:** Groups are added row by row, with the master grid updating progressively.
   2. **Song Independence:** Each song possesses its own authentic column system derived from its own notes; grids are never shared or forced across different songs.
-- **Author clarification:** Statements 28 and 29 resolve the intended order: Rows 2 and 3 first fit together using their independently established column structures, and the result translates into Row 1.
+- **Author clarification:** Statements 28–30 resolve the intended order: Rows 2 and 3 first fit together using their independently established column structures, and the result translates into Row 1.
 - **Status:** Mathematically verified and automated in `tests/test_song_timeline.py`.
 
 ---
@@ -209,7 +209,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > The idea is that Row 1 is constant and goes into different rows through row addition, so the columns blend the music together. Then the column numbers in Rows 2, 3, and so on set up the column size for Row 1. Then, to show the difference between modern and classical traditional rock music versus modern music, you measure to see whether the columns in the modern music are more numerous to connect to the old. The curved music has more on the lower row; hence, it has more columns connecting to the row, compared to traditional music, which proceeds in a linear way.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** Row 1 connects to temporary rows through mathematical union ("row addition"). The author suggests that pieces with more activity or events on lower rows generate more boundary transitions, creating more composite columns in Row 1.
 - **I Guess:** *I guess the author is observing that when lower rows contain more frequent transitions or events, they generate a denser set of connecting column boundaries in Row 1.*
 - **Status:** Established structural concept.
@@ -225,7 +225,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > It is the meaning of linearity that emerges from the rows and columns, formed by sound groups fitting columns together to establish the structure of Row 1, which represents the sound carried from row to row.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** I guess linearity may emerge from the way the independently fitted row structures combine. This remains untested.
 - **Status:** Core theoretical principle.
 
@@ -240,7 +240,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > The sound in one group is distinct from the sound in another group, but they share an underlying element from Row 1 that shapes the music. I think it is the fact that Row 1 enables the music to progress from low to high. Without Row 1, the individual groups lack a cohesive identity to move from low to high as in *Ride of the Valkyries*. You can have one part of *Ride of the Valkyries* and another part, but without that low-to-high progression, the identity of the song is lost. With the low-to-high progression, you have the song.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** I guess the groups may share musical identity. Statements 23, 28 and 29 associate Row 1 with the terminal result, rather than necessarily a gradual rise throughout the journey.
 - **Status:** Established conceptual definition of Row 1's carrier role.
 
@@ -271,7 +271,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > It looks as though the columns have different widths on different rows, rather than sharing a consistent size that fits the music they describe. The columns should fit the entire group of sounds in the song, and multiple groups then fit together. This is how they form the constant Row 1, which blends into Rows 2, 3, and onward by moving from low to high—similar to a duck running across water with a whirring foot-on-water sound before flapping into the air and taking flight, like the sound in *Ride of the Valkyries*.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** The author identifies that visual groups appear with different physical widths across rows. These multi-column groups fit together to shape Row 1, which carries the duck-flight progression.
 - **Status:** Clarified and mathematically formalized in Statements 17 and 18.
 
@@ -286,7 +286,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > Look at the difference in column size for the master column width. I think you are not using a row and column system that you can fill in with the different column sizes. Count columns in a row like a base counting system from 0 to 9, over and over, to make one column width, and repeat this to make different songs' column width, with all columns being the same size. Instead, I think you are using one column and trying to resize it.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** A major mathematical turning point. The author corrects the assistants: the program must not dynamically stretch or resize the fundamental grid cells. Instead, a song has a single, fixed **fundamental column width** ($u$). Time is partitioned into equal reference cells labeled cyclically `0` through `9`. Different group sizes are built by combining multiple fundamental cells, not by resizing individual cells.
 - **Status:** Core mathematical axiom of the project.
 
@@ -301,7 +301,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > Did you rewrite your earlier ideas, where widths were different, so that now all widths are forced to be identical? The idea is that fundamental cells group together from left to right within a row to accommodate a song's group sound. When you take that row and add a new row with a different group width, both rows still share the same fundamental column size. For instance, one row has a group width of 4 units, and another row has a group width of 3 units. Forcing a size-4 group into a size-3 group would distort the sound; instead, both rows share the same fundamental column design while fitting groups of different lengths. These multiple rows then determine the column structure of the top constant Row 1, which reconciles all rows. Does that make sense?
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** The definitive reconciliation of uniform reference cells and variable sound groups:
   1. **Shared Base Grid:** All rows share the same fundamental unit $u$ (e.g., $100\text{ ms}$ or sixteenth note).
   2. **Multi-Unit Groups:** Row 2 uses groups of $4u$; Row 3 uses groups of $3u$. Neither row's notes are distorted or forced into the other's size.
@@ -363,7 +363,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > Maybe the low-to-high sound marks the conclusion of the doll moving from Point A to Point B, or the end of the music playing for the doll at that point. There is an association with low-to-high motion existing in the constant Row 1, while Rows 2 and 3 might represent the journey from Point A to Point B that establishes Row 1.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** The author begins connecting the low-to-high sound with action completion: rather than being a continuous slope, the low-to-high sound signals the arrival at Point B. Rows 2 and 3 represent the ongoing journey, while Row 1 captures the completed result.
 - **Status:** Refined and clarified immediately in Statement 23.
 
@@ -395,7 +395,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > Is the music in Rows 2 and 3 repeating to show motion from Point A to Point B? $1 + 1 = 2$. The logic translates to sound. The '2' is the low-to-high sound; the '1 + 1' is what leads to the high of 2 (from low to 2 at '= 2'). If not $1 + 1$, then $a + b = 2$, where the high from low to high is 2. Make up something for $a$ and $b$.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** The author raises an exploratory question connecting the developmental rows with an arithmetic metaphor: $1 + 1 = 2$ (or $a + b = 2$).
   - The operands ($1$ and $1$, or $a$ and $b$) represent the developmental sound groups in Rows 2 and 3 accompanying the motion from Point A toward Point B.
   - The sum ($= 2$) represents the terminal low-to-high resolution that marks the arrival at Point B.
@@ -445,7 +445,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 > The idea was that the same thing was being expressed, but Point A and Point B created different column sizes, which shows the linear from curved low-to-high.
 
 #### C. Proposed Interpretation — Awaiting Joint Review
-- **Later author clarification:** Read this historical interpretation in light of Statements 28 and 29. Independently fitted uniform row columns must be preserved, and their translation into Row 1 remains open. Any incompatible earlier interpretation is superseded.
+- **Later author clarification:** Read this historical interpretation in light of Statements 28–30. Independently fitted uniform row columns are merged first; the resulting uniform columns fit both rows and are carried into Row 1 for the terminal 2D graph. The mathematical implementation remains open. Any incompatible earlier interpretation is superseded.
 - **Explanation:** The author's definitive clarification of "linear vs. curved." It does **not** refer to a line drawn through pitch centroids. Instead:
   - The same underlying action and musical motive can be expressed with different group-column organizations.
   - I guess regular group widths might be perceived as direct pacing; this is not established.
@@ -463,7 +463,7 @@ The following 29 statements are drawn directly from the authoritative source fil
 #### B. Grammar-Corrected Version
 > Rows 2 and 3 fit together first, using columns that divide evenly into each row's musical groups. The uniform-sized columns fit Row 2, then Row 3. They merge so that the uniform column size fits both rows, and this uniform column size then goes into Row 1, the constant row. Rows 2 and 3 represent Points A and B, the 1 plus 1. Row 1 represents the goal or target, the sum of 1 and 1: the low-to-high crescendo heard in *Ride of the Valkyries*.
 
-#### C. Proposed Interpretation — Read with Statement 29
+#### C. Proposed Interpretation — Read with Statements 29 and 30
 - The author establishes the order: fit the temporary rows together first, then translate into Row 1. Statement 29 clarifies that each temporary row first has its own uniform column size, not one size imposed on both rows.
 - The journey/result analogy is the author's research hypothesis. The exact mathematical translation remains unresolved.
 
@@ -477,17 +477,34 @@ The following 29 statements are drawn directly from the authoritative source fil
 #### B. Grammar-Corrected Version
 > No, I said that Rows 2 and 3 each have their own unique set of uniform columns that fit the entire set of sounds in the row. I did not mean that the column sizes in Rows 2 and 3 vary randomly between large and small, or that Row 1 uses a uniform column size to fit both rows. Rows 2 and 3 fit together first, using their respective uniform column sizes, and this then translates into Row 1.
 
-#### C. Proposed Interpretation — ChatGPT Agreement, Awaiting Antigravity Review
+#### C. Proposed Interpretation — Architectural Agreement (Statement 29), Read with Statement 30
 - Each temporary row has a uniform column width fitted to the entire set of sounds in that row. The widths may differ between rows, but are not arbitrarily varied within either row.
-- Fit Rows 2 and 3 together using their original uniform column structures before deriving Row 1. Do not replace either structure with a shared finest subdivision or assume Row 1 imposes one common uniform width.
+- Fit Rows 2 and 3 together using their original uniform column structures before deriving Row 1. Do not replace either native structure before the merger or assume Row 1 imposes its width on the temporary rows. Statement 30 clarifies that the merger produces uniform columns fitting both rows, which are carried into Row 1.
 - I guess a mathematical representation that retains each row's width, boundaries, and timing while expressing their interaction could help investigate the translation into Row 1. No specific translation algorithm is agreed yet.
-- Statement 28's journey/result relationship remains the author's expressive hypothesis. Statement 29 supersedes incompatible earlier assistant interpretations.
+- Statement 28's journey/result relationship remains the author's expressive hypothesis. Statements 29 and 30 supersede incompatible earlier assistant interpretations.
+
+---
+
+### Statement 30
+
+#### A. Original Statement — Author's Exact Words
+> "row 2 uniform columns merges with row 3 columns both have uniform columns that fit both rows sounds. and these uniform columns that fits into rows 2 and 3 goes into row 1 to use for the row and column linear from row to column in a 2d graph showing linear. then that is the end. and this shows that the row 1 column size differs between music and one row and column in row 1 on linear is actually linear and one is curved low to high. "
+
+#### B. Grammar-Corrected Version
+> Row 2's uniform columns merge with Row 3's columns. Both have uniform columns that fit the sounds of both rows. These uniform columns, which fit Rows 2 and 3, then go into Row 1 to be used for the linear relationship from row to column in a two-dimensional graph. That is the end. This shows that Row 1's column size differs between pieces of music: the row-to-column relationship in Row 1 of one piece is actually linear, while in another it is curved from low to high.
+
+#### C. Proposed Interpretation — ChatGPT Agreement, Awaiting Antigravity Review
+- **Author's design:** Establish each temporary row's own uniform columns first. Merge Rows 2 and 3 to obtain uniform columns fitting the sounds of both rows. Transfer these resulting columns into Row 1; do not have Row 1 impose its width on the temporary rows before they merge.
+- **Graph and ending:** Row 1 uses its resulting row and column structure in a 2D graph to express the terminal low-to-high movement. This is the endpoint of the author's proposed process, consistent with the journey/result analogy in Statements 23–28.
+- **Comparison between pieces:** Each piece has its own Row 1 column size. The author proposes that this structure reveals a straight linear low-to-high relationship in one piece and a curved low-to-high relationship in another.
+- **I guess:** The graph may require a mapping from the fitted row/column structure to coordinates that can be compared across pieces, while retaining each piece's own column size. The author has not defined the coordinate mapping or a mathematical linearity/curvature test yet. Uniform column size alone does not mathematically imply a straight or curved graph; the plotted relationship must also be specified.
+- **Status:** ChatGPT agrees that this is the design and research objective. No specific merger algorithm or graph formula is established, and no empirical musical classification is claimed. Antigravity's review of Statement 30 is pending.
 
 ---
 
 ## Section 3 — Shared Mathematical Model
 
-### Current design — independent uniform row structures
+### Current design — independently fitted rows, merged uniform columns, and terminal 2D graph
 
 For illustration only, let Row 2 have column width 4u and Row 3 have column width 3u over a duration of 12u. Here u is a timing reference, not the column width of either row.
 
@@ -497,12 +514,18 @@ Row 3: [  3u  ][  3u  ][  3u  ][  3u  ]
                 Fit together
                       |
                       v
-Row 1: Translation result (structure not yet determined)
+Merged uniform columns fitting both rows (width to be determined)
+                      |
+                      v
+Row 1: Inherits merged uniform columns
+                      |
+                      v
+Terminal 2D row-to-column graph: linear or curved (mapping to be determined)
 ```
 
-The fitting operation must preserve the two independently established column systems. How to derive the width of each row from its entire set of sounds, how to reconcile the rows, and how that reconciliation translates into Row 1 remain open tasks. No particular Row 1 subdivision is established by this example.
+The fitting operation begins with the two independently established column systems. Statement 30 specifies the intended output: uniform columns that fit both rows, carried into Row 1 for a terminal two-dimensional row-to-column graph. The exact merger rule, the method for determining its column size, and the graph coordinate mapping remain open tasks. No particular Row 1 width is established by this example. Each piece is processed independently; no common grid across different pieces is required. The graph is intended to show the musical low-to-high result, not an arbitrary curve drawn through pitch values.
 
-### Historical mathematical reference — not the Statement 29 translation
+### Historical mathematical reference — not the agreed Statements 29–30 merger
 
 The earlier boundary-union calculation below is valid arithmetic and was reported as verified in the baseline code. It is retained for comparison, not as the agreed definition of the new Row 1 architecture.
 
@@ -541,7 +564,7 @@ Expressive Journey Arc:   [-------- Journey: 1 + 1 (Developmental Groups) ------
   - Row 3 boundaries: $\{0, 3, 6, 9, 12\}$
   - Historical composite boundaries: $\{0, 3, 4, 6, 8, 9, 12\}$
   - Historical composite segment widths: $[3u, 1u, 2u, 2u, 1u, 3u]$
-- **Important Mathematical Observation (Counterexample to Uniformity):** Even when individual contributing rows have perfectly regular groups ($[4, 4, 4]$ and $[3, 3, 3, 3]$), Row 1 is composite and non-uniform ($[3, 1, 2, 2, 1, 3]$) due to the phase mismatch between periods of 4 and 3.
+- **Important Mathematical Observation (Counterexample to Uniformity):** Even when individual contributing rows have perfectly regular groups ($[4, 4, 4]$ and $[3, 3, 3, 3]$), the historical boundary-union annotation is non-uniform ($[3, 1, 2, 2, 1, 3]$) because the periods differ. This annotation is not the uniform merged column structure specified in Statement 30.
 
 ### 4. Preservation of Source Musical Timing
 - Original MIDI ticks and rational tempo maps (`Fraction`) are preserved as exact source ground truth.
@@ -558,10 +581,9 @@ The following questions represent active research hypotheses. They are investiga
 2. **The Terminal Low-to-High Gesture:** The low-to-high sound is a localized terminal punctuation mark at the tail end of an action, signaling arrival at Point B.
 3. **The $1 + 1 = 2$ Arithmetic of Song:** Rows 2 and 3 represent the developmental journey ($1 + 1$ or $a + b$), while the terminal gesture represents the outcome ($= 2$).
 4. **Boolean Outcomes:** Successful arrival at Point B evaluates to `bool = true` (the harvest/win), whereas disappointment evaluates to `bool = false` (a sad note or "aww" sound). The musical manifestation of these outcomes is an open question, not a fixed pitch rule.
-5. **Column-Width-Defined Pacing (Linear vs. Curved):**
-   - *Regular Contributing Rows:* I guess uniform group widths may influence perceived pacing.
-   - *Irregular Contributing Rows:* I guess differences in group durations may influence perceived pacing. The within-row column size remains uniform under Statement 29.
-   - *Separation of Mathematics from Emotion:* Mathematical column variance is measured objectively; whether listeners hear variance as "sad," "curved," or "hesitant" is tested independently through listening trials.
+5. **Row 1 Column Structure and the Terminal 2D Graph (Linear vs. Curved):** The author proposes that the uniform columns resulting from the merger of temporary rows fit into Row 1, and that Row 1's column size differs across pieces of music. The row-to-column relationship at the low-to-high ending is straight in one piece and curved in another. This is the research target, not an established classification rule.
+   - I guess the mapping from fitted columns to graph coordinates may reveal a measurable difference between the two shapes. No axes, formula, or threshold have been agreed yet.
+   - Distinguish geometric shape from musical perception and emotional outcomes; do not assume that irregular durations, column counts or ratios alone establish curvature.
 
 ---
 
@@ -607,10 +629,12 @@ All implementations are subject to strict automated verification and zero-regres
 - [x] Exact fractional sub-unit representation.
 
 ### Stage 2: Two-Row Column-Width Benchmark (Active Design / Next Step)
-- [ ] First establish and test independent uniform column structures for the entire sound set in each temporary row, as specified in Statement 29.
-- [ ] Investigate how the two structures fit together without replacing either one, and how the result translates into Row 1. Do not assume a boundary union or a common uniform width is the solution.
+- [ ] First establish and test independent uniform column structures for the entire sound set in each temporary row, as specified in Statements 29 and 30.
+- [ ] Investigate how the two independently fitted structures merge into uniform columns that fit both rows, and transfer the resulting columns into Row 1. Do not assume a particular GCD, LCM or boundary-union algorithm.
+- [ ] Define the two-dimensional row-to-column graph for the terminal low-to-high result. Compare the Row 1 column sizes and graph shapes of independently processed pieces, without forcing a common cross-song grid.
+- [ ] Establish what makes the graph straight or curved mathematically and test whether the distinction corresponds to the author’s musical observations.
 - [ ] Preserve the historical 4u/3u boundary-union example as a comparison control only. Raw cross-song column counts may depend on duration, tempo, number of rows, and reference unit.
-- [ ] Review the following historical benchmark plan against Statement 29 before implementation.
+- [ ] Review the following historical benchmark plan against Statements 29 and 30 before implementation.
 - [ ] Implement `music_model/group_timing_benchmark.py`:
   - **Experiment A (Mathematical Grouping Control):** Byte-for-byte identical MIDI events; evaluating Row 1 column-width variance under regular vs. irregular grouping annotations.
   - **Experiment B (Audible Musical Timing Control):** Identical pitch sequence and motive; altering actual physical note onsets to evaluate audible pacing differences.
