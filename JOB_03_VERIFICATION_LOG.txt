@@ -1,0 +1,1889 @@
+JOB-03 VERIFICATION LOG: CONSOLIDATED ARCHITECTURAL CORRECTION (D1-D8), RESUBMISSION 2
+(Resubmission 2 = localized completion-predicate correction after ChatGPT's independent audit;
+ architecture section 7.9.  No architectural change.)
+Implementer: Claude Opus 5.5 (PyCharm terminal).  Date: 2026-11-26.  Machine: Windows NT 10.0.26300.
+Interpreter: project .venv, Python 3.15.2.  Working tree: uncommitted on top of f7042f9 (nothing staged).
+
+This log replaces the thirteenth-revision log, which is preserved unchanged inside
+JOB_03_INDEPENDENT_REVIEW.zip and in %USERPROFILE%\JOB_03_REV13_BACKUP_20261126_065003.
+Every block below is copied from an output file produced in this session (the evidence
+workspace %USERPROFILE%\JOB_03_CONSOLIDATED_EVIDENCE\outputs, also inside the review ZIP).
+
+SUMMARY (final runs on the final source; hashes in section 9)
+  Full suite  python -m unittest discover tests -v ........ 272 run: 259 passed, 13 skipped, 0 failed, exit 0
+     206 pre-existing tests ................................ 206 passed (none modified)
+     53 deterministic D1-D8 tests .......................... 53 passed (incl. 9 predicate tests, 672 subtests)
+     13 opt-in real-device tests ........................... skipped in this run (opt-in; see next line)
+  Real device  MUSIC_REAL_AUDIO_TESTS=1 ... (silent WAV) ... 13 passed, 0 skipped, exit 0 (final run)
+     round-down fractional WAVs on the real device ......... complete at exact T (section 3d; pre-fix module stuck)
+     all real-device suite runs this session ............... 11 runs: 10 passed, 1 FAILED (section 3c)
+  Standalone verification scripts .......................... 9 / 9 exit code 0
+  verify_playback_transport.py ............................. 8 / 8 scenarios, 44 / 44 assertions (simulated timing)
+  Defect re-introduction (mutation) check .................. 14 / 14 detected, control passes
+  Original diagnostics vs rev13 / new code ................. section 6
+  %TEMP%\music_play_*.wav ................................... unchanged by the final suite runs (section 8)
+
+Interpretation rules
+  - Simulated backends, the FakeWinmm MCI model and the silent real device establish software and
+    device-coordinate behaviour only.  Nothing here measures sound as heard; the Author's 10 checks
+    are pending (docs/audio_playback_architecture.md Section 5).
+  - Benchmarks are simulated timing / software execution cost, not acoustic measurements.
+
+====================================================================================================
+1. FULL AUTOMATED REGRESSION SUITE (final run, complete output)
+====================================================================================================
+test_8bit_and_16bit_depths (test_audio_and_musicxml.TestAudioImporter.test_8bit_and_16bit_depths)
+Verify support for both 8-bit unsigned and 16-bit signed PCM. ... ok
+test_ambiguous_and_unpitched_signal_handling (test_audio_and_musicxml.TestAudioImporter.test_ambiguous_and_unpitched_signal_handling)
+Verify that ambiguous or unpitched white noise reports pitch_midi as None without crashing. ... ok
+test_authoritative_exact_timing_audio_and_validation (test_audio_and_musicxml.TestAudioImporter.test_authoritative_exact_timing_audio_and_validation)
+Verify authoritative timing retrieval for audio events, JSON roundtrip, and validation. ... ok
+test_defect_08_pitch_estimation_controls (test_audio_and_musicxml.TestAudioImporter.test_defect_08_pitch_estimation_controls)
+Verify DEFECT-08: 10 Hz negative control, DC, 60 Hz, 200 Hz, 440 Hz, and short signals. ... ok
+test_defect_09_truncated_pcm_wav_all_depths (test_audio_and_musicxml.TestAudioImporter.test_defect_09_truncated_pcm_wav_all_depths)
+Verify DEFECT-09: truncated PCM WAV data is rejected cleanly across all bit depths. ... ok
+test_defect_13_high_frequency_pitch_estimation_controls (test_audio_and_musicxml.TestAudioImporter.test_defect_13_high_frequency_pitch_estimation_controls)
+Verify DEFECT-13: 2000 Hz accuracy and clean rejection of out-of-band signals (2400 Hz, 3000 Hz). ... ok
+test_malformed_and_unsupported_wav_rejection (test_audio_and_musicxml.TestAudioImporter.test_malformed_and_unsupported_wav_rejection)
+Verify that corrupted bytes or non-WAV data raise AudioFormatError cleanly. ... ok
+test_multiple_pitch_frequencies_and_amplitudes (test_audio_and_musicxml.TestAudioImporter.test_multiple_pitch_frequencies_and_amplitudes)
+Verify autocorrelation pitch estimation across diverse musical pitches and amplitudes. ... ok
+test_non_window_aligned_and_closely_spaced_events (test_audio_and_musicxml.TestAudioImporter.test_non_window_aligned_and_closely_spaced_events)
+Verify detection of events at arbitrary millisecond offsets and close spacing. ... ok
+test_silence_detection (test_audio_and_musicxml.TestAudioImporter.test_silence_detection)
+Verify that an entirely silent audio buffer produces zero sound events. ... ok
+test_single_sound_event_timing_and_exact_rationals (test_audio_and_musicxml.TestAudioImporter.test_single_sound_event_timing_and_exact_rationals)
+Verify single tone burst detection and preservation of exact rational timing. ... ok
+test_variable_sample_rates (test_audio_and_musicxml.TestAudioImporter.test_variable_sample_rates)
+Verify timing accuracy across 22050 Hz and 44100 Hz audio buffers. ... ok
+test_authoritative_exact_timing_and_json_roundtrip (test_audio_and_musicxml.TestMusicXMLImporter.test_authoritative_exact_timing_and_json_roundtrip)
+Verify authoritative exact rational timing survives JSON serialization/deserialization. ... ok
+test_defect_01_tempo_changes_within_a_measure (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_01_tempo_changes_within_a_measure)
+Verify DEFECT-01: mid-measure tempo changes apply at their exact musical positions. ... ok
+test_defect_02_forward_and_backup_operations (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_02_forward_and_backup_operations)
+Verify DEFECT-02: forward and backup score-position cursor operations. ... ok
+test_defect_03_trailing_rests_in_total_duration (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_03_trailing_rests_in_total_duration)
+Verify DEFECT-03: trailing rests are included in the score's total duration. ... ok
+test_defect_04_exact_fraction_tie_continuity (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_04_exact_fraction_tie_continuity)
+Verify DEFECT-04: exact zero-gap Fraction continuity for ties (rejects 1ms gap coalescing). ... ok
+test_defect_05_three_note_tie_chain_and_continuation (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_05_three_note_tie_chain_and_continuation)
+Verify DEFECT-05: 3-note tie chain coalescing without orphaned stop warnings. ... ok
+test_defect_06_unsupported_notations_and_directions (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_06_unsupported_notations_and_directions)
+Verify DEFECT-06: glissando, ornaments, lyrics, and repeats are disclosed as unfaithful. ... ok
+test_defect_07_invalid_ordinary_note_duration (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_07_invalid_ordinary_note_duration)
+Verify DEFECT-07: ordinary note with duration 0 is rejected/flagged without fabricating 1ms. ... ok
+test_defect_10_shared_score_tempo_between_parts (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_10_shared_score_tempo_between_parts)
+Verify DEFECT-10: multi-part shared score tempo and conflicting tempo diagnosis. ... ok
+test_defect_11_out_of_order_tempo_changes_and_score_timeline (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_11_out_of_order_tempo_changes_and_score_timeline)
+Verify DEFECT-11: ScoreTimeline insertion rebuild and out-of-order XML tempo handling. ... ok
+test_defect_12_unsupported_features_nested_dynamics_metronome_microtonal_invalid_backup (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_12_unsupported_features_nested_dynamics_metronome_microtonal_invalid_backup)
+Verify DEFECT-12: nested dynamics, metronome beat units, microtonal alterations, and invalid backups. ... ok
+test_defect_14_measure_duration_and_reach_controls (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_14_measure_duration_and_reach_controls)
+Verify DEFECT-14: Mid-measure divisions change, backup with shorter voice, pickup measures, and incomplete measures. ... ok
+test_defect_15_invalid_or_unsupported_timing_inputs (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_15_invalid_or_unsupported_timing_inputs)
+Verify DEFECT-15: Non-positive rests/forwards/backups, direction offsets, and transpositions. ... ok
+test_defect_16_incomplete_and_inconsistent_exact_timing (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_16_incomplete_and_inconsistent_exact_timing)
+Verify DEFECT-16: Incomplete, unpaired, malformed, or inconsistent exact rational timing raises ValueError. ... ok
+test_defect_17_invalid_tempo_metadata_validation (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_17_invalid_tempo_metadata_validation)
+Verify DEFECT-17: Non-positive, non-finite, and malformed tempo directives are diagnosed/rejected. ... ok
+test_defect_18_tempo_positions_before_score_beginning (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_18_tempo_positions_before_score_beginning)
+Verify DEFECT-18: Negative offsets/positions before score beginning (beat < 0) are rejected. ... ok
+test_defect_19_complete_exact_rational_timing_metadata_validation (test_audio_and_musicxml.TestMusicXMLImporter.test_defect_19_complete_exact_rational_timing_metadata_validation)
+Verify DEFECT-19: Comprehensive rational timing metadata validation across MusicXML, Audio, and Fallback. ... ok
+test_fractional_timing_triplets (test_audio_and_musicxml.TestMusicXMLImporter.test_fractional_timing_triplets)
+Verify that fractional triplet durations preserve exact rational fractions. ... ok
+test_malformed_xml_rejected (test_audio_and_musicxml.TestMusicXMLImporter.test_malformed_xml_rejected)
+Verify that corrupted XML raises MusicXMLParseError cleanly. ... ok
+test_single_note_timing_and_exact_rationals (test_audio_and_musicxml.TestMusicXMLImporter.test_single_note_timing_and_exact_rationals)
+Verify single note timing and preservation of exact rational milliseconds. ... ok
+test_step_octave_to_midi (test_audio_and_musicxml.TestMusicXMLImporter.test_step_octave_to_midi)
+Verify note name and octave conversion to MIDI pitch numbers. ... ok
+test_tied_notes_coalescing_and_interrupted_ties (test_audio_and_musicxml.TestMusicXMLImporter.test_tied_notes_coalescing_and_interrupted_ties)
+Verify tied note coalescing, and transparent handling of interrupted ties. ... ok
+test_unsupported_notation_disclosure (test_audio_and_musicxml.TestMusicXMLImporter.test_unsupported_notation_disclosure)
+Verify that unsupported features cause is_complete_faithful_representation to become False. ... ok
+test_variable_chord_durations (test_audio_and_musicxml.TestMusicXMLImporter.test_variable_chord_durations)
+Verify chords where individual notes have different durations. ... ok
+test_defect_01_backend_failure_handling_and_status (test_audio_playback.TestDefectRegressions.test_defect_01_backend_failure_handling_and_status)
+DEFECT-01: Verify audio device failures raise AudioBackendError and update status to FAILED. ... ok
+test_defect_02_multitier_timing_and_simulated_delays (test_audio_playback.TestDefectRegressions.test_defect_02_multitier_timing_and_simulated_delays)
+DEFECT-02: Verify multi-tier timing distinguishes software, device, and estimated audible position. ... ok
+test_defect_03_rejection_of_malformed_exact_timing (test_audio_playback.TestDefectRegressions.test_defect_03_rejection_of_malformed_exact_timing)
+DEFECT-03: Verify playback engine strictly rejects malformed rational timing metadata. ... ok
+test_defect_03_synthesizer_uses_rational_timing (test_audio_playback.TestDefectRegressions.test_defect_03_synthesizer_uses_rational_timing)
+DEFECT-03: Verify synthesizer quantizes exact rational timing rather than truncated integers. ... ok
+test_defect_04_pcm_wav_duration_and_trailing_silence (test_audio_playback.TestDefectRegressions.test_defect_04_pcm_wav_duration_and_trailing_silence)
+DEFECT-04: Verify pure PCM WAV without timeline derives duration from frame count and rate. ... ok
+test_defect_04_stale_audio_cleanup_on_new_source (test_audio_playback.TestDefectRegressions.test_defect_04_stale_audio_cleanup_on_new_source)
+DEFECT-04: Verify loading a new source unloads previous audio backend data completely. ... ok
+test_defect_05_continuous_loop_remainder_preservation (test_audio_playback.TestDefectRegressions.test_defect_05_continuous_loop_remainder_preservation)
+DEFECT-05: Verify advancing past loop boundary preserves remainder (1250 ms -> 250 ms). ... ok
+test_defect_05_rapid_pause_resume_cycles (test_audio_playback.TestDefectRegressions.test_defect_05_rapid_pause_resume_cycles)
+DEFECT-05: Verify 50 rapid pause/resume cycles operate deterministically without deadlock. ... ok
+test_defect_05_rejection_of_non_finite_seek_values (test_audio_playback.TestDefectRegressions.test_defect_05_rejection_of_non_finite_seek_values)
+DEFECT-05: Verify seeking to NaN or infinity raises ValueError. ... ok
+test_defect_06_control_a_startup_delay_pause_resume (test_audio_playback.TestDefectRegressions.test_defect_06_control_a_startup_delay_pause_resume)
+DEFECT-06 Control A: Verify 40ms startup delay preserves position across pause and resume. ... ok
+test_defect_06_control_b_device_clock_rate_pause_resume (test_audio_playback.TestDefectRegressions.test_defect_06_control_b_device_clock_rate_pause_resume)
+DEFECT-06 Control B: Verify clock deviation (rate=0.9) preserves position without jump. ... ok
+test_defect_06_control_c_buffer_latency_pause_resume (test_audio_playback.TestDefectRegressions.test_defect_06_control_c_buffer_latency_pause_resume)
+DEFECT-06 Control C: Verify 20ms buffer latency preserves distinct frozen audible and device positions. ... ok
+test_defect_07_buffer_latency_completion_and_loop_continuity (test_audio_playback.TestDefectRegressions.test_defect_07_buffer_latency_completion_and_loop_continuity)
+DEFECT-07: Verify 20ms buffer latency drains smoothly without terminal 21ms cursor jumps. ... ok
+test_defect_07_capped_device_position_with_buffer_latency (test_audio_playback.TestDefectRegressions.test_defect_07_capped_device_position_with_buffer_latency)
+DEFECT-07: Verify device position capped at source duration drains buffer and completes cleanly. ... ok
+test_defect_07_device_aware_end_of_piece_startup_delay (test_audio_playback.TestDefectRegressions.test_defect_07_device_aware_end_of_piece_startup_delay)
+DEFECT-07: Verify device progress governs end-of-piece (40ms startup delay preserves ending). ... ok
+test_defect_07_device_clock_deviations_and_looping (test_audio_playback.TestDefectRegressions.test_defect_07_device_clock_deviations_and_looping)
+DEFECT-07: Verify slow/fast device clock rates and device-governed loop transitions. ... ok
+test_defect_07a_pause_resume_completion_during_capped_buffer_drainage (test_audio_playback.TestDefectRegressions.test_defect_07a_pause_resume_completion_during_capped_buffer_drainage)
+DEFECT-07A: Verify pause, resume, and completion during capped device buffer drainage, including looping. ... ok
+test_defect_08_device_query_failure_and_recovery (test_audio_playback.TestDefectRegressions.test_defect_08_device_query_failure_and_recovery)
+DEFECT-08: Verify device query failure during playback transitions to ERROR without silent software fallback, and recovers cleanly. ... ok
+test_defect_08_failure_state_transitions (test_audio_playback.TestDefectRegressions.test_defect_08_failure_state_transitions)
+DEFECT-08: Verify failed backend operations transition to ERROR, preserve position, and recover. ... ok
+test_defect_08_natural_completion_backend_stop_failure (test_audio_playback.TestDefectRegressions.test_defect_08_natural_completion_backend_stop_failure)
+DEFECT-08: Verify natural completion does NOT suppress backend stop failure and does not fire end callback. ... ok
+test_defect_08_reset_failure_handling (test_audio_playback.TestDefectRegressions.test_defect_08_reset_failure_handling)
+DEFECT-08: Verify reset() maintains ERROR state and position when device stop fails, and recovers on success. ... ok
+test_defect_08_unexpected_missing_device_position (test_audio_playback.TestDefectRegressions.test_defect_08_unexpected_missing_device_position)
+DEFECT-08: Verify unexpected loss of device coordinates (returning None while available) transitions to ERROR. ... ok
+test_defect_08a_combined_missing_position_and_pause_failure (test_audio_playback.TestDefectRegressions.test_defect_08a_combined_missing_position_and_pause_failure)
+DEFECT-08A: Verify combined missing position and backend pause failure avoids UnboundLocalError and notifies. ... ok
+test_defect_08b_invalid_device_position_or_query_exception_during_pause (test_audio_playback.TestDefectRegressions.test_defect_08b_invalid_device_position_or_query_exception_during_pause)
+DEFECT-08B: Verify pause rejects NaN, inf, negative positions, and query exceptions into ERROR state. ... ok
+test_defect_09_single_device_query_and_atomic_snapshot_agreement (test_audio_playback.TestDefectRegressions.test_defect_09_single_device_query_and_atomic_snapshot_agreement)
+DEFECT-09: Verify step_tick acquires single device snapshot; callback, active events, and return agree. ... ok
+test_defect_09a_failed_seek_preserves_consistent_coordinates_and_visual_position (test_audio_playback.TestDefectRegressions.test_defect_09a_failed_seek_preserves_consistent_coordinates_and_visual_position)
+DEFECT-09A: Verify seek failure preserves last valid position across state, callbacks, and active events. ... ok
+test_defect_09b_failed_stop_and_reset_preserve_consistent_coordinates_and_visual_position (test_audio_playback.TestDefectRegressions.test_defect_09b_failed_stop_and_reset_preserve_consistent_coordinates_and_visual_position)
+Verify DEFECT-09B: Failed stop() and reset() preserve last valid coordinate and visual position. ... ok
+test_defect_09c_failed_pause_recalculates_active_events_and_publishes_consistent_snapshot (test_audio_playback.TestDefectRegressions.test_defect_09c_failed_pause_recalculates_active_events_and_publishes_consistent_snapshot)
+Verify DEFECT-09C: Failed pause() recalculates active events and publishes consistent visual snapshot. ... ok
+test_defect_09d_failed_loop_restart_preserves_completed_cycle_and_suppresses_unachieved_remainder (test_audio_playback.TestDefectRegressions.test_defect_09d_failed_loop_restart_preserves_completed_cycle_and_suppresses_unachieved_remainder)
+Verify DEFECT-09D: Failed loop restart preserves completed cycle coordinate and suppresses unachieved remainder. ... ok
+test_defect_09e_failed_replay_preserves_completed_coordinate (test_audio_playback.TestDefectRegressions.test_defect_09e_failed_replay_preserves_completed_coordinate)
+Verify DEFECT-09E: Failed replay preserves completed coordinate instead of prematurely zeroing position. ... ok
+test_defect_09f_seek_in_error_state_recovers_and_maintains_coordinate_agreement (test_audio_playback.TestDefectRegressions.test_defect_09f_seek_in_error_state_recovers_and_maintains_coordinate_agreement)
+Verify DEFECT-09F: Seek in ERROR state recovers consistently and agrees across state, latches, and callbacks. ... ok
+test_defect_09g_pause_at_unprocessed_loop_boundary_preserves_completed_cycle (test_audio_playback.TestDefectRegressions.test_defect_09g_pause_at_unprocessed_loop_boundary_preserves_completed_cycle)
+Verify DEFECT-09G: Pause at unprocessed loop boundary preserves completed cycle coordinate. ... ok
+test_defect_09h_error_recovery_seek_requires_verified_non_playing_backend (test_audio_playback.TestDefectRegressions.test_defect_09h_error_recovery_seek_requires_verified_non_playing_backend)
+Verify DEFECT-09H: Seek in ERROR state requires verified non-playing backend condition before committing PAUSED. ... ok
+test_defect_09i_windows_mci_resume_after_recovery_issues_play_from_recovered_position (test_audio_playback.TestDefectRegressions.test_defect_09i_windows_mci_resume_after_recovery_issues_play_from_recovered_position)
+DEFECT-09I: Verify Windows MCI backend issues play command from recovered coordinate, resolving silent resume no-op. ... ok
+test_defect_10_seek_and_resume_semantics_with_buffer_latency (test_audio_playback.TestDefectRegressions.test_defect_10_seek_and_resume_semantics_with_buffer_latency)
+DEFECT-10: Verify seek/resume with buffer latency maintains consistent coordinates without backward jumps. ... ok
+test_defect_10_seek_stopped_playing_paused_boundaries_and_zero_latency (test_audio_playback.TestDefectRegressions.test_defect_10_seek_stopped_playing_paused_boundaries_and_zero_latency)
+DEFECT-10: Test seek across STOPPED, PLAYING, PAUSED, boundaries, and zero-latency controls. ... ok
+test_defect_10a_loop_restart_source_audio_preservation (test_audio_playback.TestDefectRegressions.test_defect_10a_loop_restart_source_audio_preservation)
+DEFECT-10A: Verify loop restarts at intended source coordinate without skipping source audio. ... ok
+test_01_initial_stopped_state (test_audio_playback.TestDeterministicTransportControls.test_01_initial_stopped_state)
+Control 1: Verify initial state is STOPPED, position is 0, backend not playing. ... ok
+test_02_play_and_transport_advancement (test_audio_playback.TestDeterministicTransportControls.test_02_play_and_transport_advancement)
+Control 2: Verify play() transitions to PLAYING and clock advance moves position. ... ok
+test_03_pause_without_unwanted_advancement (test_audio_playback.TestDeterministicTransportControls.test_03_pause_without_unwanted_advancement)
+Control 3: Verify pause() freezes position and subsequent clock advances do not affect it. ... ok
+test_04_resume_from_exact_position (test_audio_playback.TestDeterministicTransportControls.test_04_resume_from_exact_position)
+Control 4: Verify resume/play from paused state continues from exact paused timestamp. ... ok
+test_05_stop_and_reset_to_zero (test_audio_playback.TestDeterministicTransportControls.test_05_stop_and_reset_to_zero)
+Control 5: Verify stop() resets position to 0 and updates state to STOPPED. ... ok
+test_06_forward_and_backward_seeking (test_audio_playback.TestDeterministicTransportControls.test_06_forward_and_backward_seeking)
+Control 6: Verify seeking forwards and backwards works while playing, paused, or stopped. ... ok
+test_07_exact_event_boundaries_half_open_interval (test_audio_playback.TestDeterministicTransportControls.test_07_exact_event_boundaries_half_open_interval)
+Control 7: Verify half-open interval [t_start, t_end) active event semantics. ... ok
+test_08_simultaneous_polyphony (test_audio_playback.TestDeterministicTransportControls.test_08_simultaneous_polyphony)
+Control 8: Verify multiple concurrent sound events are tracked simultaneously. ... ok
+test_09_loop_boundaries (test_audio_playback.TestDeterministicTransportControls.test_09_loop_boundaries)
+Control 9: Verify loop=True wraps to 0 at end of duration, loop=False stops. ... ok
+test_10_natural_end_of_piece (test_audio_playback.TestDeterministicTransportControls.test_10_natural_end_of_piece)
+Control 10: Verify natural end-of-piece cleanly transitions to STOPPED and fires end callback. ... ok
+test_11_repeated_playback_cycles (test_audio_playback.TestDeterministicTransportControls.test_11_repeated_playback_cycles)
+Control 11: Verify repeated play/pause/seek/stop cycles operate deterministically. ... ok
+test_12_invalid_transport_inputs (test_audio_playback.TestDeterministicTransportControls.test_12_invalid_transport_inputs)
+Control 12: Verify invalid transport inputs are cleanly handled without uncaught exceptions. ... ok
+test_13_missing_audio_backend_graceful_degradation (test_audio_playback.TestDeterministicTransportControls.test_13_missing_audio_backend_graceful_degradation)
+Control 13: Verify NullAudioBackend provides complete functionality without sound hardware. ... ok
+test_14_preservation_of_exact_source_timing_metadata (test_audio_playback.TestDeterministicTransportControls.test_14_preservation_of_exact_source_timing_metadata)
+Control 14: Verify exact rational timing metadata is preserved on sound events. ... ok
+test_15_absence_of_cumulative_transport_drift (test_audio_playback.TestDeterministicTransportControls.test_15_absence_of_cumulative_transport_drift)
+Control 15: Verify absence of cumulative drift across 10,000 small transport steps. ... ok
+test_16_timeline_canvas_playhead_cursor_rendering (test_audio_playback.TestGUIPlaybackIntegration.test_16_timeline_canvas_playhead_cursor_rendering)
+Verify playhead cursor items are created, moved, and retrieved via find_playback_cursor(). ... ok
+test_17_active_sound_bar_highlighting_and_restoration (test_audio_playback.TestGUIPlaybackIntegration.test_17_active_sound_bar_highlighting_and_restoration)
+Verify active sound bars gain highlight outline, and cleanly restore original border on deactivation. ... ok
+test_18_main_window_transport_wiring (test_audio_playback.TestGUIPlaybackIntegration.test_18_main_window_transport_wiring)
+Verify transport controls, buttons, and badges in MusicGUI. ... ok
+test_01_initial_playback_issues_play_command (test_audio_playback.TestWindowsMciCommandControlPath.test_01_initial_playback_issues_play_command)
+Verify initial playback issues the appropriate play command. ... ok
+test_02_pause_and_resume_issue_appropriate_commands (test_audio_playback.TestWindowsMciCommandControlPath.test_02_pause_and_resume_issue_appropriate_commands)
+Verify ordinary pause and resume issue the appropriate commands. ... ok
+test_03_failed_stop_leaves_transport_in_error (test_audio_playback.TestWindowsMciCommandControlPath.test_03_failed_stop_leaves_transport_in_error)
+Verify failed stop leaves the transport in ERROR. ... ok
+test_04_recovery_seek_fails_when_controlled_shutdown_fails (test_audio_playback.TestWindowsMciCommandControlPath.test_04_recovery_seek_fails_when_controlled_shutdown_fails)
+Verify recovery seek fails when controlled shutdown fails. ... ok
+test_05_successful_recovery_performs_stop_and_seek_in_order (test_audio_playback.TestWindowsMciCommandControlPath.test_05_successful_recovery_performs_stop_and_seek_in_order)
+Verify successful recovery performs stop and seek in the correct order. ... ok
+test_06_playback_after_recovery_issues_play_from_recovered_position (test_audio_playback.TestWindowsMciCommandControlPath.test_06_playback_after_recovery_issues_play_from_recovered_position)
+Verify playback after successful recovery issues an actual play command at recovered coordinate. ... ok
+test_07_failed_playback_after_recovery_preserves_error_and_coord (test_audio_playback.TestWindowsMciCommandControlPath.test_07_failed_playback_after_recovery_preserves_error_and_coord)
+Verify failed playback after recovery preserves the valid coordinate and ERROR state. ... ok
+test_08_visual_callbacks_and_active_event_membership_consistency (test_audio_playback.TestWindowsMciCommandControlPath.test_08_visual_callbacks_and_active_event_membership_consistency)
+Verify visual callbacks and active-event membership remain consistent throughout recovery. ... ok
+test_09_nonzero_buffer_latency_source_preservation (test_audio_playback.TestWindowsMciCommandControlPath.test_09_nonzero_buffer_latency_source_preservation)
+Verify nonzero buffer latency and source-coordinate preservation remain intact. ... ok
+test_column_height_aggregation_and_silent_gaps (test_development_profile.TestLowToHighDevelopment.test_column_height_aggregation_and_silent_gaps)
+Verify arithmetic mean across overlapping events and silent column handling. ... ok
+test_deterministic_measurements (test_development_profile.TestLowToHighDevelopment.test_deterministic_measurements)
+Verify calculations produce identical bit-for-bit output across repeated runs. ... ok
+test_duck_flight_arrangement_a_direct_development (test_development_profile.TestLowToHighDevelopment.test_duck_flight_arrangement_a_direct_development)
+Verify Arrangement A (Direct progression) column layout and Row 1 profile. ... ok
+test_duck_flight_arrangement_b_connected_development (test_development_profile.TestLowToHighDevelopment.test_duck_flight_arrangement_b_connected_development)
+Verify Arrangement B (Intermediate connections) column layout and Row 1 profile. ... ok
+test_gui_duck_flight_mode_and_measurement_toggle (test_development_profile.TestLowToHighDevelopment.test_gui_duck_flight_mode_and_measurement_toggle)
+Verify GUI Duck Flight mode and Row 1 measurement toggle (Active Rows vs Dev Profile). ... ok
+test_more_columns_do_not_imply_greater_curvature (test_development_profile.TestLowToHighDevelopment.test_more_columns_do_not_imply_greater_curvature)
+Prove mathematically that having many columns does NOT imply curvature. ... ok
+test_sound_event_height_attributes_and_validation (test_development_profile.TestLowToHighDevelopment.test_sound_event_height_attributes_and_validation)
+Verify height storage, getter helper, and validation on SoundEvent. ... ok
+test_sound_event_identity_and_interval_preservation (test_development_profile.TestLowToHighDevelopment.test_sound_event_identity_and_interval_preservation)
+Verify sound events retain exact interval boundaries and object identity. ... ok
+test_controls_fixed_and_random (test_group_discovery.TestGroupDiscoveryEngine.test_controls_fixed_and_random)
+Test Control 1 (Fixed-Width) and Control 2 (Random Baseline). ... ok
+test_derive_composite_row1_segments (test_group_discovery.TestGroupDiscoveryEngine.test_derive_composite_row1_segments)
+Test composite Row 1 segments derivation from discovered groups. ... ok
+test_empty_reference_scoring_transparency (test_group_discovery.TestGroupDiscoveryEngine.test_empty_reference_scoring_transparency)
+Test transparent handling of negative control where ground truth has 0 internal boundaries. ... ok
+test_evaluation_metrics_precision_recall_f1 (test_group_discovery.TestGroupDiscoveryEngine.test_evaluation_metrics_precision_recall_f1)
+Test evaluation metrics against reference ground truth. ... ok
+test_extract_note_timing_polymorphic (test_group_discovery.TestGroupDiscoveryEngine.test_extract_note_timing_polymorphic)
+Test extraction across SoundEvent, MockNote, and float timings. ... ok
+test_fractional_units_and_sub_unit_detection (test_group_discovery.TestGroupDiscoveryEngine.test_fractional_units_and_sub_unit_detection)
+Test that sub-unit intervals (e.g. 50ms) are NOT rounded down to 0u. ... ok
+test_internal_boundaries_evaluation (test_group_discovery.TestGroupDiscoveryEngine.test_internal_boundaries_evaluation)
+Test evaluating internal boundaries separately from edge boundaries (0 < t < T). ... ok
+test_maximum_cardinality_bipartite_matching (test_group_discovery.TestGroupDiscoveryEngine.test_maximum_cardinality_bipartite_matching)
+Test that bipartite matching finds maximum cardinality where greedy could block. ... ok
+test_monte_carlo_random_baseline (test_group_discovery.TestGroupDiscoveryEngine.test_monte_carlo_random_baseline)
+Test Monte Carlo baseline across multiple seeds. ... ok
+test_sifter_a_breath_rests (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_a_breath_rests)
+Test Sifter A identifies boundaries at rests >= threshold. ... ok
+test_sifter_b_motoric_rhythm_and_negative_case (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_b_motoric_rhythm_and_negative_case)
+Test Sifter B identifies periodic spans and reports negative when non-repeating. ... ok
+test_sifter_c_melodic_contour (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_c_melodic_contour)
+Test Sifter C identifies turning points in melodic contour. ... ok
+test_sifter_d_cross_row_handoffs (test_group_discovery.TestGroupDiscoveryEngine.test_sifter_d_cross_row_handoffs)
+Test Sifter D identifies cross-row entry cues without circular credit. ... ok
+test_timing_diagnostics_silence_overlap_offgrid (test_group_discovery.TestGroupDiscoveryEngine.test_timing_diagnostics_silence_overlap_offgrid)
+Test diagnostic accounting of silence, overlap, and off-grid events. ... ok
+test_two_song_isolation (test_group_discovery.TestGroupDiscoveryEngine.test_two_song_isolation)
+Test that two separate passages processed sequentially do not share state. ... ok
+test_ascending_vs_flat_control_comparison (test_group_units.TestFundamentalGridAndGroupUnits.test_ascending_vs_flat_control_comparison)
+Verify algorithm distinguishes ascending passage from flat control passage. ... ok
+test_combined_boundaries_and_row1_segments (test_group_units.TestFundamentalGridAndGroupUnits.test_combined_boundaries_and_row1_segments)
+Verify combined boundary set and Row 1 segment widths [3, 1, 2, 2, 1, 3]. ... ok
+test_fundamental_grid_cyclic_labels (test_group_units.TestFundamentalGridAndGroupUnits.test_fundamental_grid_cyclic_labels)
+Verify fundamental grid has uniform duration and cyclic 0-9 labels. ... ok
+test_meeting_points_and_boundary_handoffs (test_group_units.TestFundamentalGridAndGroupUnits.test_meeting_points_and_boundary_handoffs)
+Verify Guess C: specific meeting points where sound groups transition. ... ok
+test_row_boundaries_derivation (test_group_units.TestFundamentalGridAndGroupUnits.test_row_boundaries_derivation)
+Verify row boundaries match Statement 18 specification. ... ok
+test_sound_preservation_and_off_grid_precision (test_group_units.TestFundamentalGridAndGroupUnits.test_sound_preservation_and_off_grid_precision)
+Verify float input preservation and exact rational precision. ... ok
+test_statement_18_group_widths (test_group_units.TestFundamentalGridAndGroupUnits.test_statement_18_group_widths)
+Verify Row 2 has 4-unit groups and Row 3 has 3-unit groups. ... ok
+test_two_song_independence (test_group_units.TestFundamentalGridAndGroupUnits.test_two_song_independence)
+Verify two songs can have different fundamental units, cell counts, and boundaries. ... ok
+test_01_gui_opens_groups_mode (test_group_units_gui.TestGroupUnitsGUI.test_01_gui_opens_groups_mode)
+Verify GUI cleanly switches to Statement 18 Fundamental Groups view mode. ... ok
+test_02_fundamental_grid_cells_rendered (test_group_units_gui.TestGroupUnitsGUI.test_02_fundamental_grid_cells_rendered)
+Verify 12 uniform cells are rendered with cyclic 0-9 labels and equal widths. ... ok
+test_03_sound_group_box_geometry_and_counts (test_group_units_gui.TestGroupUnitsGUI.test_03_sound_group_box_geometry_and_counts)
+Verify Row 2 (4u) and Row 3 (3u) sound groups render with exact unit spans. ... ok
+test_04_row1_composite_segments_geometry (test_group_units_gui.TestGroupUnitsGUI.test_04_row1_composite_segments_geometry)
+Verify Row 1 displays 6 composite segments with widths [3, 1, 2, 2, 1, 3] units. ... ok
+test_05_development_trend_curve_nodes (test_group_units_gui.TestGroupUnitsGUI.test_05_development_trend_curve_nodes)
+Verify development trend nodes are horizontally centered and rise in pitch. ... ok
+test_06_flat_control_passage_mode (test_group_units_gui.TestGroupUnitsGUI.test_06_flat_control_passage_mode)
+Verify Flat Control mode displays horizontal trend nodes at identical y-coordinates. ... ok
+test_07_meeting_point_markers_and_highlight_lines (test_group_units_gui.TestGroupUnitsGUI.test_07_meeting_point_markers_and_highlight_lines)
+Verify meeting markers and vertical highlight lines appear at combined boundaries. ... ok
+test_08_song2_independence_toggle (test_group_units_gui.TestGroupUnitsGUI.test_08_song2_independence_toggle)
+Verify Song 2 displays 10 fundamental cells with u = 250 ms and independent groups. ... ok
+test_09_zoom_controls_in_groups_mode (test_group_units_gui.TestGroupUnitsGUI.test_09_zoom_controls_in_groups_mode)
+Verify horizontal zoom in, zoom out, and reset work properly in groups mode. ... ok
+test_10_mode_switching_cleans_group_timeline (test_group_units_gui.TestGroupUnitsGUI.test_10_mode_switching_cleans_group_timeline)
+Verify switching between groups mode and standard modes clears and restores group state. ... ok
+test_11_row1_no_visual_overlap_and_adaptive_text (test_group_units_gui.TestGroupUnitsGUI.test_11_row1_no_visual_overlap_and_adaptive_text)
+Verify pitch text, notes, and development line never overlap, and narrow cells adapt. ... ok
+test_12_unit_0_meeting_badge_no_clipping (test_group_units_gui.TestGroupUnitsGUI.test_12_unit_0_meeting_badge_no_clipping)
+Verify Unit 0 meeting badge is clamped so its left edge is never clipped by the sidebar. ... ok
+test_32_column_stress_test_mode (test_gui_phase2.TestStage2BPhase2GUI.test_32_column_stress_test_mode)
+Verify 32-column layout stress test generates >= 32 columns and renders without error. ... ok
+test_dual_independent_songs_view (test_gui_phase2.TestStage2BPhase2GUI.test_dual_independent_songs_view)
+Verify Dual Independent Songs view displays two songs with separate grids & scrollbars. ... ok
+test_interactive_mode_switching_and_zoom (test_gui_phase2.TestStage2BPhase2GUI.test_interactive_mode_switching_and_zoom)
+Verify switching between all 4 modes and zooming operates cleanly. ... ok
+test_progressive_stage_a_gui_display (test_gui_phase2.TestStage2BPhase2GUI.test_progressive_stage_a_gui_display)
+Verify Stage A GUI: 1 column, Row 1 = [1], Sound A [0, 3000) ms. ... ok
+test_progressive_stage_b_gui_display (test_gui_phase2.TestStage2BPhase2GUI.test_progressive_stage_b_gui_display)
+Verify Stage B GUI: 3 columns, Row 1 = [1, 2, 1], Sound A [0, 3000) preserved. ... ok
+test_progressive_stage_c_gui_display (test_gui_phase2.TestStage2BPhase2GUI.test_progressive_stage_c_gui_display)
+Verify Stage C GUI: 5 columns, Row 1 = [1, 2, 3, 2, 1], Sound A [0, 3000) preserved. ... ok
+test_row_1_placement_at_top_above_temporary_rows (test_gui_phase2.TestStage2BPhase2GUI.test_row_1_placement_at_top_above_temporary_rows)
+Verify Row 1 (Constant Row) is positioned above temporary rows. ... ok
+test_dynamic_dataset_switching (test_gui_smoke.TestGUISmoke.test_dynamic_dataset_switching)
+Verify switching between datasets dynamically updates columns and constant values. ... ok
+test_gui_renders_stage_1_proof (test_gui_smoke.TestGUISmoke.test_gui_renders_stage_1_proof)
+Verify canvas elements for Stage 1 Proof (Events A, B, C). ... ok
+test_sound_bar_spans_multiple_columns_continuously (test_gui_smoke.TestGUISmoke.test_sound_bar_spans_multiple_columns_continuously)
+Verify Sound A [0, 3000) renders as a continuous rectangle spanning Col 0, 1, 2. ... ok
+test_column_proportionality (test_gui_smoke.TestTimelineCoordinates.test_column_proportionality)
+Verify column pixel widths strictly reflect millisecond durations. ... ok
+test_linear_timestamp_mapping (test_gui_smoke.TestTimelineCoordinates.test_linear_timestamp_mapping)
+Verify strict linear 1-to-1 mapping x(t) = x0 + t * s. ... ok
+test_sound_event_span_matches_duration (test_gui_smoke.TestTimelineCoordinates.test_sound_event_span_matches_duration)
+Verify sound event bar pixel width matches (end - start) * scale. ... ok
+test_zoom_scaling (test_gui_smoke.TestTimelineCoordinates.test_zoom_scaling)
+Verify zoom scaling scales pixels_per_ms uniformly without altering proportions. ... ok
+test_active_row_count_diagnostic_preservation (test_master_columns_gui.TestMasterColumnsGUI.test_active_row_count_diagnostic_preservation)
+Verify Row 1 baseline active-row count diagnostic values remain preserved. ... ok
+test_exact_gridline_alignment_across_all_rows (test_master_columns_gui.TestMasterColumnsGUI.test_exact_gridline_alignment_across_all_rows)
+Verify that every master boundary aligns to the exact same x-coordinate across all rows. ... ok
+test_internal_column_dividers_on_continuous_sound_bars (test_master_columns_gui.TestMasterColumnsGUI.test_internal_column_dividers_on_continuous_sound_bars)
+Verify crisp internal column dividers appear over multi-column sound events. ... ok
+test_many_column_orchestral_example (test_master_columns_gui.TestMasterColumnsGUI.test_many_column_orchestral_example)
+Verify that the synthetic orchestral passage renders 20 master columns with aligned gridlines. ... ok
+test_note_name_correctness (test_master_columns_gui.TestMasterColumnsGUI.test_note_name_correctness)
+Verify scientific pitch notation formatting across standard octaves. ... ok
+test_row_1_development_trend_rendering (test_master_columns_gui.TestMasterColumnsGUI.test_row_1_development_trend_rendering)
+Verify Row 1 displays the development trend line when in development mode. ... ok
+test_sound_event_identity_and_duration_preservation (test_master_columns_gui.TestMasterColumnsGUI.test_sound_event_identity_and_duration_preservation)
+Verify that visual dividers NEVER split, clone, or modify SoundEvent objects. ... ok
+test_two_song_independence (test_master_columns_gui.TestMasterColumnsGUI.test_two_song_independence)
+Verify two songs in Dual View maintain independent master column systems. ... ok
+test_variable_width_column_rendering (test_master_columns_gui.TestMasterColumnsGUI.test_variable_width_column_rendering)
+Verify variable-width columns reflect exact durations in pixel proportions. ... ok
+test_coordinate_collapse_minimum_one_millisecond (test_midi_and_passage.TestMidiParsingAndTiming.test_coordinate_collapse_minimum_one_millisecond)
+Verify that extremely short notes (rounding to start_ms == end_ms) are given duration 1 ms. ... ok
+test_malformed_midi_rejection (test_midi_and_passage.TestMidiParsingAndTiming.test_malformed_midi_rejection)
+Verify that corrupt or unsupported MIDI files are cleanly rejected. ... ok
+test_note_on_velocity_zero_acts_as_note_off (test_midi_and_passage.TestMidiParsingAndTiming.test_note_on_velocity_zero_acts_as_note_off)
+Verify that note-on with velocity 0 is treated as note-off. ... ok
+test_polyphonic_and_overlapping_notes (test_midi_and_passage.TestMidiParsingAndTiming.test_polyphonic_and_overlapping_notes)
+Verify overlapping polyphony where two notes sound simultaneously. ... ok
+test_repeated_notes_of_same_pitch (test_midi_and_passage.TestMidiParsingAndTiming.test_repeated_notes_of_same_pitch)
+Verify that repeated notes of the same pitch are matched FIFO. ... ok
+test_running_status_handling (test_midi_and_passage.TestMidiParsingAndTiming.test_running_status_handling)
+Verify that running status byte persistence works correctly. ... ok
+test_tempo_map_exact_rational_arithmetic (test_midi_and_passage.TestMidiParsingAndTiming.test_tempo_map_exact_rational_arithmetic)
+Verify tempo map conversion from ticks to microseconds and milliseconds. ... ok
+test_vlq_read_write (test_midi_and_passage.TestMidiParsingAndTiming.test_vlq_read_write)
+Verify variable-length quantity encoding and decoding for standard MIDI values. ... ok
+test_json_deserialization_validation (test_midi_and_passage.TestReproduciblePassageFormat.test_json_deserialization_validation)
+Verify that malformed JSON passage structures raise ValueError. ... ok
+test_json_roundtrip_fidelity (test_midi_and_passage.TestReproduciblePassageFormat.test_json_roundtrip_fidelity)
+Verify that a SongTimeline round-trips through JSON with identical structure. ... ok
+test_gui_midi_mode_interactive (test_midi_and_passage.TestStage3IntegrationAndGUI.test_gui_midi_mode_interactive)
+Verify Tkinter GUI cleanly switches to MIDI mode and updates summary labels. ... ok
+test_song_independence (test_midi_and_passage.TestStage3IntegrationAndGUI.test_song_independence)
+Verify that two songs imported from the same MIDI bytes do not share state. ... ok
+test_synthetic_orchestral_many_columns (test_midi_and_passage.TestStage3IntegrationAndGUI.test_synthetic_orchestral_many_columns)
+Verify synthetic orchestral fixture produces >= 16 columns and low-to-high progression. ... ok
+test_backend_refuses_cross_thread_commands_with_explicit_error (test_playback_consolidated.TestD1ThreadOwnership.test_backend_refuses_cross_thread_commands_with_explicit_error) ... ok
+test_ordinary_playback_advances_beyond_first_interval_without_263 (test_playback_consolidated.TestD1ThreadOwnership.test_ordinary_playback_advances_beyond_first_interval_without_263) ... ok
+test_pause_halts_device_after_scheduled_updates (test_playback_consolidated.TestD1ThreadOwnership.test_pause_halts_device_after_scheduled_updates) ... ok
+test_query_failure_during_playback_shuts_audio_down (test_playback_consolidated.TestD1ThreadOwnership.test_query_failure_during_playback_shuts_audio_down)
+The original D1 symptom: ERROR while the device kept playing.  Now audio is stopped. ... ok
+test_transport_rejects_lifecycle_calls_from_non_owner_thread (test_playback_consolidated.TestD1ThreadOwnership.test_transport_rejects_lifecycle_calls_from_non_owner_thread) ... ok
+test_case_table_covers_round_up_round_down_and_exact (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_case_table_covers_round_up_round_down_and_exact) ... ok
+test_frame_sweep_22000_to_22150_at_44100 (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_frame_sweep_22000_to_22150_at_44100) ... ok
+test_looping_for_every_case (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_looping_for_every_case) ... ok
+test_natural_completion_for_every_case (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_natural_completion_for_every_case) ... ok
+test_no_premature_completion_without_evidence (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_no_premature_completion_without_evidence) ... ok
+test_nonzero_buffer_latency_completion_and_looping (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_nonzero_buffer_latency_completion_and_looping) ... ok
+test_predicate_equals_previous_rounding_where_previous_was_well_defined (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_predicate_equals_previous_rounding_where_previous_was_well_defined)
+For T that is a multiple of 1e-6 ms, p >= T - 5e-7 accepts exactly what round(p, 6) >= T did. ... ok
+test_progress_within_tolerance_below_end_completes_and_loops_from_zero (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_progress_within_tolerance_below_end_completes_and_loops_from_zero) ... ok
+test_simulated_device_capped_exactly_at_fractional_end_completes (test_playback_consolidated.TestD2CompletionPredicateAcrossDurations.test_simulated_device_capped_exactly_at_fractional_end_completes) ... ok
+test_exact_1000_ms_control_completes (test_playback_consolidated.TestD2FractionalDurationCompletion.test_exact_1000_ms_control_completes) ... ok
+test_fractional_22070_frame_wav_completes_at_exact_duration (test_playback_consolidated.TestD2FractionalDurationCompletion.test_fractional_22070_frame_wav_completes_at_exact_duration) ... ok
+test_fractional_duration_looping (test_playback_consolidated.TestD2FractionalDurationCompletion.test_fractional_duration_looping) ... ok
+test_timeline_longer_than_media_continues_as_silent_tail (test_playback_consolidated.TestD2FractionalDurationCompletion.test_timeline_longer_than_media_continues_as_silent_tail) ... ok
+test_unexpected_early_device_stop_is_an_error_not_completion (test_playback_consolidated.TestD2FractionalDurationCompletion.test_unexpected_early_device_stop_is_an_error_not_completion) ... ok
+test_backend_pause_on_self_stopped_device_without_prior_observation (test_playback_consolidated.TestD3DeviceStateReconciliation.test_backend_pause_on_self_stopped_device_without_prior_observation)
+Backend-level guard: pause() checks the device mode itself (no 302). ... ok
+test_flags_reconcile_after_natural_end_and_no_302_is_sent (test_playback_consolidated.TestD3DeviceStateReconciliation.test_flags_reconcile_after_natural_end_and_no_302_is_sent) ... ok
+test_resume_refuses_to_send_302_when_device_not_paused (test_playback_consolidated.TestD3DeviceStateReconciliation.test_resume_refuses_to_send_302_when_device_not_paused) ... ok
+test_seek_beyond_device_length_is_clamped_not_282 (test_playback_consolidated.TestD3DeviceStateReconciliation.test_seek_beyond_device_length_is_clamped_not_282) ... ok
+test_seek_while_paused_leaves_device_stopped_and_resume_uses_play_from (test_playback_consolidated.TestD3DeviceStateReconciliation.test_seek_while_paused_leaves_device_stopped_and_resume_uses_play_from) ... ok
+test_seek_while_playing_restarts_device (test_playback_consolidated.TestD3DeviceStateReconciliation.test_seek_while_playing_restarts_device) ... ok
+test_obsolete_callback_cannot_restart_stopped_or_superseded_transport (test_playback_consolidated.TestD4D6Scheduling.test_obsolete_callback_cannot_restart_stopped_or_superseded_transport) ... ok
+test_rapid_pause_play_keeps_at_most_one_pending_update (test_playback_consolidated.TestD4D6Scheduling.test_rapid_pause_play_keeps_at_most_one_pending_update) ... ok
+test_replay_immediately_after_completion (test_playback_consolidated.TestD4D6Scheduling.test_replay_immediately_after_completion) ... ok
+test_replay_inside_end_callback_at_natural_completion (test_playback_consolidated.TestD4D6Scheduling.test_replay_inside_end_callback_at_natural_completion) ... ok
+test_tk_scheduler_drives_transport_on_tk_thread (test_playback_consolidated.TestD4D6Scheduling.test_tk_scheduler_drives_transport_on_tk_thread) ... ok
+test_every_snapshot_is_internally_coherent_and_ordered (test_playback_consolidated.TestD5CoherentSnapshots.test_every_snapshot_is_internally_coherent_and_ordered) ... ok
+test_position_getter_does_not_silently_fall_back (test_playback_consolidated.TestD5CoherentSnapshots.test_position_getter_does_not_silently_fall_back) ... ok
+test_reentrant_publication_is_rejectable_by_sequence (test_playback_consolidated.TestD5CoherentSnapshots.test_reentrant_publication_is_rejectable_by_sequence)
+A callback that changes the transport makes later callbacks see a newer snapshot ... ok
+test_snapshots_are_immutable (test_playback_consolidated.TestD5CoherentSnapshots.test_snapshots_are_immutable) ... ok
+test_tick_callback_payload_comes_from_one_snapshot (test_playback_consolidated.TestD5CoherentSnapshots.test_tick_callback_payload_comes_from_one_snapshot) ... ok
+test_application_shutdown_closes_transport_and_cancels_updates (test_playback_consolidated.TestD7GuiSnapshotRendering.test_application_shutdown_closes_transport_and_cancels_updates) ... ok
+test_failed_operation_keeps_preserved_coordinate_on_screen (test_playback_consolidated.TestD7GuiSnapshotRendering.test_failed_operation_keeps_preserved_coordinate_on_screen) ... ok
+test_natural_completion_and_stop (test_playback_consolidated.TestD7GuiSnapshotRendering.test_natural_completion_and_stop) ... ok
+test_seek_while_stopped_and_paused (test_playback_consolidated.TestD7GuiSnapshotRendering.test_seek_while_stopped_and_paused) ... ok
+test_source_replacement_resets_view (test_playback_consolidated.TestD7GuiSnapshotRendering.test_source_replacement_resets_view) ... ok
+test_stale_and_foreign_snapshots_are_rejected (test_playback_consolidated.TestD7GuiSnapshotRendering.test_stale_and_foreign_snapshots_are_rejected) ... ok
+test_destroy_removes_the_application_temp_wav (test_playback_consolidated.TestD8GuiTeardownReleasesItsOwnTempWav.test_destroy_removes_the_application_temp_wav) ... ok
+test_close_while_playing_stops_then_closes (test_playback_consolidated.TestD8ResourceCleanup.test_close_while_playing_stops_then_closes) ... ok
+test_failed_close_is_reported_and_retryable (test_playback_consolidated.TestD8ResourceCleanup.test_failed_close_is_reported_and_retryable) ... ok
+test_failed_open_cleans_up_partial_initialization (test_playback_consolidated.TestD8ResourceCleanup.test_failed_open_cleans_up_partial_initialization) ... ok
+test_load_replace_and_close_release_device_and_temp_files (test_playback_consolidated.TestD8ResourceCleanup.test_load_replace_and_close_release_device_and_temp_files) ... ok
+test_fake_reproduces_d1_d2_d3_device_facts (test_playback_consolidated.TestFakeDriverReproducesRecordedDeviceFacts.test_fake_reproduces_d1_d2_d3_device_facts) ... ok
+test_boundaries_adjacent_overlapping_silence_and_completion (test_playback_consolidated.TestHalfOpenMembershipDuringPlayback.test_boundaries_adjacent_overlapping_silence_and_completion) ... ok
+test_exact_rational_boundaries_are_respected (test_playback_consolidated.TestHalfOpenMembershipDuringPlayback.test_exact_rational_boundaries_are_respected) ... ok
+test_closed_transport_refuses_operations (test_playback_consolidated.TestTransactionsAndRecovery.test_closed_transport_refuses_operations) ... ok
+test_failed_pause_shuts_audio_down_and_preserves_coordinate (test_playback_consolidated.TestTransactionsAndRecovery.test_failed_pause_shuts_audio_down_and_preserves_coordinate) ... ok
+test_failed_seek_while_playing_never_publishes_destination (test_playback_consolidated.TestTransactionsAndRecovery.test_failed_seek_while_playing_never_publishes_destination) ... ok
+test_secondary_shutdown_failure_is_reported_not_swallowed (test_playback_consolidated.TestTransactionsAndRecovery.test_secondary_shutdown_failure_is_reported_not_swallowed) ... Controlled audio shutdown after transport failure failed: AudioBackendError("Failed to stop audio device 'vmm_audio_1640102104880': MCI command failed 'stop vmm_audio_1640102104880': The specified device is not open or is not recognized by MCI. (code 263)")
+ok
+test_r1_ordinary_playback_advances_without_mci_263 (test_playback_windows_device.TestRealMciDevice.test_r1_ordinary_playback_advances_without_mci_263) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r2_fractional_22070_frame_wav_completes (test_playback_windows_device.TestRealMciDevice.test_r2_fractional_22070_frame_wav_completes) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r2b_fractional_22071_frame_wav_rounding_down_completes (test_playback_windows_device.TestRealMciDevice.test_r2b_fractional_22071_frame_wav_rounding_down_completes) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r2c_fractional_48khz_wav_rounding_down_completes (test_playback_windows_device.TestRealMciDevice.test_r2c_fractional_48khz_wav_rounding_down_completes) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r3_exact_1000ms_control_completes (test_playback_windows_device.TestRealMciDevice.test_r3_exact_1000ms_control_completes) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r4_pause_halts_device_and_resume_continues (test_playback_windows_device.TestRealMciDevice.test_r4_pause_halts_device_and_resume_continues) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r5_seek_while_paused_then_play (test_playback_windows_device.TestRealMciDevice.test_r5_seek_while_paused_then_play) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r6_fractional_duration_looping (test_playback_windows_device.TestRealMciDevice.test_r6_fractional_duration_looping) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r6b_rounding_down_fractional_duration_looping (test_playback_windows_device.TestRealMciDevice.test_r6b_rounding_down_fractional_duration_looping) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r7_cross_thread_command_is_refused_device_unaffected (test_playback_windows_device.TestRealMciDevice.test_r7_cross_thread_command_is_refused_device_unaffected) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r8_close_releases_device_and_temp_file (test_playback_windows_device.TestRealMciDevice.test_r8_close_releases_device_and_temp_file) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_r9_source_replacement_releases_previous_device (test_playback_windows_device.TestRealMciDevice.test_r9_source_replacement_releases_previous_device) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_gui_end_to_end_playback_completion_and_teardown (test_playback_windows_device.TestRealMciThroughMusicGUI.test_gui_end_to_end_playback_completion_and_teardown) ... skipped 'real-device tests are opt-in: set MUSIC_REAL_AUDIO_TESTS=1 (Windows only)'
+test_deterministic_boundary_derivation (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_deterministic_boundary_derivation)
+Verify boundary derivation produces identical output regardless of run count. ... ok
+test_duplicate_ids_rejected_within_same_song (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_duplicate_ids_rejected_within_same_song)
+Verify duplicate event IDs inside the same song raise ValueError. ... ok
+test_empty_song_behavior (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_empty_song_behavior)
+Verify empty song returns empty boundaries and 0 columns without crashing. ... ok
+test_id_isolation_between_songs (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_id_isolation_between_songs)
+Verify identical row_ids and event_ids in different songs do not collide. ... ok
+test_independent_song_timelines_no_grid_sharing (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_independent_song_timelines_no_grid_sharing)
+Verify two songs calculate columns independently without sharing grids or state. ... ok
+test_progressive_refitting_sequence (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_progressive_refitting_sequence)
+Verify the exact 3-stage progressive refitting sequence from the specification. ... ok
+test_refitter_intermediate_inspection (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_refitter_intermediate_inspection)
+Verify every intermediate refitting state can be inspected individually. ... ok
+test_sound_event_identity_and_duration_preservation (test_song_timeline.TestSongTimelineAndProgressiveRefitting.test_sound_event_identity_and_duration_preservation)
+Verify Sound A retains its exact interval and object identity throughout all refits. ... ok
+test_01_one_event_one_column (test_timeline_model.TestMusicTimelineModel.test_01_one_event_one_column)
+1. One event creates exactly one time column covering its interval. ... ok
+test_02_full_abc_mathematical_proof (test_timeline_model.TestMusicTimelineModel.test_02_full_abc_mathematical_proof)
+2. Full A/B/C mathematical proof from Stage 0. ... ok
+test_03_multiple_sounds_simultaneous_starts (test_timeline_model.TestMusicTimelineModel.test_03_multiple_sounds_simultaneous_starts)
+3. Multiple sounds beginning simultaneously create one shared start boundary. ... ok
+test_04_multiple_sounds_simultaneous_ends (test_timeline_model.TestMusicTimelineModel.test_04_multiple_sounds_simultaneous_ends)
+4. Multiple sounds ending simultaneously create one shared end boundary. ... ok
+test_05_two_sounds_touching_without_overlapping (test_timeline_model.TestMusicTimelineModel.test_05_two_sounds_touching_without_overlapping)
+5. Two sounds touching at a boundary [0, 1000) and [1000, 2000) do not overlap. ... ok
+test_06_silent_gap_between_sounds (test_timeline_model.TestMusicTimelineModel.test_06_silent_gap_between_sounds)
+6. A gap between sounds creates a valid column with zero active rows. ... ok
+test_07_multiple_events_same_temporary_row (test_timeline_model.TestMusicTimelineModel.test_07_multiple_events_same_temporary_row)
+7. Multiple sequential sound events can reside in the same temporary row. ... ok
+test_08_overlapping_events_within_same_row (test_timeline_model.TestMusicTimelineModel.test_08_overlapping_events_within_same_row)
+8. Multiple events within the same row may overlap without error. ... ok
+test_09_duplicate_event_ids_rejected (test_timeline_model.TestMusicTimelineModel.test_09_duplicate_event_ids_rejected)
+9. Duplicate event IDs are rejected both in TemporaryRow and in MusicTimeline. ... ok
+test_10_negative_start_time_rejected (test_timeline_model.TestMusicTimelineModel.test_10_negative_start_time_rejected)
+10. Negative start time raises ValueError. ... ok
+test_11_zero_duration_sound_rejected (test_timeline_model.TestMusicTimelineModel.test_11_zero_duration_sound_rejected)
+11. Zero-duration sound (start == end) raises ValueError. ... ok
+test_12_end_time_before_start_time_rejected (test_timeline_model.TestMusicTimelineModel.test_12_end_time_before_start_time_rejected)
+12. End time before start time raises ValueError. ... ok
+test_13_invalid_or_non_finite_timestamps_rejected (test_timeline_model.TestMusicTimelineModel.test_13_invalid_or_non_finite_timestamps_rejected)
+13. Non-finite or non-integer timestamps raise ValueError. ... ok
+test_14_variable_width_columns (test_timeline_model.TestMusicTimelineModel.test_14_variable_width_columns)
+14. Variable-width columns reflect event boundaries with different durations. ... ok
+test_15_sound_spanning_multiple_columns_not_duplicated (test_timeline_model.TestMusicTimelineModel.test_15_sound_spanning_multiple_columns_not_duplicated)
+15. A long sound spanning several columns remains a single object in the row. ... ok
+test_16_reproducible_output_ordering (test_timeline_model.TestMusicTimelineModel.test_16_reproducible_output_ordering)
+16. Output ordering is deterministic and independent of insertion order. ... ok
+test_17_empty_timeline_behavior (test_timeline_model.TestMusicTimelineModel.test_17_empty_timeline_behavior)
+17. Empty timeline returns empty boundaries, columns, and constant row without error. ... ok
+test_18_distinct_active_row_count_vs_active_event_count (test_timeline_model.TestMusicTimelineModel.test_18_distinct_active_row_count_vs_active_event_count)
+18. Explicitly verify distinct active row count vs event count. ... ok
+test_19_mismatched_row_id_rejected (test_timeline_model.TestMusicTimelineModel.test_19_mismatched_row_id_rejected)
+19. TemporaryRow rejects sound event with mismatched row_id. ... ok
+
+----------------------------------------------------------------------
+Ran 272 tests in 49.181s
+
+OK (skipped=13)
+
+Command: python -m unittest discover tests -v
+Interpreter: Python 3.15.2 (project .venv)
+Started: 2026-11-26T08:01:37-08:00  Exit code: 0
+[temp-file accounting] %TEMP%\music_play_*.wav before=489 after=489
+
+Per-module test counts parsed from the output above:
+  test_audio_and_musicxml              36
+  test_audio_playback                  64
+  test_development_profile             8
+  test_group_discovery                 15
+  test_group_units                     8
+  test_group_units_gui                 12
+  test_gui_phase2                      7
+  test_gui_smoke                       7
+  test_master_columns_gui              9
+  test_midi_and_passage                13
+  test_playback_consolidated           53
+  test_playback_windows_device         13
+  test_song_timeline                   8
+  test_timeline_model                  19
+  total                                272
+  Pre-existing modules sum to 206 (all except test_playback_consolidated and test_playback_windows_device).
+
+====================================================================================================
+2. EXISTING TESTS: MODIFICATIONS
+====================================================================================================
+No existing test file was modified.  Verified by byte comparison against the thirteenth-revision
+backup (tests/test_audio_playback.py, tests/test_group_discovery.py identical) and `git diff HEAD`
+on every tracked test file (no differences).  verify_playback_transport.py: only the printed wording
+of the docstring and the Scenario 6 / 7 PASS lines changed; `assert` lines and assertion counters are
+identical (diff-verified).
+
+====================================================================================================
+3a. WINDOWS REAL-DEVICE INTEGRATION TESTS (final run, complete output)
+====================================================================================================
+test_r1_ordinary_playback_advances_without_mci_263 (tests.test_playback_windows_device.TestRealMciDevice.test_r1_ordinary_playback_advances_without_mci_263) ... [measure] R1 ticks=26 last_published=388.0ms device_now=390ms wall_since_play=424.7ms device-published=2.0ms
+[measure] R1 update interval ms: mean=15.25 max=15.42; step_tick duration ms: mean=0.229 max=0.413; independent Tk 1 ms probe lateness max=16.2ms
+ok
+test_r2_fractional_22070_frame_wav_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2_fractional_22070_frame_wav_completes) ... invalid command name "2067474657280probe"
+    while executing
+"2067474657280probe"
+    ("after" script)
+[measure] frames=22070@44100: exact=500.45351473922904ms (round-6 up) device_length=500ms state=STOPPED final=500.45351473922904 completion wall time - exact duration = 76.2ms
+ok
+test_r2b_fractional_22071_frame_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2b_fractional_22071_frame_wav_rounding_down_completes) ... [measure] frames=22071@44100: exact=500.4761904761905ms (round-6 down) device_length=500ms state=STOPPED final=500.4761904761905 completion wall time - exact duration = 75.9ms
+ok
+test_r2c_fractional_48khz_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2c_fractional_48khz_wav_rounding_down_completes) ... [measure] frames=4801@48000: exact=100.02083333333333ms (round-6 down) device_length=100ms state=STOPPED final=100.02083333333333 completion wall time - exact duration = 87.9ms
+ok
+test_r3_exact_1000ms_control_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r3_exact_1000ms_control_completes) ... [measure] frames=44100@44100: exact=1000.0ms (round-6 exact) device_length=1000ms state=STOPPED final=1000.0 completion wall time - exact duration = 58.7ms
+ok
+test_r4_pause_halts_device_and_resume_continues (tests.test_playback_windows_device.TestRealMciDevice.test_r4_pause_halts_device_and_resume_continues) ... [measure] R4 paused transport=304.0ms device-after-pause=321ms (device coordinate step across 'pause' = 17.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=304.0ms, first changed value=323.0ms (forward step at resume = 19.0ms)
+ok
+test_r5_seek_while_paused_then_play (tests.test_playback_windows_device.TestRealMciDevice.test_r5_seek_while_paused_then_play) ... [measure] R5 after seek(2000.4)+play+200ms: transport=2191.0ms device=2192ms
+ok
+test_r6_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6_fractional_duration_looping) ... [measure] R6 loops=3 ticks=106; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [76.2, 75.6, 79.1] ms
+ok
+test_r6b_rounding_down_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6b_rounding_down_fractional_duration_looping) ... [measure] R6b 22071 frames: loops=3 errors=0 state=PLAYING
+ok
+test_r7_cross_thread_command_is_refused_device_unaffected (tests.test_playback_windows_device.TestRealMciDevice.test_r7_cross_thread_command_is_refused_device_unaffected) ... ok
+test_r8_close_releases_device_and_temp_file (tests.test_playback_windows_device.TestRealMciDevice.test_r8_close_releases_device_and_temp_file) ... ok
+test_r9_source_replacement_releases_previous_device (tests.test_playback_windows_device.TestRealMciDevice.test_r9_source_replacement_releases_previous_device) ... ok
+test_gui_end_to_end_playback_completion_and_teardown (tests.test_playback_windows_device.TestRealMciThroughMusicGUI.test_gui_end_to_end_playback_completion_and_teardown) ... [measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.28ms max=1.48ms (n=523)
+ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 11.007s
+
+OK
+
+Command: MUSIC_REAL_AUDIO_TESTS=1 python -m unittest tests.test_playback_windows_device -v
+Started: 2026-11-26T08:02:27-08:00  Exit code: 0   Device: real Windows MCI waveaudio, SILENT PCM WAV only
+[temp-file accounting] %TEMP%\music_play_*.wav before=489 after=489
+
+====================================================================================================
+3b. REAL-DEVICE SUITE: FIVE CONSECUTIVE REPETITIONS (measurements and exit codes)
+====================================================================================================
+===== repetition 1 2026-11-26T07:39:16-08:00 =====
+[measure] R1 ticks=25 last_published=374.0ms device_now=389ms wall_since_play=426.4ms device-published=15.0ms
+[measure] R1 update interval ms: mean=15.28 max=15.57; step_tick duration ms: mean=0.248 max=0.403; independent Tk 1 ms probe lateness max=17.2ms
+[measure] frames=22070: exact=500.453515ms device_length=500ms completion wall time - exact duration = 78.6ms
+[measure] frames=44100: exact=1000.000000ms device_length=1000ms completion wall time - exact duration = 49.1ms
+[measure] R4 paused transport=303.0ms device-after-pause=321ms (device coordinate step across 'pause' = 18.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=303.0ms, first changed value=322.0ms (forward step at resume = 19.0ms)
+[measure] R5 after seek(2000.4)+play+200ms: transport=2191.0ms device=2192ms
+[measure] R6 loops=3 ticks=106; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [79.5, 83.1, 86.4] ms
+[measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.47ms max=2.25ms (n=524)
+[exit code: 0]
+===== repetition 2 2026-11-26T07:39:24-08:00 =====
+[measure] R1 ticks=25 last_published=375.0ms device_now=390ms wall_since_play=422.1ms device-published=15.0ms
+[measure] R1 update interval ms: mean=15.33 max=15.70; step_tick duration ms: mean=0.301 max=0.674; independent Tk 1 ms probe lateness max=16.7ms
+[measure] frames=22070: exact=500.453515ms device_length=500ms completion wall time - exact duration = 80.1ms
+[measure] frames=44100: exact=1000.000000ms device_length=1000ms completion wall time - exact duration = 59.7ms
+[measure] R4 paused transport=303.0ms device-after-pause=321ms (device coordinate step across 'pause' = 18.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=303.0ms, first changed value=324.0ms (forward step at resume = 21.0ms)
+[measure] R5 after seek(2000.4)+play+200ms: transport=2192.0ms device=2193ms
+[measure] R6 loops=3 ticks=106; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [80.0, 76.6, 80.1] ms
+[measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.34ms max=3.15ms (n=524)
+[exit code: 0]
+===== repetition 3 2026-11-26T07:39:33-08:00 =====
+[measure] R1 ticks=26 last_published=391.0ms device_now=391ms wall_since_play=423.4ms device-published=0.0ms
+[measure] R1 update interval ms: mean=15.30 max=15.35; step_tick duration ms: mean=0.273 max=0.387; independent Tk 1 ms probe lateness max=18.0ms
+[measure] frames=22070: exact=500.453515ms device_length=500ms completion wall time - exact duration = 75.8ms
+[measure] frames=44100: exact=1000.000000ms device_length=1000ms completion wall time - exact duration = 62.3ms
+[measure] R4 paused transport=301.0ms device-after-pause=321ms (device coordinate step across 'pause' = 20.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=301.0ms, first changed value=321.0ms (forward step at resume = 20.0ms)
+[measure] R5 after seek(2000.4)+play+200ms: transport=2176.0ms device=2191ms
+[measure] R6 loops=3 ticks=106; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [79.4, 79.7, 80.4] ms
+[measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.48ms max=1.38ms (n=522)
+[exit code: 0]
+===== repetition 4 2026-11-26T07:39:41-08:00 =====
+[measure] R1 ticks=25 last_published=379.0ms device_now=390ms wall_since_play=423.2ms device-published=11.0ms
+[measure] R1 update interval ms: mean=15.29 max=15.66; step_tick duration ms: mean=0.266 max=0.635; independent Tk 1 ms probe lateness max=22.3ms
+[measure] frames=22070: exact=500.453515ms device_length=500ms completion wall time - exact duration = 78.2ms
+[measure] frames=44100: exact=1000.000000ms device_length=1000ms completion wall time - exact duration = 75.3ms
+[measure] R4 paused transport=303.0ms device-after-pause=321ms (device coordinate step across 'pause' = 18.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=303.0ms, first changed value=322.0ms (forward step at resume = 19.0ms)
+[measure] R5 after seek(2000.4)+play+200ms: transport=2178.0ms device=2193ms
+[measure] R6 loops=3 ticks=107; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [75.7, 76.0, 77.1] ms
+[measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.24ms max=1.13ms (n=524)
+[exit code: 0]
+===== repetition 5 2026-11-26T07:39:49-08:00 =====
+[measure] R1 ticks=26 last_published=387.0ms device_now=390ms wall_since_play=421.0ms device-published=3.0ms
+[measure] R1 update interval ms: mean=15.25 max=15.57; step_tick duration ms: mean=0.229 max=0.537; independent Tk 1 ms probe lateness max=15.2ms
+[measure] frames=22070: exact=500.453515ms device_length=500ms completion wall time - exact duration = 79.2ms
+[measure] frames=44100: exact=1000.000000ms device_length=1000ms completion wall time - exact duration = 48.6ms
+[measure] R4 paused transport=301.0ms device-after-pause=321ms (device coordinate step across 'pause' = 20.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=301.0ms, first changed value=321.0ms (forward step at resume = 20.0ms)
+[measure] R5 after seek(2000.4)+play+200ms: transport=2193.0ms device=2193ms
+[measure] R6 loops=3 ticks=106; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [77.3, 77.2, 78.0] ms
+[measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.28ms max=1.06ms (n=524)
+[exit code: 0]
+
+====================================================================================================
+3c. REAL-DEVICE SUITE: THE ONE FAILED RUN (2026-11-26T07:36, preserved complete in outputs/)
+====================================================================================================
+test_r1_ordinary_playback_advances_without_mci_263 ... FAIL
+test_r2_fractional_22070_frame_wav_completes ... [measure] frames=22070: exact=500.453515ms device_length=500ms completion wall time - exact duration = 367.6ms
+test_r3_exact_1000ms_control_completes ... [measure] frames=44100: exact=1000.000000ms device_length=1000ms completion wall time - exact duration = 242.5ms
+test_r4_pause_halts_device_and_resume_continues ... [measure] R4 paused transport=300.0ms device-after-pause=321ms (device coordinate step across 'pause' = 21.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=300.0ms, first changed value=334.0ms (forward step at resume = 34.0ms)
+test_r5_seek_while_paused_then_play ... [measure] R5 after seek(2000.4)+play+200ms: transport=2192.0ms device=2193ms
+test_r6_fractional_duration_looping ... FAIL
+test_r7_cross_thread_command_is_refused_device_unaffected ... ok
+test_r8_close_releases_device_and_temp_file ... ok
+test_r9_source_replacement_releases_previous_device ... ok
+test_gui_end_to_end_playback_completion_and_teardown ... [measure] R10 GUI: snapshots rendered=17, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.93ms max=51.93ms (n=209)
+FAIL: test_r1_ordinary_playback_advances_without_mci_263 (tests.test_playback_windows_device.TestRealMciDevice.test_r1_ordinary_playback_advances_without_mci_263)
+AssertionError: 8 not greater than 10
+FAIL: test_r6_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6_fractional_duration_looping)
+AssertionError: 2 not greater than or equal to 3
+Ran 10 tests in 11.924s
+FAILED (failures=2)
+[temp-file accounting] %TEMP%\music_play_*.wav before=489 after=489
+
+Analysis: in this run every timing degraded 4-6x simultaneously (8 updates in 400 ms instead of ~25,
+completion detected 242-368 ms late instead of 43-92 ms, Tk timer lateness up to 52 ms).  Two
+performance thresholds failed (R1 >= 10 updates; R6 >= 3 loops).  No correctness assertion that
+executed failed.  Identical code passed 5/5 immediate repetitions (3b) and the final run (3a); the
+instrumented diagnostic diag_r1_timing.py showed step_tick < 1 ms and 15.2 ms update intervals.
+I guess external CPU / audio-subsystem load (pycharm64 was the dominant CPU consumer) - not proven.
+The thresholds were kept; R1/R6 now print measurements before asserting.
+
+====================================================================================================
+3d. REAL DEVICE: ROUND-DOWN FRACTIONAL DURATIONS, PRE-FIX (RESUBMISSION 1) MODULE vs FIXED MODULE
+====================================================================================================
+=== NEGATIVE BASELINE: consolidated R1 module (before this fix) ===
+module: %TEMP%\scratch\r1_tree\music_gui\audio_playback.py
+22070@44100 T=500.45351473922904 round6=up/exact loop=False: state=STOPPED pos=500.45351473922904 end_callbacks=1 loop_restarts=0
+22070@44100 T=500.45351473922904 round6=up/exact loop=True: state=PLAYING pos=332.0 end_callbacks=0 loop_restarts=2
+22071@44100 T=500.4761904761905 round6=down loop=False: state=PLAYING pos=500.4761904761905 end_callbacks=0 loop_restarts=0
+22071@44100 T=500.4761904761905 round6=down loop=True: state=PLAYING pos=500.4761904761905 end_callbacks=0 loop_restarts=0
+4801@48000 T=100.02083333333333 round6=down loop=False: state=PLAYING pos=100.02083333333333 end_callbacks=0 loop_restarts=0
+4801@48000 T=100.02083333333333 round6=down loop=True: state=PLAYING pos=100.02083333333333 end_callbacks=0 loop_restarts=0
+=== FIXED: current project ===
+module: <project>\music_gui\audio_playback.py
+22070@44100 T=500.45351473922904 round6=up/exact loop=False: state=STOPPED pos=500.45351473922904 end_callbacks=1 loop_restarts=0
+22070@44100 T=500.45351473922904 round6=up/exact loop=True: state=PLAYING pos=334.0 end_callbacks=0 loop_restarts=2
+22071@44100 T=500.4761904761905 round6=down loop=False: state=STOPPED pos=500.4761904761905 end_callbacks=1 loop_restarts=0
+22071@44100 T=500.4761904761905 round6=down loop=True: state=PLAYING pos=347.0 end_callbacks=0 loop_restarts=2
+4801@48000 T=100.02083333333333 round6=down loop=False: state=STOPPED pos=100.02083333333333 end_callbacks=1 loop_restarts=0
+4801@48000 T=100.02083333333333 round6=down loop=True: state=PLAYING pos=20.0 end_callbacks=0 loop_restarts=8
+
+====================================================================================================
+4. STANDALONE VERIFICATION SCRIPTS (exit codes; final lines of each; full output in outputs/standalone_scripts.txt)
+====================================================================================================
+==================== python verify_proof.py ====================
+   Total SoundEvent Objects in Timeline: 4
+   LongSound [0, 5000) ms is active in 7 out of 7 derived columns.
+     -> Continuity & Non-Duplication: PASSED
+   ================================================================================
+   ALL MATHEMATICAL PROOFS PASSED SUCCESSFULLY!
+   ================================================================================
+   [exit code: 0]
+
+==================== python verify_progressive.py ====================
+     Song 1 Columns: 2 columns (unchanged)
+     Song 1 Constant Row: [1, 2] (unchanged)
+     -> Multi-Song Isolation Proof: PASSED
+   ================================================================================
+   ALL PROGRESSIVE REFITTING & SONG INDEPENDENCE PROOFS PASSED!
+   ================================================================================
+   [exit code: 0]
+
+==================== python verify_development.py ====================
+   Curvature Variance: 0.00000000
+     -> PROOF SUCCESS: Curvature variance is strictly 0.0 despite having 16 columns.
+        Proves that column count is a measure of boundary density, not curvature.
+   ================================================================================
+   ALL EXPERIMENTAL DEVELOPMENT PROOFS COMPLETED SUCCESSFULLY!
+   ================================================================================
+   [exit code: 0]
+
+==================== python verify_midi_import.py ====================
+     Song 1: 'Synthetic Orchestral Flight (Low-to-High)' -> 4 rows, 20 columns
+     Song 2: 'Flight Grouped by Register' -> 4 rows, 20 columns
+     --> Step 5 PASSED: Separate songs maintain completely independent timelines.
+   ============================================================================
+   ALL STAGE 3 VERIFICATION CHECKS COMPLETED SUCCESSFULLY
+   ============================================================================
+   [exit code: 0]
+
+==================== python verify_group_units.py ====================
+     Song 1: u=100ms, 12 cells, bounds=[0, 3, 4, 6, 8, 9, 12], widths=[3, 1, 2, 2, 1, 3]
+     Song 2: u=250ms, 10 cells, bounds=[0, 2, 4, 5, 6, 8, 10], widths=[2, 2, 1, 1, 2, 2]
+     -> Confirmed: Song 1 and Song 2 maintain completely independent grids and parameters.
+   ================================================================================
+   ALL MILESTONE 4A MATHEMATICAL CHECKS PASSED SUCCESSFULLY (EXIT CODE 0)!
+   ================================================================================
+   [exit code: 0]
+
+==================== python verify_group_discovery.py ====================
+   3. Elimination of 0u Anomaly:
+      Passage 2 Segment 2 [750.0, 800.0) ms now displays cleanly as (0.50u) [Sub-Unit < 1u],
+      preserving true 50ms duration without mathematical collapse.
+   ================================================================================
+   ALL MILESTONE 5A CORRECTED VERIFICATION CHECKS COMPLETED SUCCESSFULLY (EXIT CODE 0)!
+   ================================================================================
+   [exit code: 0]
+
+==================== python verify_row_merger.py ====================
+   3. Scientific Integrity:
+      - Original note timings are 100% preserved.
+      - Zero modifications to production codebase or Calculator repository.
+   ================================================================================
+   ALL EXPERIMENTAL RUNS EXECUTED SUCCESSFULLY (EXIT CODE 0)!
+   ================================================================================
+   [exit code: 0]
+
+==================== python verify_audio_and_sheet_adapters.py ====================
+     Suite A (Continuous Audio):      25/25 assertions passed
+     Suite S (Digital Sheet Music):   22/22 assertions passed
+     Total Assertions Evaluated:      47/47 PASSED (100%)
+     Total Benchmark Scenarios:       34/34 PASSED (12 Audio + 22 MusicXML)
+   ================================================================================
+   RESULT: SUCCESS (EXIT CODE 0) — ALL JOB-02 PROTOTYPE CAPABILITIES VERIFIED
+   [exit code: 0]
+
+==================== python verify_playback_transport.py ====================
+   JOB-03 VERIFICATION SUMMARY
+   ================================================================================
+   Benchmark Scenarios Passed: 8 / 8
+   Total Assertions Passed:    44 / 44
+   Zero Failures. Zero Errors. Status: PASS
+   ================================================================================
+   [exit code: 0]
+
+Benchmark Scenarios 6-7 detail (simulated backend; not acoustic):
+   --- SCENARIO 6: Cumulative Transport Drift Benchmark (10,000 steps) ---
+     Steps executed: 10000
+     Step interval: 0.1 ms
+     Expected transport position: 1000.000000 ms
+     Actual transport position:   1000.000000 ms
+     Measured cumulative drift:   0.000000000000 ms (0.0000 picoseconds)
+     -> Scenario 6 PASSED (arithmetic drift is sub-nanosecond: 0.00 ps; simulated clock, zero by construction)
+   
+   --- SCENARIO 7: Software Transport Dispatch & Query Latency Benchmark (Evaluation against <= 20 ms Target) ---
+     Evaluations: 1000
+     Mean latency: 0.0063 ms
+     99th percentile: 0.0088 ms
+     Max latency: 0.2168 ms
+     Target requirement: <= 20.0 ms
+     -> Scenario 7 PASSED (software dispatch time on simulated backend within <= 20 ms target; not an acoustic measurement)
+   
+
+====================================================================================================
+5. DEFECT RE-INTRODUCTION (MUTATION) CHECK
+====================================================================================================
+[CONTROL] unmutated code, same test selection: exit=0 Ran 114 tests in 7.969s | OK
+[CAUGHT ] D1 owner-thread ownership check disabled everywhere: Ran 5 tests in 0.055s | FAILED (errors=1)
+[CAUGHT ] D1 controlled shutdown on ERROR removed: Ran 9 tests in 0.079s | FAILED (failures=4)
+[CAUGHT ] D2 exact media-end mapping removed: Ran 5 tests in 0.045s | FAILED (failures=2)
+[CAUGHT ] D2/D3 end-of-media classification removed (old optimistic flags): Ran 11 tests in 0.092s | FAILED (failures=4)
+[CAUGHT ] D3 pause sends 'pause' to a stopped device: Ran 6 tests in 0.046s | FAILED (errors=1)
+[CAUGHT ] D4 single-pending guard removed from _ensure_tick_scheduled: Ran 5 tests in 0.937s | FAILED (failures=1)
+[CAUGHT ] D6 obsolete-callback generation check removed: Ran 5 tests in 0.961s | FAILED (failures=1)
+[CAUGHT ] D5 snapshot ids recomputed from live state at delivery: Ran 69 tests in 3.690s | FAILED (failures=6)
+[CAUGHT ] D7 GUI discards non-PLAYING snapshots (old filter): Ran 6 tests in 1.703s | FAILED (failures=5)
+[CAUGHT ] D7 GUI accepts stale snapshots: Ran 6 tests in 1.748s | FAILED (failures=1)
+[CAUGHT ] D8 GUI destroy no longer closes transport: Ran 7 tests in 1.866s | FAILED (failures=2)
+[CAUGHT ] D8 unload leaves temp file: Ran 4 tests in 0.038s | FAILED (failures=4)
+[CAUGHT ] D2b thirteenth-revision asymmetric predicate round(p, 6) >= T restored: Ran 9 tests in 1.595s | FAILED (failures=88)
+[CAUGHT ] D2b loop remainder p mod T used for progress reached from below: Ran 9 tests in 1.547s | FAILED (failures=1)
+
+mutations: 14, escaped: 0; production files restored and hash-verified
+exit=0
+production files hash-identical before/after mutation run
+[temp-file accounting] real %TEMP% before=489 after=489
+
+====================================================================================================
+6. ORIGINAL DIAGNOSTICS: NEGATIVE BASELINE (rev13) AND NEW CODE (unmodified scripts)
+====================================================================================================
+Reading guide:
+  - [REV13 NEGATIVE BASELINE]: the preserved scripts, path redirected to a rebuilt rev13 tree.
+    D1, D2, D3, D4, D5, D6, D7 and D8 symptoms are all reproduced again today.
+  - [NEW CODE, ORIGINAL SCRIPT UNMODIFIED]: the same scripts against the refactored code.
+    VALID comparisons: diag_mci_real2 (b) (22070 frames: rev13 PLAYING@500.000 forever -> new
+    STOPPED@500.454, end callback 1); diag_mci_user_view (rev13 ERROR@0 with device playing ->
+    new PLAYING / PAUSED with device paused); diag_mci_real raw device probes (unchanged facts).
+    NOT VALID, NOT COUNTED AS PASSES: diag_concurrency (its hooks target the removed thread; its
+    (c) 'DEFECT REPRODUCED' line is a false positive of a thread-count heuristic - with no scheduler
+    injected the transport is not driven at all); diag_gui and the transport part of diag_mci_real
+    (AttributeError on removed internals).  These were adapted - section 7.
+==================== [REV13 NEGATIVE BASELINE] diag_mci_real.py (exit 0) ====================
+
+[frames=44100] exact WAV duration = 1000.000000 ms; MCI length = (0, '1000')
+  after end: position=(0, '1000') mode=(0, 'stopped') backend.is_playing(cached)=True
+  'pause' on ended device -> (302, ''); mode=(0, 'stopped')
+  'resume' on that device -> (302, ''); mode=(0, 'stopped')
+  'play from <length=1000>' -> (0, ''); mode=(0, 'playing')
+  'play from <length+1>' -> (282, '')
+
+[frames=22070] exact WAV duration = 500.453515 ms; MCI length = (0, '500')
+  after end: position=(0, '500') mode=(0, 'stopped') backend.is_playing(cached)=True
+  'pause' on ended device -> (302, ''); mode=(0, 'stopped')
+  'resume' on that device -> (302, ''); mode=(0, 'stopped')
+  'play from <length=500>' -> (0, ''); mode=(0, 'playing')
+  'play from <length+1>' -> (282, '')
+
+[transport frames=44100] total_duration_ms=1000.000000; after 2.00s: state=ERROR, position_ms=0.000, end_callbacks=0, tick_thread_alive=False
+
+[transport frames=22070] total_duration_ms=500.453515; after 1.50s: state=ERROR, position_ms=0.000, end_callbacks=0, tick_thread_alive=False
+
+[cross-thread] status position queried from worker thread -> {'err': 'AudioBackendError("Audio device query failed during active playback: MCI command failed \'status vmm_audio_1598830185216 position\': The specified device is not open or is not recognized by MCI. (code 263)")'}
+
+[seek-paused] after pause mode=(0, 'paused') pos=(0, '311')
+  after backend.seek(1000): mode=(0, 'stopped') pos=(0, '1000') cached is_playing=False is_paused=False
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [REV13 NEGATIVE BASELINE] diag_mci_real2.py (exit 0) ====================
+MCI error 263: The specified device is not open or is not recognized by MCI.
+MCI error 282: The specified parameter is out of range for the specified command.
+MCI error 302: Cannot carry out the commands in the order specified.  Correct the command sequence, and then try again.
+
+(a) RealClock transport 0.5 s after play(): state=ERROR pos=0.0
+    ticks delivered=[0.0, 0.0] ... count=2
+    error callback=['AudioBackendError("Audio backend query failed: Audio device query failed during active playback: MCI command failed \'status vmm_audio_2898277623056 position\': The specified device is not open or is not recognized by MCI. (code 263)")']
+    real MCI mode while transport is in ERROR: 'playing' (audio still running?)
+
+(b) frames=44100: total_duration_ms=1000.000000; 2.50s of main-thread ticks -> state=STOPPED, position_ms=1000.000, device_pos=1000.0, MCI mode='stopped', end_callbacks=1
+
+(b) frames=22070: total_duration_ms=500.453515; 2.00s of main-thread ticks -> state=PLAYING, position_ms=500.000, device_pos=500.0, MCI mode='stopped', end_callbacks=0
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [REV13 NEGATIVE BASELINE] diag_mci_user_view.py (exit 0) ====================
+pre-existing leaked temp WAVs in %TEMP%: 1
+Play pressed:      transport=ERROR@0.0  device=playing@290ms
+Pause pressed:     transport=ERROR@0.0  device=playing@591ms  (pause ignored in ERROR)
+Play pressed again: transport=ERROR@0.0  device=playing@274ms  (restarts from preserved 0)
+Stop pressed:      transport=STOPPED@0.0  device=stopped@274ms
+temp WAV after stop() (what MusicGUI.destroy() does): exists=True path=%USERPROFILE%\JOB_03_CONSOLIDATED_EVIDENCE\diagnostic_temp\music_play_hi8ut1dt.wav
+after explicit unload(): exists=False
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [REV13 NEGATIVE BASELINE] diag_concurrency.py (exit 0) ====================
+(a) pause() blocked 105 ms (join timeout); after immediate play(): live TransportTimer threads = 2 (expected 1) -> DEFECT REPRODUCED
+(b) transport now: state=PAUSED pos=100.0 active=['E0']
+    callback sequence (thread, pos, ids):
+       ('TransportTimer', 445.8, ['E1'])
+       ('MainThread', 461.0, ['E1'])
+       ('MainThread', 100.0, ['E0'])
+       ('TransportTimer', 460.9, ['E0'])
+    LAST delivered snapshot pos=460.9 ids=['E0']; ids actually active at that pos=['E1']; transport position=100.0
+    -> DEFECT REPRODUCED: stale position delivered after seek, and/or ids not from same snapshot
+(c) 1.0 s after replay: state=PLAYING, live tick threads=0, tick callbacks since replay=1, end callbacks total=1
+    -> DEFECT REPRODUCED: transport reports PLAYING with no tick thread; it will never complete
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [REV13 NEGATIVE BASELINE] diag_gui.py (exit 0) ====================
+total_duration_ms=3000.0; events=[('Sound A', 0, 3000)]
+
+(g1) after seek(2000) while STOPPED: transport pos=2000.0 active=['Sound A']
+     GUI: cursor_ms=None, highlighted=[], slider=0.0, label='00:00.000 / 00:03.000'
+     after play+100ms+pause: transport pos=2100.0 active=['Sound A']
+     GUI: cursor_ms=2100.0, highlighted=['Sound A'], slider=2100.0, label='00:02.100 / 00:03.000'
+     after seek(4500) while PAUSED: transport pos=3000.0 active=[]
+     GUI: cursor_ms=2100.0, highlighted=['Sound A'], slider=2100.0, label='00:02.100 / 00:03.000'
+
+(g2) after Stop (with one queued tick): transport state=STOPPED pos=0.0 active=['Sound A']
+     GUI: cursor_ms=700.0, highlighted=['Sound A'], slider=700.0, label='00:00.700 / 00:03.000'
+
+(g3) natural completion: transport state=STOPPED pos=3000.0 active=[] (final delivered snapshot=3000.0)
+     GUI: cursor_ms=2985.0, highlighted=['Sound A'], slider=2985.0, label='00:02.985 / 00:03.000'
+
+(g4) failed seek(3000) from PLAYING@1200: transport state=ERROR pos=1200.0 active=['Sound A']
+     GUI: cursor_ms=1200.0, highlighted=['Sound A'], slider=1200.0, label='00:01.200 / 00:03.000'
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [NEW CODE, ORIGINAL SCRIPT UNMODIFIED] diag_mci_real.py (exit 1) ====================
+
+[frames=44100] exact WAV duration = 1000.000000 ms; MCI length = (0, '1000')
+  after end: position=(0, '1000') mode=(0, 'stopped') backend.is_playing(cached)=True
+  'pause' on ended device -> (302, ''); mode=(0, 'stopped')
+  'resume' on that device -> (302, ''); mode=(0, 'stopped')
+  'play from <length=1000>' -> (0, ''); mode=(0, 'playing')
+  'play from <length+1>' -> (282, '')
+
+[frames=22070] exact WAV duration = 500.453515 ms; MCI length = (0, '500')
+  after end: position=(0, '500') mode=(0, 'stopped') backend.is_playing(cached)=True
+  'pause' on ended device -> (302, ''); mode=(0, 'stopped')
+  'resume' on that device -> (302, ''); mode=(0, 'stopped')
+  'play from <length=500>' -> (0, ''); mode=(0, 'playing')
+  'play from <length+1>' -> (282, '')
+--- stderr ---
+PlaybackTransport is playing with a real clock but no injected scheduler: periodic updates (playhead, completion, looping) will not run unless step_tick() is called. Inject TkScheduler(widget) for GUI use.
+Traceback (most recent call last):
+  File "%USERPROFILE%\JOB_03_CONSOLIDATED_EVIDENCE\original_diagnostics\diag_mci_real.py", line 97, in <module>
+    probe_transport_completion(44100)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "%USERPROFILE%\JOB_03_CONSOLIDATED_EVIDENCE\original_diagnostics\diag_mci_real.py", line 58, in probe_transport_completion
+    f"tick_thread_alive={tr._timer_thread is not None and tr._timer_thread.is_alive()}")
+                         ^^^^^^^^^^^^^^^^
+AttributeError: 'PlaybackTransport' object has no attribute '_timer_thread'
+
+[temp-file accounting] left in diagnostic_temp by this run=1 ['music_play_rv3ekpdu.wav']; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [NEW CODE, ORIGINAL SCRIPT UNMODIFIED] diag_mci_real2.py (exit 0) ====================
+MCI error 263: The specified device is not open or is not recognized by MCI.
+MCI error 282: The specified parameter is out of range for the specified command.
+MCI error 302: Cannot carry out the commands in the order specified.  Correct the command sequence, and then try again.
+
+(a) RealClock transport 0.5 s after play(): state=PLAYING pos=490.0
+    ticks delivered=[0.0] ... count=1
+    error callback=[]
+    real MCI mode while transport is in ERROR: 'playing' (audio still running?)
+
+(b) frames=44100: total_duration_ms=1000.000000; 2.50s of main-thread ticks -> state=STOPPED, position_ms=1000.000, device_pos=1000.0, MCI mode='stopped', end_callbacks=1
+
+(b) frames=22070: total_duration_ms=500.453515; 2.00s of main-thread ticks -> state=STOPPED, position_ms=500.454, device_pos=500.0, MCI mode='stopped', end_callbacks=1
+--- stderr ---
+PlaybackTransport is playing with a real clock but no injected scheduler: periodic updates (playhead, completion, looping) will not run unless step_tick() is called. Inject TkScheduler(widget) for GUI use.
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [NEW CODE, ORIGINAL SCRIPT UNMODIFIED] diag_mci_user_view.py (exit 0) ====================
+pre-existing leaked temp WAVs in %TEMP%: 2
+Play pressed:      transport=PLAYING@290.0  device=playing@290ms
+Pause pressed:     transport=PAUSED@290.0  device=paused@311ms  (pause ignored in ERROR)
+Play pressed again: transport=PLAYING@600.0  device=playing@601ms  (restarts from preserved 0)
+Stop pressed:      transport=STOPPED@0.0  device=stopped@601ms
+temp WAV after stop() (what MusicGUI.destroy() does): exists=True path=%USERPROFILE%\JOB_03_CONSOLIDATED_EVIDENCE\diagnostic_temp\music_play_zt30m8v5.wav
+after explicit unload(): exists=False
+--- stderr ---
+PlaybackTransport is playing with a real clock but no injected scheduler: periodic updates (playhead, completion, looping) will not run unless step_tick() is called. Inject TkScheduler(widget) for GUI use.
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [NEW CODE, ORIGINAL SCRIPT UNMODIFIED] diag_concurrency.py (exit 0) ====================
+(a) pause() blocked 0 ms (join timeout); after immediate play(): live TransportTimer threads = 0 (expected 1) -> not reproduced
+(b) transport now: state=PAUSED pos=100.0 active=['E0']
+    callback sequence (thread, pos, ids):
+       ('MainThread', 0.0, ['E0'])
+       ('MainThread', 2466.1, ['E1'])
+       ('MainThread', 100.0, ['E0'])
+    LAST delivered snapshot pos=100.0 ids=['E0']; ids actually active at that pos=['E0']; transport position=100.0
+(c) 1.0 s after replay: state=PLAYING, live tick threads=0, tick callbacks since replay=0, end callbacks total=0
+    -> DEFECT REPRODUCED: transport reports PLAYING with no tick thread; it will never complete
+--- stderr ---
+PlaybackTransport is playing with a real clock but no injected scheduler: periodic updates (playhead, completion, looping) will not run unless step_tick() is called. Inject TkScheduler(widget) for GUI use.
+PlaybackTransport is playing with a real clock but no injected scheduler: periodic updates (playhead, completion, looping) will not run unless step_tick() is called. Inject TkScheduler(widget) for GUI use.
+PlaybackTransport is playing with a real clock but no injected scheduler: periodic updates (playhead, completion, looping) will not run unless step_tick() is called. Inject TkScheduler(widget) for GUI use.
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+==================== [NEW CODE, ORIGINAL SCRIPT UNMODIFIED] diag_gui.py (exit 1) ====================
+--- stderr ---
+Traceback (most recent call last):
+  File "%USERPROFILE%\JOB_03_CONSOLIDATED_EVIDENCE\original_diagnostics\diag_gui.py", line 36, in <module>
+    app, tr, clock = build()
+                     ~~~~~^^
+  File "%USERPROFILE%\JOB_03_CONSOLIDATED_EVIDENCE\original_diagnostics\diag_gui.py", line 22, in build
+    tr.register_tick_callback(app._on_transport_tick)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python315\Lib\tkinter\__init__.py", line 2665, in __getattr__
+    return getattr(self.tk, attr)
+AttributeError: '_tkinter.tkapp' object has no attribute '_on_transport_tick'
+
+[temp-file accounting] left in diagnostic_temp by this run=0 []; real %TEMP% music_play_*.wav before=489 after=489
+
+====================================================================================================
+7. ADAPTED DIAGNOSTICS AGAINST THE NEW CODE (adaptations described in each script's docstring)
+====================================================================================================
+==================== [ADAPTED, NEW CODE] diag_concurrency_adapted.py ====================
+(a) threads before=1 after=1 (no playback thread exists); pending updates after re-entrant pause+play = 1 (max 1); tick spacing afterwards (ms) = [15.7, 15.6, 15.6, 15.3, 15.1, 15.5, 15.1, 16.0] -> OK: single update stream
+(b) transport now: state=PAUSED pos=100.0 active=['E0']
+    last 4 deliveries to the second callback (seq, reason, pos, ids):
+       (31, tick, 424.2, ['E1'])
+       (33, pause, 440.1, ['E1'])
+       (34, seek, 100.0, ['E0'])
+       (32, tick, 440.1, ['E1'])
+    snapshots whose ids disagree with their own position: 0
+    view after applying 'supersedes' (what MusicGUI renders): seq=34 seek pos=100.0 ids=['E0']
+    -> OK: every snapshot coherent; out-of-order arrival is rejected by sequence
+(c) 1.0 s after replay: state=STOPPED, pending updates=0, tick snapshots since replay=19, end callbacks total=2, final pos=300.0
+    -> OK: replay owned its own update stream and completed again
+(exit 0)
+
+==================== [ADAPTED, NEW CODE] diag_gui_adapted.py ====================
+total_duration_ms=3000.0; events=[('Sound A', 0, 3000)]
+
+(g1) after seek(2000) while STOPPED: transport pos=2000.0 active=['Sound A']
+     GUI: cursor_ms=2000.0, highlighted=['Sound A'], slider=2000.0, label='00:02.000 / 00:03.000'  [AGREE]
+     after play+100ms+pause: transport pos=2100.0 active=['Sound A']
+     GUI: cursor_ms=2100.0, highlighted=['Sound A'], slider=2100.0, label='00:02.100 / 00:03.000'  [AGREE]
+     after seek(4500) while PAUSED: transport pos=3000.0 active=[]
+     GUI: cursor_ms=3000.0, highlighted=[], slider=3000.0, label='00:03.000 / 00:03.000'  [AGREE]
+
+(g2) after Stop (stale ~690 ms snapshot delivered late): transport state=STOPPED pos=0.0 active=['Sound A']
+     GUI: cursor_ms=None, highlighted=[], slider=0.0, label='00:00.000 / 00:03.000'  [AGREE]
+
+(g3) natural completion: transport state=STOPPED pos=3000.0 active=[]
+     GUI: cursor_ms=3000.0, highlighted=[], slider=3000.0, label='00:03.000 / 00:03.000'  [AGREE]
+
+(g4) failed seek(3000) from PLAYING@~1200: transport state=ERROR pos=1200.0 active=['Sound A']
+     GUI: cursor_ms=1200.0, highlighted=['Sound A'], slider=1200.0, label='00:01.200 / 00:03.000'  [AGREE]  play button bg=#ef4444 badge='[Audio Error: Injected failure during se'
+
+(shutdown) transport closed=True, pending scheduled updates=0
+(exit 0)
+
+==================== [ADAPTED, NEW CODE] diag_mci_production_adapted.py ====================
+(real2-a) production transport 0.5 s after play(): state=PLAYING pos=499.0
+    ticks delivered=[0.0, 0.0, 28.0, 43.0, 59.0, 75.0] ... count=33
+    error callback=[]
+    real MCI mode: 'playing@499ms'
+[transport frames=44100] total_duration_ms=1000.000000; after 2.00s: state=STOPPED, position_ms=1000.000000, end_callbacks=1, pending_updates=0
+[transport frames=22070] total_duration_ms=500.453515; after 1.50s: state=STOPPED, position_ms=500.453515, end_callbacks=1, pending_updates=0
+[cross-thread] status position requested from worker thread -> {'err': 'MciThreadOwnershipError("MCI command \'status position\' refused: the device was opened on thread 17692 but the command was issued from thread 10188. Windows MCI aliases are thread-affine (cross-thread commands fail with MCI error 263).")'}
+               owner thread still controls the device: mode=playing@190ms
+pre-existing temp WAVs in %TEMP% (read-only count): 489
+Play pressed:       transport=PLAYING@286.0  device=playing@301ms
+Pause pressed:      transport=PAUSED@301.0  device=paused@321ms
+Play pressed again: transport=PLAYING@602.0  device=playing@617ms
+Stop pressed:       transport=STOPPED@0.0  device=stopped@617ms
+temp WAV after stop(): exists=True (source stays loaded for replay)
+temp WAV after close() (what MusicGUI.destroy() now calls): exists=False
+temp WAVs in %TEMP% afterwards: 489
+(exit 0)
+
+[temp-file accounting] music_play_*.wav before=489 after=489
+
+====================================================================================================
+8. TEMPORARY WAV FILE ACCOUNTING
+====================================================================================================
+Temp-WAV accounting for this session (%TEMP%\music_play_*.wav). Pre-existing files were never deleted.
+Investigation reported 463; count at session start (before any run of mine): see note below.
+
+DELETED (exact proof: file absent immediately before and present immediately after one of my diagnostic runs, via before/after set difference):
+  music_play_goaqufvs.wav - removed earlier in session (07:15, same cause)
+  music_play_4jz_8zq8.wav (mtime 2026-11-26 07:25:33.263243400 -0800) - created by unmodified original diag_mci_real.py crashing on removed _timer_thread before its own unload(); removed 2026-11-26T07:30:21-08:00
+  music_play_xzvc9h_z.wav (mtime 2026-11-26 07:27:30.945049200 -0800) - created by unmodified original diag_mci_real.py crashing on removed _timer_thread before its own unload(); removed 2026-11-26T07:30:21-08:00
+
+NOT DELETED - created today during my session; attribution by timestamp and reproduced mechanism, but without exact before/after proof:
+  music_play_0h8_ecv0.wav mtime 2026-11-26 06:54:48.192985500
+  music_play_1__9iy3x.wav mtime 2026-11-26 06:54:48.996993100
+  music_play_2lvovzu8.wav mtime 2026-11-26 06:54:51.835109000
+  music_play_55s1kgn1.wav mtime 2026-11-26 07:10:24.236864400
+  music_play_8rrmdc6k.wav mtime 2026-11-26 06:54:49.506010000
+  music_play__xv307xc.wav mtime 2026-11-26 06:54:49.224150300
+  music_play__zc0oloy.wav mtime 2026-11-26 06:54:46.647747200
+  music_play_e6m2qlmb.wav mtime 2026-11-26 07:03:09.843693500
+  music_play_fgzd8sfn.wav mtime 2026-11-26 06:54:46.460380800
+  music_play_g2z4_bsm.wav mtime 2026-11-26 06:54:47.025785500
+  music_play_g3q5e7v1.wav mtime 2026-11-26 07:09:39.650979600
+  music_play_gm94wahl.wav mtime 2026-11-26 07:03:10.188753100
+  music_play_h0g94fik.wav mtime 2026-11-26 07:24:25.718654400
+  music_play_ie0zgyn3.wav mtime 2026-11-26 06:54:55.913514400
+  music_play_jil8a8h8.wav mtime 2026-11-26 06:54:49.805633900
+  music_play_khlcau4b.wav mtime 2026-11-26 06:54:51.305652800
+  music_play_kqmgs96w.wav mtime 2026-11-26 06:54:48.341507700
+  music_play_m1w1xsfe.wav mtime 2026-11-26 06:54:50.764767100
+  music_play_m7iaoavq.wav mtime 2026-11-26 07:11:01.636939700
+  music_play_r_bnwfhm.wav mtime 2026-11-26 07:25:01.092277400
+  music_play_rxam2c1s.wav mtime 2026-11-26 06:54:54.700435400
+  music_play_sjsjci6c.wav mtime 2026-11-26 07:21:36.597149000
+  music_play_v4wq4czu.wav mtime 2026-11-26 07:03:10.038172500
+  music_play_wfea9wjw.wav mtime 2026-11-26 06:54:50.111247100
+  music_play_wsroim1m.wav mtime 2026-11-26 06:54:46.794399700
+  music_play_xzrxnhly.wav mtime 2026-11-26 06:54:47.705909000
+  Probable causes: 06:5x-07:03 = my pre-change baseline / first focused runs of rev13-era GUI tests (rev13 MusicGUI.destroy never unloaded);
+  07:09:39, 07:10:24, 07:11:01, 07:21:36, 07:24:25, 07:25:01 = my six mutation-check runs (the deliberate 'destroy no longer closes' mutant leaks exactly one WAV per run; reproduced into mutation_temp/ afterwards).
+  Left in place for the Author to decide.
+
+Count now: 489
+
+RECONCILIATION: 489 now - 26 created today = 463 = the pre-existing count reported by the investigation.
+No pre-existing file was touched.  The 20 files at 06:54:46-06:54:55 fall inside my pre-change baseline
+run of the unmodified rev13 suite (06:54, 206 tests, 48 s): evidence that the rev13 suite itself leaks
+~20 temp WAVs per run (MusicGUI.destroy never unloaded the backend).  The refactored suite, run in full
+after the change, left 0 (count 486 before / 486 after: outputs/full_regression_unittest.txt).
+
+====================================================================================================
+9. FINAL SOURCE HASHES (files under test in the final runs)
+====================================================================================================
+9e6a9254cd691d0d436c04e18f48bc5ccd742558c2bbc3dab5e316c9e6ac412f *music_gui/audio_playback.py
+9c22aa6912e760f673e8c5fde3f183e9c827c773e925b528a6b20a3927218e3d *music_gui/main_window.py
+78bd4bb4ab92242c88606eff328c79003ba021da33b43ea5b05c738c37a51a60 *music_gui/timeline_canvas.py
+ce3b0e9614730d1492cb29070a4c29b662c9c5ea3c7df6680d083d3a10899aec *music_gui/coordinates.py
+5f736cedd7ac9fc01a14f8e26a18a32f43afd461ca8e8c0a42627458dbcbe4a2 *music_model/song.py
+24c26caae9608d057f0c3f6f4a563551632925db1208930feab8f457d271a3e1 *music_model/timeline.py
+11b0a42cd505943bca9ca4c7afcdecc9b138cd59a351acfdb1db7f11bd8b36fb *tests/test_audio_playback.py
+5a6e97d8a48a43f9f8f23c6c013c3fe642b3c9737721d123d8005327f9228491 *tests/test_playback_consolidated.py
+d91281c57dba24fa45544bfb822663f40ea1728b6e646735f928e5d9ce3c6a8f *tests/test_playback_windows_device.py
+6945384b5baf3bfb73d148eefcd2e3b1e37fb61bc328f51b33bd01cd56989f26 *verify_playback_transport.py
+
+====================================================================================================
+10. GUI-THREAD COST OF MCI COMMANDS (probe_mci_command_cost.py, silent WAV)
+====================================================================================================
+MCI command blocking time on the calling thread, 8 trials (ms):
+  open                         n=  8 median=  15.27 max=  40.95
+  set                          n=  8 median=   0.02 max=   0.02
+  status length                n=  8 median=   0.00 max=   0.01
+  play(from stopped)           n= 16 median=  15.85 max=  24.61
+  status mode (playing)        n= 40 median=   0.02 max=   0.60
+  status position (playing)    n= 40 median=   0.12 max=   1.29
+  pause                        n=  8 median=   6.13 max=   6.89
+  resume                       n=  8 median=   0.10 max=   0.14
+  seek (while playing)         n=  8 median=  55.14 max=  59.84
+  play(after seek)             n=  8 median=  15.55 max=  19.31
+  status mode (around end)     n=889 median=   0.01 max=   5.43
+  stop (after end)             n=  8 median=   0.01 max=   0.02
+  stop (while playing)         n=  8 median=  43.72 max=  61.84
+  close                        n=  8 median=   0.29 max=   0.37
+
+====================================================================================================
+11. AUTHOR MANUAL VERIFICATION: WAV IMPORT CRASH (resubmission 3, 2026-11-26)
+====================================================================================================
+Investigation: JOB_03_WAV_CRASH_EVIDENCE/WAV_CRASH_INVESTIGATION.md (sections 1-8).
+Correction: music_gui/main_window.py only (row id + background analysis). audio_importer.py unchanged.
+Interpreter: .venv\Scripts\python.exe -> CPython 3.15.2 (tags/v3.15.2:5e58eaa) MSC v.1951 64-bit, GIL, JIT off.
+Known pre-existing stderr noise: Tcl "invalid command name ...probe" from test R1 probe timer at teardown (test passes; also present in section 10-era runs).
+
+
+=================== interpreter (2026-11-26T19:09:56-08:00)
+<project>\.venv\Scripts\python.exe
+3.15.2 (tags/v3.15.2:5e58eaa, Oct 25 2026, 17:27:03) [MSC v.1951 64 bit (AMD64)]
+
+=================== focused: tests.test_wav_import_regression (2026-11-26T19:09:56-08:00)
+test_analysis_error_is_reported_on_tk_thread (tests.test_wav_import_regression.TestGuiWavImportPath.test_analysis_error_is_reported_on_tk_thread) ... [measure] not_a_wav.wav: Tk heartbeats during analysis=2, largest gap=21 ms
+ok
+test_import_play_complete_and_replace_source (tests.test_wav_import_regression.TestGuiWavImportPath.test_import_play_complete_and_replace_source) ... [measure] four_notes.wav: Tk heartbeats during analysis=90, largest gap=112 ms
+[measure] two_notes.wav: Tk heartbeats during analysis=37, largest gap=125 ms
+ok
+test_second_open_while_analysing_is_refused_not_queued (tests.test_wav_import_regression.TestGuiWavImportPath.test_second_open_while_analysing_is_refused_not_queued) ... ok
+test_window_destroyed_during_analysis_ignores_result (tests.test_wav_import_regression.TestGuiWavImportPath.test_window_destroyed_during_analysis_ignores_result) ... ok
+test_author_equivalent_file_imports_without_crashing (tests.test_wav_import_regression.TestNonSilentImportInChildProcess.test_author_equivalent_file_imports_without_crashing) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 55.282s
+
+OK
+exit=0
+
+=================== full regression suite (discover tests) (2026-11-26T19:10:52-08:00)
+.......................................................................................................................................................................................................................................Controlled audio shutdown after transport failure failed: AudioBackendError("Failed to stop audio device 'vmm_audio_2422494565040': MCI command failed 'stop vmm_audio_2422494565040': The specified device is not open or is not recognized by MCI. (code 263)")
+.ssssssssssssss...........................[measure] not_a_wav.wav: Tk heartbeats during analysis=2, largest gap=22 ms
+.[measure] four_notes.wav: Tk heartbeats during analysis=91, largest gap=127 ms
+[measure] two_notes.wav: Tk heartbeats during analysis=37, largest gap=127 ms
+....
+----------------------------------------------------------------------
+Ran 278 tests in 103.925s
+
+OK (skipped=14)
+exit=0
+
+=================== real-device suite MUSIC_REAL_AUDIO_TESTS=1 (2026-11-26T19:12:36-08:00)
+test_r1_ordinary_playback_advances_without_mci_263 (tests.test_playback_windows_device.TestRealMciDevice.test_r1_ordinary_playback_advances_without_mci_263) ... [measure] R1 ticks=26 last_published=388.0ms device_now=389ms wall_since_play=426.8ms device-published=1.0ms
+[measure] R1 update interval ms: mean=15.31 max=15.75; step_tick duration ms: mean=0.265 max=0.607; independent Tk 1 ms probe lateness max=15.3ms
+ok
+test_r2_fractional_22070_frame_wav_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2_fractional_22070_frame_wav_completes) ... invalid command name "2235763245696probe"
+    while executing
+"2235763245696probe"
+    ("after" script)
+[measure] frames=22070@44100: exact=500.45351473922904ms (round-6 up) device_length=500ms state=STOPPED final=500.45351473922904 completion wall time - exact duration = 72.9ms
+ok
+test_r2b_fractional_22071_frame_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2b_fractional_22071_frame_wav_rounding_down_completes) ... [measure] frames=22071@44100: exact=500.4761904761905ms (round-6 down) device_length=500ms state=STOPPED final=500.4761904761905 completion wall time - exact duration = 75.7ms
+ok
+test_r2c_fractional_48khz_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2c_fractional_48khz_wav_rounding_down_completes) ... [measure] frames=4801@48000: exact=100.02083333333333ms (round-6 down) device_length=100ms state=STOPPED final=100.02083333333333 completion wall time - exact duration = 88.5ms
+ok
+test_r3_exact_1000ms_control_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r3_exact_1000ms_control_completes) ... [measure] frames=44100@44100: exact=1000.0ms (round-6 exact) device_length=1000ms state=STOPPED final=1000.0 completion wall time - exact duration = 59.3ms
+ok
+test_r4_pause_halts_device_and_resume_continues (tests.test_playback_windows_device.TestRealMciDevice.test_r4_pause_halts_device_and_resume_continues) ... [measure] R4 paused transport=301.0ms device-after-pause=321ms (device coordinate step across 'pause' = 20.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=301.0ms, first changed value=321.0ms (forward step at resume = 20.0ms)
+ok
+test_r5_seek_while_paused_then_play (tests.test_playback_windows_device.TestRealMciDevice.test_r5_seek_while_paused_then_play) ... [measure] R5 after seek(2000.4)+play+200ms: transport=2177.0ms device=2192ms
+ok
+test_r6_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6_fractional_duration_looping) ... [measure] R6 loops=3 ticks=107; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [78.7, 77.7, 75.7] ms
+ok
+test_r6b_rounding_down_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6b_rounding_down_fractional_duration_looping) ... [measure] R6b 22071 frames: loops=3 errors=0 state=PLAYING
+ok
+test_r7_cross_thread_command_is_refused_device_unaffected (tests.test_playback_windows_device.TestRealMciDevice.test_r7_cross_thread_command_is_refused_device_unaffected) ... ok
+test_r8_close_releases_device_and_temp_file (tests.test_playback_windows_device.TestRealMciDevice.test_r8_close_releases_device_and_temp_file) ... ok
+test_r9_source_replacement_releases_previous_device (tests.test_playback_windows_device.TestRealMciDevice.test_r9_source_replacement_releases_previous_device) ... ok
+test_gui_imports_non_silent_wav_into_real_device_and_releases_it (tests.test_playback_windows_device.TestRealMciNonSilentWavImport.test_gui_imports_non_silent_wav_into_real_device_and_releases_it) ... [measure] R11 real-device non-silent WAV import: 2 imports OK, device lengths 1600/700 ms, previous temp released
+ok
+test_gui_end_to_end_playback_completion_and_teardown (tests.test_playback_windows_device.TestRealMciThroughMusicGUI.test_gui_end_to_end_playback_completion_and_teardown) ... [measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.27ms max=0.64ms (n=524)
+ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 22.831s
+
+OK
+exit=0
+
+=================== script verify_audio_and_sheet_adapters.py (2026-11-26T19:12:59-08:00)
+  Total Assertions Evaluated:      47/47 PASSED (100%)
+  Total Benchmark Scenarios:       34/34 PASSED (12 Audio + 22 MusicXML)
+================================================================================
+RESULT: SUCCESS (EXIT CODE 0) — ALL JOB-02 PROTOTYPE CAPABILITIES VERIFIED
+exit=0
+
+=================== script verify_development.py (2026-11-26T19:13:27-08:00)
+
+================================================================================
+ALL EXPERIMENTAL DEVELOPMENT PROOFS COMPLETED SUCCESSFULLY!
+================================================================================
+exit=0
+
+=================== script verify_group_discovery.py (2026-11-26T19:13:27-08:00)
+   preserving true 50ms duration without mathematical collapse.
+================================================================================
+ALL MILESTONE 5A CORRECTED VERIFICATION CHECKS COMPLETED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+exit=0
+
+=================== script verify_group_units.py (2026-11-26T19:13:28-08:00)
+
+================================================================================
+ALL MILESTONE 4A MATHEMATICAL CHECKS PASSED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+exit=0
+
+=================== script verify_midi_import.py (2026-11-26T19:13:28-08:00)
+
+============================================================================
+ALL STAGE 3 VERIFICATION CHECKS COMPLETED SUCCESSFULLY
+============================================================================
+exit=0
+
+=================== script verify_playback_transport.py (2026-11-26T19:13:28-08:00)
+Benchmark Scenarios Passed: 8 / 8
+Total Assertions Passed:    44 / 44
+Zero Failures. Zero Errors. Status: PASS
+================================================================================
+exit=0
+
+=================== script verify_progressive.py (2026-11-26T19:13:29-08:00)
+
+================================================================================
+ALL PROGRESSIVE REFITTING & SONG INDEPENDENCE PROOFS PASSED!
+================================================================================
+exit=0
+
+=================== script verify_proof.py (2026-11-26T19:13:29-08:00)
+
+================================================================================
+ALL MATHEMATICAL PROOFS PASSED SUCCESSFULLY!
+================================================================================
+exit=0
+
+=================== script verify_row_merger.py (2026-11-26T19:13:29-08:00)
+   - Zero modifications to production codebase or Calculator repository.
+================================================================================
+ALL EXPERIMENTAL RUNS EXECUTED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+exit=0
+
+=================== done (2026-11-26T19:13:29-08:00)
+
+====================================================================================================
+12. STALE ASYNCHRONOUS WAV IMPORT CORRECTION (resubmission 4, 2026-11-26)
+====================================================================================================
+Test accounting: "Ran N tests ... OK (skipped=S)" means N-S passed. Section 11 run: 278 run = 264 passed + 14 skipped.
+This run: 287 run = 273 passed + 14 skipped (the 14 gated real-device tests; they pass in the MUSIC_REAL_AUDIO_TESTS=1 step).
+Note: for the two piped suite steps, the printed exit= is the exit code of tail; pass/fail is the unittest summary line.
+
+--- auditor reproduction BEFORE fix ---
+after switch: progressive Progressive Refitting — Stage A True
+after old import: progressive Imported WAV: delayed.wav False errors []
+--- auditor reproduction AFTER fix ---
+after switch: progressive Progressive Refitting — Stage A True
+after old import: progressive Progressive Refitting — Stage A True errors []
+--- new lifecycle tests run against the PRE-FIX main_window.py ---
+ERROR: test_normal_import_publishes_exactly_once (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_normal_import_publishes_exactly_once)
+FAIL: test_mode_without_transport_reload_also_supersedes (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_mode_without_transport_reload_also_supersedes)
+FAIL: test_musicxml_source_loaded_during_analysis_is_kept (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_musicxml_source_loaded_during_analysis_is_kept)
+FAIL: test_new_import_refused_while_obsolete_worker_computes_then_allowed (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_new_import_refused_while_obsolete_worker_computes_then_allowed)
+FAIL: test_obsolete_failure_shows_no_dialog_and_keeps_badge (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_obsolete_failure_shows_no_dialog_and_keeps_badge)
+FAIL: test_progressive_selection_discards_obsolete_success (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_progressive_selection_discards_obsolete_success)
+FAIL: test_shutdown_with_obsolete_worker_running (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_shutdown_with_obsolete_worker_running)
+Ran 9 tests in 18.373s
+FAILED (failures=6, errors=1)
+--- test ids: before=278 after=287, missing=0 ---
+--- pre-existing observation (not changed): Row 1 toggle after WAV import ---
+after import: synthesized = False pcm kept = True
+after Row 1 toggle: view = midi dataset = Imported: w.wav synthesized = True pcm kept = False
+
+
+=================== interpreter (2026-11-26T19:25:54-08:00)
+<project>\.venv\Scripts\python.exe
+3.15.2 (tags/v3.15.2:5e58eaa, Oct 25 2026, 17:27:03) [MSC v.1951 64 bit (AMD64)]
+
+=================== focused: tests.test_wav_import_regression (2026-11-26T19:25:54-08:00)
+test_analysis_error_is_reported_on_tk_thread (tests.test_wav_import_regression.TestGuiWavImportPath.test_analysis_error_is_reported_on_tk_thread) ... [measure] not_a_wav.wav: Tk heartbeats during analysis=2, largest gap=21 ms
+ok
+test_import_play_complete_and_replace_source (tests.test_wav_import_regression.TestGuiWavImportPath.test_import_play_complete_and_replace_source) ... [measure] four_notes.wav: Tk heartbeats during analysis=86, largest gap=127 ms
+[measure] two_notes.wav: Tk heartbeats during analysis=38, largest gap=111 ms
+ok
+test_second_open_while_analysing_is_refused_not_queued (tests.test_wav_import_regression.TestGuiWavImportPath.test_second_open_while_analysing_is_refused_not_queued) ... ok
+test_window_destroyed_during_analysis_ignores_result (tests.test_wav_import_regression.TestGuiWavImportPath.test_window_destroyed_during_analysis_ignores_result) ... ok
+test_author_equivalent_file_imports_without_crashing (tests.test_wav_import_regression.TestNonSilentImportInChildProcess.test_author_equivalent_file_imports_without_crashing) ... ok
+test_cancelled_dialog_is_not_a_source_selection (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_cancelled_dialog_is_not_a_source_selection) ... ok
+test_current_failure_is_still_reported (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_current_failure_is_still_reported) ... ok
+test_mode_without_transport_reload_also_supersedes (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_mode_without_transport_reload_also_supersedes) ... ok
+test_musicxml_source_loaded_during_analysis_is_kept (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_musicxml_source_loaded_during_analysis_is_kept) ... ok
+test_new_import_refused_while_obsolete_worker_computes_then_allowed (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_new_import_refused_while_obsolete_worker_computes_then_allowed) ... ok
+test_normal_import_publishes_exactly_once (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_normal_import_publishes_exactly_once) ... ok
+test_obsolete_failure_shows_no_dialog_and_keeps_badge (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_obsolete_failure_shows_no_dialog_and_keeps_badge) ... ok
+test_progressive_selection_discards_obsolete_success (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_progressive_selection_discards_obsolete_success) ... ok
+test_shutdown_with_obsolete_worker_running (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_shutdown_with_obsolete_worker_running) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 76.488s
+
+OK
+exit=0
+
+=================== full regression suite (discover tests) (2026-11-26T19:27:11-08:00)
+.......................................................................................................................................................................................................................................Controlled audio shutdown after transport failure failed: AudioBackendError("Failed to stop audio device 'vmm_audio_1919097164912': MCI command failed 'stop vmm_audio_1919097164912': The specified device is not open or is not recognized by MCI. (code 263)")
+.ssssssssssssss...........................[measure] not_a_wav.wav: Tk heartbeats during analysis=2, largest gap=20 ms
+.[measure] four_notes.wav: Tk heartbeats during analysis=89, largest gap=125 ms
+[measure] two_notes.wav: Tk heartbeats during analysis=37, largest gap=126 ms
+.............
+----------------------------------------------------------------------
+Ran 287 tests in 125.026s
+
+OK (skipped=14)
+exit=0
+
+=================== real-device suite MUSIC_REAL_AUDIO_TESTS=1 (2026-11-26T19:29:16-08:00)
+test_r1_ordinary_playback_advances_without_mci_263 (tests.test_playback_windows_device.TestRealMciDevice.test_r1_ordinary_playback_advances_without_mci_263) ... [measure] R1 ticks=26 last_published=384.0ms device_now=391ms wall_since_play=426.9ms device-published=7.0ms
+[measure] R1 update interval ms: mean=15.19 max=15.39; step_tick duration ms: mean=0.180 max=0.375; independent Tk 1 ms probe lateness max=6.3ms
+ok
+test_r2_fractional_22070_frame_wav_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2_fractional_22070_frame_wav_completes) ... invalid command name "2558869700224probe"
+    while executing
+"2558869700224probe"
+    ("after" script)
+[measure] frames=22070@44100: exact=500.45351473922904ms (round-6 up) device_length=500ms state=STOPPED final=500.45351473922904 completion wall time - exact duration = 82.1ms
+ok
+test_r2b_fractional_22071_frame_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2b_fractional_22071_frame_wav_rounding_down_completes) ... [measure] frames=22071@44100: exact=500.4761904761905ms (round-6 down) device_length=500ms state=STOPPED final=500.4761904761905 completion wall time - exact duration = 76.1ms
+ok
+test_r2c_fractional_48khz_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2c_fractional_48khz_wav_rounding_down_completes) ... [measure] frames=4801@48000: exact=100.02083333333333ms (round-6 down) device_length=100ms state=STOPPED final=100.02083333333333 completion wall time - exact duration = 86.4ms
+ok
+test_r3_exact_1000ms_control_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r3_exact_1000ms_control_completes) ... [measure] frames=44100@44100: exact=1000.0ms (round-6 exact) device_length=1000ms state=STOPPED final=1000.0 completion wall time - exact duration = 58.5ms
+ok
+test_r4_pause_halts_device_and_resume_continues (tests.test_playback_windows_device.TestRealMciDevice.test_r4_pause_halts_device_and_resume_continues) ... [measure] R4 paused transport=289.0ms device-after-pause=311ms (device coordinate step across 'pause' = 22.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=289.0ms, first changed value=312.0ms (forward step at resume = 23.0ms)
+ok
+test_r5_seek_while_paused_then_play (tests.test_playback_windows_device.TestRealMciDevice.test_r5_seek_while_paused_then_play) ... [measure] R5 after seek(2000.4)+play+200ms: transport=2192.0ms device=2192ms
+ok
+test_r6_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6_fractional_duration_looping) ... [measure] R6 loops=3 ticks=107; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [77.9, 73.8, 73.7] ms
+ok
+test_r6b_rounding_down_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6b_rounding_down_fractional_duration_looping) ... [measure] R6b 22071 frames: loops=3 errors=0 state=PLAYING
+ok
+test_r7_cross_thread_command_is_refused_device_unaffected (tests.test_playback_windows_device.TestRealMciDevice.test_r7_cross_thread_command_is_refused_device_unaffected) ... ok
+test_r8_close_releases_device_and_temp_file (tests.test_playback_windows_device.TestRealMciDevice.test_r8_close_releases_device_and_temp_file) ... ok
+test_r9_source_replacement_releases_previous_device (tests.test_playback_windows_device.TestRealMciDevice.test_r9_source_replacement_releases_previous_device) ... ok
+test_gui_imports_non_silent_wav_into_real_device_and_releases_it (tests.test_playback_windows_device.TestRealMciNonSilentWavImport.test_gui_imports_non_silent_wav_into_real_device_and_releases_it) ... [measure] R11 real-device non-silent WAV import: 2 imports OK, device lengths 1600/700 ms, previous temp released
+ok
+test_gui_end_to_end_playback_completion_and_teardown (tests.test_playback_windows_device.TestRealMciThroughMusicGUI.test_gui_end_to_end_playback_completion_and_teardown) ... [measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.28ms max=0.77ms (n=524)
+ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 22.804s
+
+OK
+exit=0
+
+=================== script verify_audio_and_sheet_adapters.py (2026-11-26T19:29:39-08:00)
+  Total Assertions Evaluated:      47/47 PASSED (100%)
+  Total Benchmark Scenarios:       34/34 PASSED (12 Audio + 22 MusicXML)
+================================================================================
+RESULT: SUCCESS (EXIT CODE 0) — ALL JOB-02 PROTOTYPE CAPABILITIES VERIFIED
+exit=0
+
+=================== script verify_development.py (2026-11-26T19:30:07-08:00)
+
+================================================================================
+ALL EXPERIMENTAL DEVELOPMENT PROOFS COMPLETED SUCCESSFULLY!
+================================================================================
+exit=0
+
+=================== script verify_group_discovery.py (2026-11-26T19:30:07-08:00)
+   preserving true 50ms duration without mathematical collapse.
+================================================================================
+ALL MILESTONE 5A CORRECTED VERIFICATION CHECKS COMPLETED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+exit=0
+
+=================== script verify_group_units.py (2026-11-26T19:30:08-08:00)
+
+================================================================================
+ALL MILESTONE 4A MATHEMATICAL CHECKS PASSED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+exit=0
+
+=================== script verify_midi_import.py (2026-11-26T19:30:08-08:00)
+
+============================================================================
+ALL STAGE 3 VERIFICATION CHECKS COMPLETED SUCCESSFULLY
+============================================================================
+exit=0
+
+=================== script verify_playback_transport.py (2026-11-26T19:30:08-08:00)
+Benchmark Scenarios Passed: 8 / 8
+Total Assertions Passed:    44 / 44
+Zero Failures. Zero Errors. Status: PASS
+================================================================================
+exit=0
+
+=================== script verify_progressive.py (2026-11-26T19:30:09-08:00)
+
+================================================================================
+ALL PROGRESSIVE REFITTING & SONG INDEPENDENCE PROOFS PASSED!
+================================================================================
+exit=0
+
+=================== script verify_proof.py (2026-11-26T19:30:09-08:00)
+
+================================================================================
+ALL MATHEMATICAL PROOFS PASSED SUCCESSFULLY!
+================================================================================
+exit=0
+
+=================== script verify_row_merger.py (2026-11-26T19:30:09-08:00)
+   - Zero modifications to production codebase or Calculator repository.
+================================================================================
+ALL EXPERIMENTAL RUNS EXECUTED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+exit=0
+
+=================== done (2026-11-26T19:30:09-08:00)
+
+====================================================================================================
+13. ROW 1 SOURCE PRESERVATION CORRECTION (resubmission 5, 2026-11-26)
+====================================================================================================
+Exit codes below are the Python processes' own (output captured to a file first; see row1_source/final_verification_v3.sh).
+Test accounting: 291 run = 277 passed + 14 skipped (gated real-device tests, which pass 14/14 in their own step).
+
+--- negative baseline: probe_row1_source_matrix.py on PRE-correction code ---
+WAV: after source load             loads=['synth', 'pcm'] synth=False state=STOPPED  pos=    0.0 dataset='Imported WAV: w.wav' badge='[Audio: Authentic PCM WAV]' row1='Row 1 (Constant): [1, 0, 1, 0, 1, 0, 1'
+WAV: toggle (stopped)              loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: w.wav' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [60.0, 0.0, 62.0,'
+WAV: toggle (playing)              loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: w.wav' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 0, 1, 0, 1, 0, 1'
+WAV: toggle (paused)               loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: w.wav' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [60.0, 0.0, 62.0,'
+WAV: PCM/audio bytes identical after toggles: False
+MusicXML: after source load        loads=['synth', 'synth'] synth=True  state=STOPPED  pos=    0.0 dataset='Imported MusicXML: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 1, 1, 1]'
+MusicXML: toggle (stopped)         loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [60.0, 62.0, 64.0'
+MusicXML: toggle (playing)         loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 1, 1, 1]'
+MusicXML: toggle (paused)          loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [60.0, 62.0, 64.0'
+MusicXML: PCM/audio bytes identical after toggles: True
+MIDI fixture: after source load    loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 2, 1, 2, 1, 2, 1'
+MIDI fixture: toggle (stopped)     loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [36.0, 44.7, 39.5'
+MIDI fixture: toggle (playing)     loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 2, 1, 2, 1, 2, 1'
+MIDI fixture: toggle (paused)      loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [36.0, 44.7, 39.5'
+MIDI fixture: PCM/audio bytes identical after toggles: True
+--- same probe AFTER correction ---
+WAV: after source load             loads=['pcm']          synth=False state=STOPPED  pos=    0.0 dataset='Imported WAV: w.wav' badge='[Audio: Authentic PCM WAV]' row1='Row 1 (Constant): [1, 0, 1, 0, 1, 0, 1'
+WAV: toggle (stopped)              loads=[]               synth=False state=STOPPED  pos=    0.0 dataset='Imported WAV: w.wav' badge='[Audio: Authentic PCM WAV]' row1='Row 1 (Dev Profile): [60.0, 0.0, 62.0,'
+WAV: toggle (playing)              loads=[]               synth=False state=PLAYING  pos=  120.0 dataset='Imported WAV: w.wav' badge='[Audio: Authentic PCM WAV]' row1='Row 1 (Constant): [1, 0, 1, 0, 1, 0, 1'
+WAV: toggle (paused)               loads=[]               synth=False state=PAUSED   pos=  120.0 dataset='Imported WAV: w.wav' badge='[Audio: Authentic PCM WAV]' row1='Row 1 (Dev Profile): [60.0, 0.0, 62.0,'
+WAV: PCM/audio bytes identical after toggles: True
+MusicXML: after source load        loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported MusicXML: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 1, 1, 1]'
+MusicXML: toggle (stopped)         loads=[]               synth=True  state=STOPPED  pos=    0.0 dataset='Imported MusicXML: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [60.0, 62.0, 64.0'
+MusicXML: toggle (playing)         loads=[]               synth=True  state=PLAYING  pos=  120.0 dataset='Imported MusicXML: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 1, 1, 1]'
+MusicXML: toggle (paused)          loads=[]               synth=True  state=PAUSED   pos=  120.0 dataset='Imported MusicXML: four.musicxml' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [60.0, 62.0, 64.0'
+MusicXML: PCM/audio bytes identical after toggles: True
+MIDI fixture: after source load    loads=['synth']        synth=True  state=STOPPED  pos=    0.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 2, 1, 2, 1, 2, 1'
+MIDI fixture: toggle (stopped)     loads=[]               synth=True  state=STOPPED  pos=    0.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [36.0, 44.7, 39.5'
+MIDI fixture: toggle (playing)     loads=[]               synth=True  state=PLAYING  pos=  120.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Constant): [1, 2, 1, 2, 1, 2, 1'
+MIDI fixture: toggle (paused)      loads=[]               synth=True  state=PAUSED   pos=  120.0 dataset='Imported: Synthetic Orchestral Flight (Low-to-High)' badge='[Audio: Synthesized (Audible)]' row1='Row 1 (Dev Profile): [36.0, 44.7, 39.5'
+MIDI fixture: PCM/audio bytes identical after toggles: True
+--- new tests vs PRE-correction code ---
+FAIL: test_genuine_source_selection_still_replaces_wav (tests.test_wav_import_regression.TestRow1SourcePreservation.test_genuine_source_selection_still_replaces_wav)
+AssertionError: Lists differ: ['synth', 'synth'] != ['synth']
+FAIL: test_musicxml_and_midi_sources_survive_row1_toggles (tests.test_wav_import_regression.TestRow1SourcePreservation.test_musicxml_and_midi_sources_survive_row1_toggles)
+AssertionError: Lists differ: ['synth', 'synth'] != ['synth']
+FAIL: test_wav_pcm_survives_row1_toggles_in_every_transport_state (tests.test_wav_import_regression.TestRow1SourcePreservation.test_wav_pcm_survives_row1_toggles_in_every_transport_state)
+AssertionError: Lists differ: ['synth', 'pcm'] != ['pcm']
+FAIL: test_row1_toggle_is_not_a_source_selection (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_row1_toggle_is_not_a_source_selection)
+AssertionError: None is not <_WavImportJob(WavImportAnalysis, started daemon 2836)>
+Ran 4 tests in 20.519s
+FAILED (failures=4)
+--- new tests vs PRE-correction code, import-count assertions relaxed (toggle checks alone) ---
+FAIL: test_musicxml_and_midi_sources_survive_row1_toggles (tests.test_wav_import_regression.TestRow1SourcePreservation.test_musicxml_and_midi_sources_survive_row1_toggles)
+AssertionError: Lists differ: ['synth'] != []
+FAIL: test_wav_pcm_survives_row1_toggles_in_every_transport_state (tests.test_wav_import_regression.TestRow1SourcePreservation.test_wav_pcm_survives_row1_toggles_in_every_transport_state)
+AssertionError: Lists differ: ['synth'] != []
+Ran 3 tests in 18.553s
+FAILED (failures=2)
+--- test ids: before=287 after=291 missing=0 ---
+
+=================== interpreter (2026-11-26T19:41:06-08:00)
+<project>\.venv\Scripts\python.exe
+3.15.2 (tags/v3.15.2:5e58eaa, Oct 25 2026, 17:27:03) [MSC v.1951 64 bit (AMD64)]
+python exit code = 0
+
+=================== focused: tests.test_wav_import_regression (2026-11-26T19:41:06-08:00)
+test_analysis_error_is_reported_on_tk_thread (tests.test_wav_import_regression.TestGuiWavImportPath.test_analysis_error_is_reported_on_tk_thread) ... [measure] not_a_wav.wav: Tk heartbeats during analysis=2, largest gap=22 ms
+ok
+test_import_play_complete_and_replace_source (tests.test_wav_import_regression.TestGuiWavImportPath.test_import_play_complete_and_replace_source) ... [measure] four_notes.wav: Tk heartbeats during analysis=90, largest gap=141 ms
+[measure] two_notes.wav: Tk heartbeats during analysis=36, largest gap=112 ms
+ok
+test_second_open_while_analysing_is_refused_not_queued (tests.test_wav_import_regression.TestGuiWavImportPath.test_second_open_while_analysing_is_refused_not_queued) ... ok
+test_window_destroyed_during_analysis_ignores_result (tests.test_wav_import_regression.TestGuiWavImportPath.test_window_destroyed_during_analysis_ignores_result) ... ok
+test_author_equivalent_file_imports_without_crashing (tests.test_wav_import_regression.TestNonSilentImportInChildProcess.test_author_equivalent_file_imports_without_crashing) ... ok
+test_genuine_source_selection_still_replaces_wav (tests.test_wav_import_regression.TestRow1SourcePreservation.test_genuine_source_selection_still_replaces_wav) ... [measure] four.wav: Tk heartbeats during analysis=88, largest gap=127 ms
+ok
+test_musicxml_and_midi_sources_survive_row1_toggles (tests.test_wav_import_regression.TestRow1SourcePreservation.test_musicxml_and_midi_sources_survive_row1_toggles) ... ok
+test_wav_pcm_survives_row1_toggles_in_every_transport_state (tests.test_wav_import_regression.TestRow1SourcePreservation.test_wav_pcm_survives_row1_toggles_in_every_transport_state) ... [measure] four.wav: Tk heartbeats during analysis=85, largest gap=143 ms
+ok
+test_cancelled_dialog_is_not_a_source_selection (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_cancelled_dialog_is_not_a_source_selection) ... ok
+test_current_failure_is_still_reported (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_current_failure_is_still_reported) ... ok
+test_mode_without_transport_reload_also_supersedes (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_mode_without_transport_reload_also_supersedes) ... ok
+test_musicxml_source_loaded_during_analysis_is_kept (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_musicxml_source_loaded_during_analysis_is_kept) ... ok
+test_new_import_refused_while_obsolete_worker_computes_then_allowed (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_new_import_refused_while_obsolete_worker_computes_then_allowed) ... ok
+test_normal_import_publishes_exactly_once (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_normal_import_publishes_exactly_once) ... ok
+test_obsolete_failure_shows_no_dialog_and_keeps_badge (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_obsolete_failure_shows_no_dialog_and_keeps_badge) ... ok
+test_progressive_selection_discards_obsolete_success (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_progressive_selection_discards_obsolete_success) ... ok
+test_row1_toggle_is_not_a_source_selection (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_row1_toggle_is_not_a_source_selection) ... ok
+test_shutdown_with_obsolete_worker_running (tests.test_wav_import_regression.TestStaleWavImportLifecycle.test_shutdown_with_obsolete_worker_running) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 96.544s
+
+OK
+python exit code = 0
+
+=================== full regression suite (discover tests) (2026-11-26T19:42:43-08:00)
+.......................................................................................................................................................................................................................................Controlled audio shutdown after transport failure failed: AudioBackendError("Failed to stop audio device 'vmm_audio_2699700655440': MCI command failed 'stop vmm_audio_2699700655440': The specified device is not open or is not recognized by MCI. (code 263)")
+.ssssssssssssss...........................[measure] not_a_wav.wav: Tk heartbeats during analysis=2, largest gap=20 ms
+.[measure] four_notes.wav: Tk heartbeats during analysis=88, largest gap=126 ms
+[measure] two_notes.wav: Tk heartbeats during analysis=43, largest gap=111 ms
+....[measure] four.wav: Tk heartbeats during analysis=88, largest gap=142 ms
+..[measure] four.wav: Tk heartbeats during analysis=89, largest gap=285 ms
+...........
+----------------------------------------------------------------------
+Ran 291 tests in 145.539s
+
+OK (skipped=14)
+python exit code = 0
+
+=================== real-device suite MUSIC_REAL_AUDIO_TESTS=1 (2026-11-26T19:45:09-08:00)
+test_r1_ordinary_playback_advances_without_mci_263 (tests.test_playback_windows_device.TestRealMciDevice.test_r1_ordinary_playback_advances_without_mci_263) ... [measure] R1 ticks=26 last_published=384.0ms device_now=391ms wall_since_play=425.8ms device-published=7.0ms
+[measure] R1 update interval ms: mean=15.19 max=15.35; step_tick duration ms: mean=0.181 max=0.403; independent Tk 1 ms probe lateness max=6.3ms
+ok
+test_r2_fractional_22070_frame_wav_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2_fractional_22070_frame_wav_completes) ... invalid command name "1487361524352probe"
+    while executing
+"1487361524352probe"
+    ("after" script)
+[measure] frames=22070@44100: exact=500.45351473922904ms (round-6 up) device_length=500ms state=STOPPED final=500.45351473922904 completion wall time - exact duration = 76.4ms
+ok
+test_r2b_fractional_22071_frame_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2b_fractional_22071_frame_wav_rounding_down_completes) ... [measure] frames=22071@44100: exact=500.4761904761905ms (round-6 down) device_length=500ms state=STOPPED final=500.4761904761905 completion wall time - exact duration = 76.0ms
+ok
+test_r2c_fractional_48khz_wav_rounding_down_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r2c_fractional_48khz_wav_rounding_down_completes) ... [measure] frames=4801@48000: exact=100.02083333333333ms (round-6 down) device_length=100ms state=STOPPED final=100.02083333333333 completion wall time - exact duration = 62.5ms
+ok
+test_r3_exact_1000ms_control_completes (tests.test_playback_windows_device.TestRealMciDevice.test_r3_exact_1000ms_control_completes) ... [measure] frames=44100@44100: exact=1000.0ms (round-6 exact) device_length=1000ms state=STOPPED final=1000.0 completion wall time - exact duration = 47.4ms
+ok
+test_r4_pause_halts_device_and_resume_continues (tests.test_playback_windows_device.TestRealMciDevice.test_r4_pause_halts_device_and_resume_continues) ... [measure] R4 paused transport=301.0ms device-after-pause=321ms (device coordinate step across 'pause' = 20.0ms; stable over 300 ms: True)
+[measure] R4 after resume: first published=301.0ms, first changed value=321.0ms (forward step at resume = 20.0ms)
+ok
+test_r5_seek_while_paused_then_play (tests.test_playback_windows_device.TestRealMciDevice.test_r5_seek_while_paused_then_play) ... [measure] R5 after seek(2000.4)+play+200ms: transport=2176.0ms device=2191ms
+ok
+test_r6_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6_fractional_duration_looping) ... [measure] R6 loops=3 ticks=107; per-cycle wall time beyond exact duration (upper bound on the restart gap, includes up to one update interval): [75.4, 75.7, 74.9] ms
+ok
+test_r6b_rounding_down_fractional_duration_looping (tests.test_playback_windows_device.TestRealMciDevice.test_r6b_rounding_down_fractional_duration_looping) ... [measure] R6b 22071 frames: loops=3 errors=0 state=PLAYING
+ok
+test_r7_cross_thread_command_is_refused_device_unaffected (tests.test_playback_windows_device.TestRealMciDevice.test_r7_cross_thread_command_is_refused_device_unaffected) ... ok
+test_r8_close_releases_device_and_temp_file (tests.test_playback_windows_device.TestRealMciDevice.test_r8_close_releases_device_and_temp_file) ... ok
+test_r9_source_replacement_releases_previous_device (tests.test_playback_windows_device.TestRealMciDevice.test_r9_source_replacement_releases_previous_device) ... ok
+test_gui_imports_non_silent_wav_into_real_device_and_releases_it (tests.test_playback_windows_device.TestRealMciNonSilentWavImport.test_gui_imports_non_silent_wav_into_real_device_and_releases_it) ... [measure] R11 real-device non-silent WAV import: 2 imports OK, device lengths 1600/700 ms, previous temp released
+ok
+test_gui_end_to_end_playback_completion_and_teardown (tests.test_playback_windows_device.TestRealMciThroughMusicGUI.test_gui_end_to_end_playback_completion_and_teardown) ... [measure] R10 GUI: snapshots rendered=36, Tk 1 ms timer lateness during playback: median=0.01ms p95=0.30ms max=1.10ms (n=523)
+ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 22.764s
+
+OK
+python exit code = 0
+
+=================== script verify_audio_and_sheet_adapters.py (2026-11-26T19:45:32-08:00)
+  Total Assertions Evaluated:      47/47 PASSED (100%)
+  Total Benchmark Scenarios:       34/34 PASSED (12 Audio + 22 MusicXML)
+================================================================================
+RESULT: SUCCESS (EXIT CODE 0) — ALL JOB-02 PROTOTYPE CAPABILITIES VERIFIED
+python exit code = 0
+
+=================== script verify_development.py (2026-11-26T19:46:00-08:00)
+
+================================================================================
+ALL EXPERIMENTAL DEVELOPMENT PROOFS COMPLETED SUCCESSFULLY!
+================================================================================
+python exit code = 0
+
+=================== script verify_group_discovery.py (2026-11-26T19:46:00-08:00)
+   preserving true 50ms duration without mathematical collapse.
+================================================================================
+ALL MILESTONE 5A CORRECTED VERIFICATION CHECKS COMPLETED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+python exit code = 0
+
+=================== script verify_group_units.py (2026-11-26T19:46:00-08:00)
+
+================================================================================
+ALL MILESTONE 4A MATHEMATICAL CHECKS PASSED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+python exit code = 0
+
+=================== script verify_midi_import.py (2026-11-26T19:46:01-08:00)
+
+============================================================================
+ALL STAGE 3 VERIFICATION CHECKS COMPLETED SUCCESSFULLY
+============================================================================
+python exit code = 0
+
+=================== script verify_playback_transport.py (2026-11-26T19:46:01-08:00)
+Benchmark Scenarios Passed: 8 / 8
+Total Assertions Passed:    44 / 44
+Zero Failures. Zero Errors. Status: PASS
+================================================================================
+python exit code = 0
+
+=================== script verify_progressive.py (2026-11-26T19:46:01-08:00)
+
+================================================================================
+ALL PROGRESSIVE REFITTING & SONG INDEPENDENCE PROOFS PASSED!
+================================================================================
+python exit code = 0
+
+=================== script verify_proof.py (2026-11-26T19:46:02-08:00)
+
+================================================================================
+ALL MATHEMATICAL PROOFS PASSED SUCCESSFULLY!
+================================================================================
+python exit code = 0
+
+=================== script verify_row_merger.py (2026-11-26T19:46:02-08:00)
+   - Zero modifications to production codebase or Calculator repository.
+================================================================================
+ALL EXPERIMENTAL RUNS EXECUTED SUCCESSFULLY (EXIT CODE 0)!
+================================================================================
+python exit code = 0
+
+=================== done (2026-11-26T19:46:02-08:00)
+
+====================================================================================================
+14. AUTOMATED ACCEPTANCE PACKAGE (2026-11-26 / 2026-11-27 UTC)
+====================================================================================================
+Command: .venv\Scripts\python.exe acceptance/run_acceptance.py --windows-device
+Per-step exit codes are the child Python processes' own (subprocess return codes).
+
+JOB-03 acceptance runner | python 3.15.2 | win32 | results: <project>\acceptance_results\20261127T041944Z
+[suite] python exit code = 0 (172.8 s); run=293 failures=0 errors=0 skipped=14
+[device] python exit code = 0 (22.9 s); run=14 failures=0 errors=0 skipped=0
+[script] verify_audio_and_sheet_adapters.py: python exit code = 0 (28.0 s)
+[script] verify_development.py: python exit code = 0 (0.1 s)
+[script] verify_group_discovery.py: python exit code = 0 (0.1 s)
+[script] verify_group_units.py: python exit code = 0 (0.1 s)
+[script] verify_midi_import.py: python exit code = 0 (0.1 s)
+[script] verify_playback_transport.py: python exit code = 0 (0.6 s)
+[script] verify_progressive.py: python exit code = 0 (0.1 s)
+[script] verify_proof.py: python exit code = 0 (0.1 s)
+[script] verify_row_merger.py: python exit code = 0 (0.1 s)
+
+SUITE: run=293 passed=279 skipped=14 failures=0 errors=0 (exit 0)
+DEVICE: {'exit_code': 0, 'run': 14, 'failures': 0, 'errors': 0, 'skipped': 0}
+  A01  PASS                                             device: n/a
+  A02  PASS                                             device: n/a
+  A03  PASS                                             device: PASS
+  A04  PASS                                             device: PASS
+  A05  PASS                                             device: n/a
+  A06  PASS                                             device: n/a
+  A07  PASS                                             device: PASS
+  A08  PASS                                             device: n/a
+  A09  PASS                                             device: n/a
+  A10  PASS                                             device: n/a
+  A11  PASS                                             device: n/a
+  A12  PASS                                             device: PASS
+  A13  PASS                                             device: PASS
+  A14  PASS                                             device: PASS
+  A15  PASS                                             device: PASS
+  A16  PASS                                             device: PASS
+  A17  PASS                                             device: PASS
+  A18  PASS                                             device: PASS
+  A19  PASS                                             device: n/a
+  A20  NO-AUTOMATED-COVERAGE                            device: n/a
+  A21  PASS (regression only; see remaining_unverified) device: n/a
+  A22  PASS                                             device: PASS
+
+ACCEPTANCE CHECKS PASSED  -> <project>\acceptance_results\20261127T041944Z\report.md
+runner python exit code = 0
+
+--- negative check of the acceptance gate ---
+Negative check of the acceptance gate (scratch project: 1 passing test, 1 failing test, 1 matrix typo; --skip-scripts)
+runner python exit code = 1 (observed)
+
+# JOB-03 Acceptance Report (20261127T042347Z)
+
+- Python: `3.15.2` on `Windows-11-10.0.26300-SP0`
+- **Overall: ACCEPTANCE CHECKS FAILED**
+- Complete suite: run 2, **passed 1, skipped 0**, failures 1, errors 0 (python exit code 1)
+- Real Windows device tests: **not run here** (opt-in, Windows only: `--windows-device`)
+- Standalone scripts: verify_audio_and_sheet_adapters.py = NOT RUN, verify_development.py = NOT RUN, verify_group_discovery.py = NOT RUN, verify_group_units.py = NOT RUN, verify_midi_import.py = NOT RUN, verify_playback_transport.py = NOT RUN, verify_progressive.py = NOT RUN, verify_proof.py = NOT RUN, verify_row_merger.py = NOT RUN
+
+> Simulated and device timing figures are software/driver measurements, not acoustic measurements.
+
+## Requirements
+
+| ID | Requirement | Automated (this run) | Windows device | Author observation | Remaining unverified |
+|---|---|---|---|---|---|
+| N1 | passing test | **PASS** (1/1 tests) | n/a | — | — |
+| N2 | failing test | **FAIL** (0/1 tests) | n/a | — | — |
+| N3 | typo id | **FAIL** (0/1 tests) | n/a | — | — |
+
+## Test mapping
+
+### N1 — PASS
+- [pass] `tests.test_neg.T.test_ok`
+
+### N2 — FAIL
+- [fail] `tests.test_neg.T.test_broken`
+
+### N3 — FAIL
+- [missing] `tests.test_neg.T.test_does_not_exist`
+
+## Skipped tests in the complete suite
+
+- none
+
+**Matrix errors (gate failure):**
+- N3: unknown test id tests.test_neg.T.test_does_not_exist
+
+## Optional physical observations (need speakers; not required for automated acceptance)
+
+
+====================================================================================================
+15. PUBLICATION PREPARATION: ACCEPTANCE RUNNER SCOPE CORRECTION (2026-11-27 UTC)
+====================================================================================================
+Required scripts (7) always run; optional experimental scripts (verify_group_discovery.py, verify_row_merger.py) run only when present.
+Exit codes are the child Python processes' own.
+
+--- rule checks (scratch project) ---
+Required/optional script rule checks (scratch project, one passing test, stub scripts), 2026-11-27 UTC
+case 1: 7 required present and passing, both optional absent -> both optional reported "OUTSIDE PUBLICATION SCOPE (absent)"; PASS; runner exit 0
+case 2: required verify_proof.py missing -> "MISSING (required)"; FAIL; runner exit 1
+case 3: optional verify_row_merger.py present, exits 3 -> FAIL; runner exit 1
+case 4: optional verify_row_merger.py present, exits 0 (verify_group_discovery.py absent) -> PASS; runner exit 0
+Note: results directories are named by UTC second; two runs started within one second share a directory (cases 1-2). No verdict is affected.
+
+=== (1) complete local project
+JOB-03 acceptance runner | python 3.15.2 | win32 | results: <project>\acceptance_results\20261127T044525Z
+[suite] python exit code = 0 (172.3 s); run=293 failures=0 errors=0 skipped=14
+[device] python exit code = 0 (22.9 s); run=14 failures=0 errors=0 skipped=0
+[script] verify_audio_and_sheet_adapters.py (required): python exit code = 0 (28.5 s)
+[script] verify_development.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_units.py (required): python exit code = 0 (0.1 s)
+[script] verify_midi_import.py (required): python exit code = 0 (0.1 s)
+[script] verify_playback_transport.py (required): python exit code = 0 (0.6 s)
+[script] verify_progressive.py (required): python exit code = 0 (0.1 s)
+[script] verify_proof.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_discovery.py (optional, present): python exit code = 0 (0.1 s)
+[script] verify_row_merger.py (optional, present): python exit code = 0 (0.1 s)
+
+SUITE: run=293 passed=279 skipped=14 failures=0 errors=0 (exit 0)
+DEVICE: {'exit_code': 0, 'run': 14, 'failures': 0, 'errors': 0, 'skipped': 0}
+  A01  PASS                                             device: n/a
+  A02  PASS                                             device: n/a
+  A03  PASS                                             device: PASS
+  A04  PASS                                             device: PASS
+  A05  PASS                                             device: n/a
+  A06  PASS                                             device: n/a
+  A07  PASS                                             device: PASS
+  A08  PASS                                             device: n/a
+  A09  PASS                                             device: n/a
+  A10  PASS                                             device: n/a
+  A11  PASS                                             device: n/a
+  A12  PASS                                             device: PASS
+  A13  PASS                                             device: PASS
+  A14  PASS                                             device: PASS
+  A15  PASS                                             device: PASS
+  A16  PASS                                             device: PASS
+  A17  PASS                                             device: PASS
+  A18  PASS                                             device: PASS
+  A19  PASS                                             device: n/a
+  A20  NO-AUTOMATED-COVERAGE                            device: n/a
+  A21  PASS (regression only; see remaining_unverified) device: n/a
+  A22  PASS                                             device: PASS
+
+ACCEPTANCE CHECKS PASSED  -> <project>\acceptance_results\20261127T044525Z\report.md
+runner python exit code = 0
+=== (2) exact proposed publication tree
+JOB-03 acceptance runner | python 3.15.2 | win32 | results: %TEMP%\scratch\pubtree2\acceptance_results\20261127T044910Z
+[suite] python exit code = 0 (172.3 s); run=278 failures=0 errors=0 skipped=14
+[device] python exit code = 0 (22.9 s); run=14 failures=0 errors=0 skipped=0
+[script] verify_audio_and_sheet_adapters.py (required): python exit code = 0 (27.9 s)
+[script] verify_development.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_units.py (required): python exit code = 0 (0.1 s)
+[script] verify_midi_import.py (required): python exit code = 0 (0.1 s)
+[script] verify_playback_transport.py (required): python exit code = 0 (0.6 s)
+[script] verify_progressive.py (required): python exit code = 0 (0.1 s)
+[script] verify_proof.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_discovery.py: OUTSIDE PUBLICATION SCOPE (absent)
+[script] verify_row_merger.py: OUTSIDE PUBLICATION SCOPE (absent)
+
+SUITE: run=278 passed=264 skipped=14 failures=0 errors=0 (exit 0)
+DEVICE: {'exit_code': 0, 'run': 14, 'failures': 0, 'errors': 0, 'skipped': 0}
+  A01  PASS                                             device: n/a
+  A02  PASS                                             device: n/a
+  A03  PASS                                             device: PASS
+  A04  PASS                                             device: PASS
+  A05  PASS                                             device: n/a
+  A06  PASS                                             device: n/a
+  A07  PASS                                             device: PASS
+  A08  PASS                                             device: n/a
+  A09  PASS                                             device: n/a
+  A10  PASS                                             device: n/a
+  A11  PASS                                             device: n/a
+  A12  PASS                                             device: PASS
+  A13  PASS                                             device: PASS
+  A14  PASS                                             device: PASS
+  A15  PASS                                             device: PASS
+  A16  PASS                                             device: PASS
+  A17  PASS                                             device: PASS
+  A18  PASS                                             device: PASS
+  A19  PASS                                             device: n/a
+  A20  NO-AUTOMATED-COVERAGE                            device: n/a
+  A21  PASS (regression only; see remaining_unverified) device: n/a
+  A22  PASS                                             device: PASS
+
+ACCEPTANCE CHECKS PASSED  -> %TEMP%\scratch\pubtree2\acceptance_results\20261127T044910Z\report.md
+runner python exit code = 0
+finished

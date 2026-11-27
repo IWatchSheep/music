@@ -18,9 +18,11 @@ Houses:
 
 from __future__ import annotations
 
+import logging
+import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from typing import Optional
+from typing import Any, Optional, Set
 
 from music_gui.dual_view import DualSongView
 from music_gui.gui_style import (
@@ -32,6 +34,20 @@ from music_gui.gui_style import (
     FONT_TOOLBAR,
     FONT_TOOLBAR_BOLD,
 )
+from music_gui.audio_playback import (
+    AudioBackendError,
+    AudioBackendStatus,
+    NullAudioBackend,
+    PlaybackTransport,
+    RealClock,
+    TkScheduler,
+    TransportSnapshot,
+    TransportState,
+    WindowsMciAudioBackend,
+    WindowsWaveBackend,
+)
+from music_model.audio_importer import import_audio_to_sound_events
+from music_model.musicxml_importer import parse_musicxml
 from music_gui.timeline_canvas import TimelineCanvas
 from music_model.constant_row import calculate_constant_row
 from music_model.datasets import (
@@ -55,6 +71,37 @@ from verify_group_units import (
     build_flat_control_passage,
     build_song_2_independent,
 )
+
+
+_log = logging.getLogger(__name__)
+
+
+class _WavImportJob(threading.Thread):
+    """Background JOB-02 analysis of one WAV file (no Tk, transport or device access).
+
+    The result (events or the raised exception) is read by MusicGUI._poll_wav_import on the Tk
+    thread after the thread has finished.  The original bytes are kept unchanged for playback.
+
+    Computational lifetime and publishing authority are separate.  The thread always runs to
+    completion (Python threads cannot be terminated safely).  It may publish only while it is still
+    MusicGUI._wav_import_job and its `generation` equals MusicGUI._source_generation, i.e. no other
+    source or mode has been selected since it started (see MusicGUI._supersede_pending_wav_import).
+    """
+
+    def __init__(self, filepath: str, wav_bytes: bytes, row_id: str, generation: int) -> None:
+        super().__init__(name="WavImportAnalysis", daemon=True)
+        self.filepath = filepath
+        self.wav_bytes = wav_bytes
+        self.row_id = row_id
+        self.generation = generation         # source-selection generation at start (read on the Tk thread only)
+        self.events: list = []
+        self.error: Optional[BaseException] = None
+
+    def run(self) -> None:
+        try:
+            self.events = import_audio_to_sound_events(self.wav_bytes, row_id=self.row_id)
+        except BaseException as ex:          # reported to the user on the Tk thread
+            self.error = ex
 
 
 class MusicGUI(tk.Tk):
@@ -81,9 +128,23 @@ class MusicGUI(tk.Tk):
         )
         self.song1, self.song2 = create_dual_independent_songs()
         self.current_song: Optional[SongTimeline] = None
+        self.transport: Optional[PlaybackTransport] = None
+        self._slider_seeking: bool = False
+        # Last transport snapshot rendered by the GUI (stale-notification rejection).
+        self._rendered_snapshot: Optional[TransportSnapshot] = None
+        # Asynchronous WAV import lifecycle (see _on_open_wav_file and _supersede_pending_wav_import).
+        # _source_generation: incremented on every source or mode selection (Tk thread only).
+        # _wav_import_job: the pending import that still has authority to publish; None otherwise.
+        # _wav_worker: the most recently started analysis thread, authorized or not, so that at most
+        #   one analysis computes at a time (an obsolete worker is never terminated, only disowned).
+        self._source_generation: int = 0
+        self._wav_import_job: Optional[_WavImportJob] = None
+        self._wav_worker: Optional[_WavImportJob] = None
+        self._wav_import_after_id: Optional[str] = None
 
         # Build UI layout
         self._build_toolbar()
+        self._build_transport_bar()
         self._build_summary_bar()
         self._build_content_area()
         self._build_status_bar()
@@ -274,6 +335,356 @@ class MusicGUI(tk.Tk):
             command=self._on_zoom_reset,
         ).pack(side="left", padx=2)
 
+    def _build_transport_bar(self) -> None:
+        """Create the real-time audio playback and transport control bar (JOB-03)."""
+        bar = tk.Frame(self, bg="#0f172a", padx=8, pady=4)
+        bar.pack(fill="x", side="top", padx=8, pady=(0, 2))
+
+        # 1. Transport Buttons
+        btn_frame = tk.Frame(bar, bg="#0f172a")
+        btn_frame.pack(side="left", padx=(4, 12))
+
+        self.btn_play = tk.Button(
+            btn_frame,
+            text="▶ Play",
+            font=FONT_TOOLBAR_BOLD,
+            bg="#22c55e",
+            fg="#ffffff",
+            activebackground="#16a34a",
+            activeforeground="#ffffff",
+            relief="raised",
+            bd=1,
+            padx=10,
+            pady=2,
+            command=self.on_transport_play,
+        )
+        self.btn_play.pack(side="left", padx=2)
+
+        self.btn_pause = tk.Button(
+            btn_frame,
+            text="⏸ Pause",
+            font=FONT_TOOLBAR_BOLD,
+            bg="#eab308",
+            fg="#0f172a",
+            activebackground="#ca8a04",
+            relief="raised",
+            bd=1,
+            padx=10,
+            pady=2,
+            command=self.on_transport_pause,
+        )
+        self.btn_pause.pack(side="left", padx=2)
+
+        self.btn_stop = tk.Button(
+            btn_frame,
+            text="⏹ Stop",
+            font=FONT_TOOLBAR_BOLD,
+            bg="#ef4444",
+            fg="#ffffff",
+            activebackground="#dc2626",
+            activeforeground="#ffffff",
+            relief="raised",
+            bd=1,
+            padx=10,
+            pady=2,
+            command=self.on_transport_stop,
+        )
+        self.btn_stop.pack(side="left", padx=2)
+
+        # Loop toggle
+        self.loop_var = tk.BooleanVar(value=False)
+        self.chk_loop = tk.Checkbutton(
+            btn_frame,
+            text="Loop",
+            variable=self.loop_var,
+            font=FONT_TOOLBAR,
+            bg="#0f172a",
+            fg="#e2e8f0",
+            selectcolor="#1e293b",
+            activebackground="#0f172a",
+            activeforeground="#ffffff",
+            command=self.on_transport_toggle_loop,
+        )
+        self.chk_loop.pack(side="left", padx=8)
+
+        # 2. Time Position Display
+        self.lbl_time = tk.Label(
+            bar,
+            text="00:00.000 / 00:00.000",
+            font=("Segoe UI", 9, "bold"),
+            bg="#1e293b",
+            fg="#38bdf8",
+            padx=8,
+            pady=3,
+            relief="sunken",
+            bd=1,
+        )
+        self.lbl_time.pack(side="left", padx=(0, 12))
+
+        # 3. Audio Mode Badge
+        self.lbl_audio_mode = tk.Label(
+            bar,
+            text="[Audio: Synthesized]",
+            font=("Segoe UI", 8, "bold"),
+            bg="#1e293b",
+            fg="#a855f7",
+            padx=6,
+            pady=2,
+            relief="groove",
+            bd=1,
+        )
+        self.lbl_audio_mode.pack(side="left", padx=(0, 12))
+
+        # 4. Seek Slider
+        self.seek_var = tk.DoubleVar(value=0.0)
+        self.seek_slider = ttk.Scale(
+            bar,
+            from_=0.0,
+            to=1000.0,
+            orient="horizontal",
+            variable=self.seek_var,
+            command=self._on_slider_change,
+        )
+        self.seek_slider.pack(side="left", fill="x", expand=True, padx=4)
+        self.seek_slider.bind("<ButtonPress-1>", lambda e: setattr(self, "_slider_seeking", True))
+        self.seek_slider.bind("<ButtonRelease-1>", self._on_slider_release)
+
+        # Keyboard shortcuts
+        self.bind("<space>", lambda e: self.on_transport_toggle_play_pause())
+        self.bind("<Escape>", lambda e: self.on_transport_stop())
+
+    def _handle_audio_error(self, ex: Exception) -> None:
+        """Surface audio backend failures cleanly in GUI status badge."""
+        err_msg = f"[Audio Error: {ex}]"
+        if hasattr(self, "lbl_audio_mode"):
+            self.lbl_audio_mode.configure(text=err_msg[:40], fg="#ef4444")
+
+    def on_transport_play(self) -> None:
+        """Start audio playback and visual transport."""
+        if self.transport is not None:
+            try:
+                self.transport.play()
+            except AudioBackendError as ex:
+                self._handle_audio_error(ex)
+
+    def on_transport_pause(self) -> None:
+        """Pause playback preserving exact position."""
+        if self.transport is not None:
+            try:
+                self.transport.pause()
+            except AudioBackendError as ex:
+                self._handle_audio_error(ex)
+
+    def on_transport_stop(self) -> None:
+        """Stop playback.
+
+        The cursor is not cleared here: the transport's own snapshot decides it.  A
+        successful stop publishes STOPPED at 0 (idle: cursor cleared); a failed stop
+        publishes ERROR at the preserved coordinate (cursor kept there).
+        """
+        if self.transport is not None:
+            try:
+                self.transport.stop()
+            except AudioBackendError as ex:
+                self._handle_audio_error(ex)
+
+    def on_transport_toggle_play_pause(self) -> None:
+        """Toggle play/pause via keyboard shortcut or toolbar."""
+        if self.transport is not None:
+            try:
+                if self.transport.state == TransportState.PLAYING:
+                    self.transport.pause()
+                else:
+                    self.transport.play()
+            except AudioBackendError as ex:
+                self._handle_audio_error(ex)
+
+    def on_transport_toggle_loop(self) -> None:
+        """Toggle transport loop mode."""
+        if self.transport is not None:
+            self.transport.set_loop(self.loop_var.get())
+
+    def _on_slider_change(self, val: Any) -> None:
+        """Handle interactive slider dragging (preview label only; no transport change)."""
+        if self._slider_seeking:
+            target_ms = float(val)
+            dur_ms = self.transport.total_duration_ms if self.transport else 0.0
+            self.lbl_time.configure(text=f"{self._format_time(target_ms)} / {self._format_time(dur_ms)}")
+
+    def _on_slider_release(self, _event: Any) -> None:
+        """Apply seek position when slider is released.
+
+        On failure the transport publishes ERROR at the preserved coordinate and the
+        slider is moved back there by that snapshot.
+        """
+        self._slider_seeking = False
+        if self.transport is not None:
+            try:
+                self.transport.seek(float(self.seek_var.get()))
+            except AudioBackendError as ex:
+                self._handle_audio_error(ex)
+            # Re-render the authoritative coordinate (a drag preview may have changed the label).
+            snap = self.transport.snapshot
+            if snap is not None:
+                self._render_snapshot(snap)
+
+    def _format_time(self, ms: float) -> str:
+        """Format milliseconds into mm:ss.mmm string."""
+        s = int(ms // 1000)
+        m = s // 60
+        rem_s = s % 60
+        rem_ms = int(ms % 1000)
+        return f"{m:02d}:{rem_s:02d}.{rem_ms:03d}"
+
+    # --- JOB-03 snapshot rendering ------------------------------------------------
+    #
+    # Cursor display policy (applied to every snapshot, in every transport state):
+    #   * STOPPED at exactly 0 ms is the idle rest state: playhead cursor and active-event
+    #     highlighting are cleared; slider at 0; label 00:00.000.
+    #   * Every other snapshot (PLAYING, PAUSED, ERROR, and STOPPED at a non-zero
+    #     position such as after a seek while stopped or after natural completion) shows
+    #     the cursor at snapshot.position_ms and highlights exactly
+    #     snapshot.active_event_ids.  Highlighting is shown if and only if the cursor is.
+    # Slider, elapsed-time label, cursor, highlighting and the transport buttons are all
+    # rendered from the same immutable snapshot.
+
+    @staticmethod
+    def _is_idle_snapshot(snap: TransportSnapshot) -> bool:
+        return snap.state == TransportState.STOPPED and snap.position_ms == 0.0
+
+    def _on_transport_snapshot(self, snap: TransportSnapshot) -> None:
+        """Render one published transport snapshot (delivered on the Tk thread).
+
+        Rejects snapshots from a replaced transport, from a replaced source, and any
+        snapshot that does not supersede the one already rendered (out of order).
+        """
+        tr = self.transport
+        if tr is None or snap.transport_id != tr.transport_id or snap.source_id != tr.source_id:
+            return
+        if not snap.supersedes(self._rendered_snapshot):
+            return
+        self._render_snapshot(snap)
+
+    def _render_snapshot(self, snap: TransportSnapshot) -> None:
+        try:
+            if not self.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        self._rendered_snapshot = snap
+        pos_ms = snap.position_ms
+        dur_ms = snap.total_duration_ms
+        try:
+            self.seek_slider.configure(to=max(1.0, dur_ms))
+            if not self._slider_seeking:
+                self.seek_var.set(pos_ms)
+            self.lbl_time.configure(text=f"{self._format_time(pos_ms)} / {self._format_time(dur_ms)}")
+            view = getattr(self, "timeline_view", None)
+            if view is not None:
+                if self._is_idle_snapshot(snap):
+                    view.clear_playback_cursor()
+                elif self.current_view_mode not in ("dual", "duck", "groups"):
+                    view.set_playback_cursor(
+                        pos_ms, set(snap.active_event_ids), auto_scroll=(snap.state == TransportState.PLAYING)
+                    )
+            self._update_transport_buttons(snap.state)
+        except tk.TclError:
+            _log.debug("Snapshot render skipped: widgets are being destroyed")
+
+    def _on_transport_error(self, err: Exception) -> None:
+        """Error callback (delivered on the Tk thread after the ERROR snapshot)."""
+        try:
+            if self.winfo_exists():
+                self._handle_audio_error(err)
+        except tk.TclError:
+            pass
+
+    def _update_transport_buttons(self, state: TransportState) -> None:
+        """Update play/pause button visual states."""
+        if state == TransportState.PLAYING:
+            self.btn_play.configure(relief="sunken", bg="#15803d")
+            self.btn_pause.configure(relief="raised", bg="#eab308")
+        elif state == TransportState.PAUSED:
+            self.btn_play.configure(relief="raised", bg="#22c55e")
+            self.btn_pause.configure(relief="sunken", bg="#ca8a04")
+        elif state == TransportState.ERROR:
+            self.btn_play.configure(relief="raised", bg="#ef4444")
+            self.btn_pause.configure(relief="raised", bg="#eab308")
+        else:
+            self.btn_play.configure(relief="raised", bg="#22c55e")
+            self.btn_pause.configure(relief="raised", bg="#eab308")
+        self._update_audio_mode_badge()
+
+    def _update_audio_mode_badge(self) -> None:
+        """Update audio mode indicator badge reflecting true device and synthesis state."""
+        if self.transport is None:
+            self.lbl_audio_mode.configure(text="[Audio: None]", fg="#64748b")
+            return
+
+        if self.transport.state == TransportState.ERROR:
+            self.lbl_audio_mode.configure(text="[Audio: Device Error]", fg="#ef4444")
+            return
+
+        status = self.transport.audio_backend.get_status()
+        if status == AudioBackendStatus.FAILED:
+            self.lbl_audio_mode.configure(text="[Audio: Device Failed]", fg="#ef4444")
+        elif status == AudioBackendStatus.UNAVAILABLE:
+            self.lbl_audio_mode.configure(text="[Audio: Unavailable]", fg="#64748b")
+        elif status == AudioBackendStatus.SIMULATED:
+            self.lbl_audio_mode.configure(text="[Audio: Simulated]", fg="#f59e0b")
+        elif self.transport.is_synthesized_audio:
+            self.lbl_audio_mode.configure(text="[Audio: Synthesized (Audible)]", fg="#a855f7")
+        else:
+            self.lbl_audio_mode.configure(text="[Audio: Authentic PCM WAV]", fg="#22c55e")
+
+    def _create_transport(self) -> PlaybackTransport:
+        """Create the GUI's single transport: Tk-thread scheduler, owner = this Tk thread."""
+        mci = WindowsMciAudioBackend()
+        backend = mci if mci.is_available() else NullAudioBackend()
+        transport = PlaybackTransport(
+            clock=RealClock(),
+            audio_backend=backend,
+            scheduler=TkScheduler(self),
+        )
+        transport.set_loop(bool(self.loop_var.get()))
+        transport.register_snapshot_callback(self._on_transport_snapshot)
+        transport.register_error_callback(self._on_transport_error)
+        return transport
+
+    def _sync_transport_with_current_timeline(self, wav_bytes: Optional[bytes] = None) -> None:
+        """Load the current active timeline (and synthesized or PCM audio) into the transport.
+
+        Source replacement stops the previous source and releases its device resources
+        (load_timeline); the 'load' snapshot resets slider, label and cursor.
+        """
+        # Installing any source supersedes a pending WAV import (no-op when none is pending; the
+        # completing import itself is no longer pending when _apply_imported_wav calls this).
+        self._supersede_pending_wav_import()
+        if self.transport is None:
+            self.transport = self._create_transport()
+        try:
+            self.transport.load_timeline(self.timeline, wav_bytes=wav_bytes, synthesize=True)
+        except AudioBackendError as ex:
+            self._handle_audio_error(ex)
+        snap = self.transport.snapshot
+        if snap is not None:
+            self._render_snapshot(snap)
+
+    def destroy(self) -> None:
+        """Release playback resources before window teardown.
+
+        close() cancels the pending Tk update, stops audio, closes the MCI device and
+        removes this application's temp WAV.  A cleanup failure is logged, not hidden.
+        """
+        # An unfinished analysis loses its authority; its daemon thread may finish but never publishes.
+        self._supersede_pending_wav_import(refresh_badge=False)
+        if self.transport is not None:
+            try:
+                self.transport.close()
+            except Exception:
+                _log.exception("Playback transport cleanup failed during window teardown")
+        super().destroy()
+
     def _build_summary_bar(self) -> None:
         """Create the summary metric banner above the timeline canvas."""
         f = tk.Frame(self, bg="#ffffff", highlightbackground=BORDER_DEFAULT, highlightthickness=1)
@@ -348,7 +759,12 @@ class MusicGUI(tk.Tk):
             widget.destroy()
 
     def _set_active_mode_button(self, active_btn: tk.Button) -> None:
-        """Update top-tier mode button styles."""
+        """Update top-tier mode button styles.
+
+        Every show_*_mode entry point calls this, including modes that do not reload the transport
+        (dual, duck, groups), so a mode selection supersedes a pending WAV import here.
+        """
+        self._supersede_pending_wav_import()
         all_buttons = (
             self.btn_mode_progressive,
             self.btn_mode_duck,
@@ -528,6 +944,8 @@ class MusicGUI(tk.Tk):
         )
         self._refresh_dual_constant_summary()
         self._update_status_bar()
+        if self.transport is not None:
+            self.on_transport_stop()
 
     def _show_solo_duck(self, song: SongTimeline) -> None:
         """Display a single arrangement in the full single-canvas view."""
@@ -612,6 +1030,32 @@ class MusicGUI(tk.Tk):
 
         tk.Button(
             self.subcontrols_frame,
+            text="Open Audio WAV... (.wav)",
+            font=FONT_TOOLBAR_BOLD,
+            bg="#dcfce7",
+            fg="#166534",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._on_open_wav_file,
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
+            text="Open MusicXML... (.xml)",
+            font=FONT_TOOLBAR,
+            bg="#f1f5f9",
+            fg="#334155",
+            relief="raised",
+            bd=1,
+            padx=6,
+            pady=2,
+            command=self._on_open_musicxml_file,
+        ).pack(side="left", padx=2)
+
+        tk.Button(
+            self.subcontrols_frame,
             text="Export JSON... (.json)",
             font=FONT_TOOLBAR,
             bg="#f1f5f9",
@@ -623,10 +1067,9 @@ class MusicGUI(tk.Tk):
             command=self._on_export_json_file,
         ).pack(side="left", padx=2)
 
-        toggle_txt = "Active Rows" if self.current_constant_row_mode == "active_rows" else "Pitch Dev Profile"
-        tk.Button(
+        self._btn_row1_toggle = tk.Button(
             self.subcontrols_frame,
-            text=f"Row 1: {toggle_txt}",
+            text=self._row1_toggle_text(),
             font=FONT_TOOLBAR_BOLD,
             bg="#fef3c7",
             fg="#92400e",
@@ -635,7 +1078,8 @@ class MusicGUI(tk.Tk):
             padx=6,
             pady=2,
             command=self._toggle_constant_row_mode,
-        ).pack(side="left", padx=(8, 2))
+        )
+        self._btn_row1_toggle.pack(side="left", padx=(8, 2))
 
         self.current_dataset_name = f"Imported: {song.title}"
         self._update_summary()
@@ -668,6 +1112,150 @@ class MusicGUI(tk.Tk):
             self.show_midi_mode(song)
         except Exception as ex:
             messagebox.showerror("Passage Load Error", f"Failed to load JSON passage:\n{ex}")
+
+    # Row that receives imported WAV events.  The importer must label events with this same
+    # row id: TemporaryRow.add_event rejects events whose row_id differs from the row's id.
+    WAV_IMPORT_ROW_ID = "Row 2"
+    WAV_IMPORT_POLL_MS = 50
+
+    def _on_open_wav_file(self) -> None:
+        """Prompt for a PCM WAV file and analyse it without blocking the Tk thread.
+
+        The JOB-02 analysis (pure Python, CPU-bound, ~26 s for a 4 s sustained recording) runs on a
+        worker thread.  It touches no Tk widget, transport or audio device; the finished events are
+        applied on the Tk thread by _poll_wav_import, which owns the transport and the MCI device.
+        """
+        filepath = filedialog.askopenfilename(
+            title="Open PCM WAV File",
+            filetypes=[("WAV files", "*.wav"), ("All files", "*.*")],
+        )
+        if not filepath:
+            return
+        if self._wav_import_job is not None:
+            messagebox.showinfo("Audio Import", "A WAV file is still being analysed. Please wait until it finishes.")
+            return
+        if self._wav_worker is not None and self._wav_worker.is_alive():
+            # A superseded analysis is still computing.  It cannot be stopped safely, and starting a
+            # second one would let workers accumulate, so the new import is refused, not queued.
+            messagebox.showinfo(
+                "Audio Import",
+                "A previous WAV analysis is still finishing in the background (its result will be discarded). "
+                "Please try again in a moment.",
+            )
+            return
+        try:
+            with open(filepath, "rb") as f:
+                wav_bytes = f.read()
+        except OSError as ex:
+            messagebox.showerror("Audio Import Error", f"Failed to read WAV audio file:\n{ex}")
+            return
+        job = _WavImportJob(filepath, wav_bytes, self.WAV_IMPORT_ROW_ID, self._source_generation)
+        self._wav_import_job = job
+        self._wav_worker = job
+        self.lbl_audio_mode.configure(text="[Audio: Analysing WAV...]", fg="#f59e0b")
+        job.start()
+        self._wav_import_after_id = self.after(self.WAV_IMPORT_POLL_MS, self._poll_wav_import, job)
+
+    def _has_publish_authority(self, job: "_WavImportJob") -> bool:
+        """True only for the pending import, started under the current source-selection generation."""
+        return job is self._wav_import_job and job.generation == self._source_generation
+
+    def _supersede_pending_wav_import(self, refresh_badge: bool = True) -> None:
+        """Record a source or mode selection; a pending WAV import loses its authority to publish.
+
+        Tk thread only.  The worker thread is not touched: it runs to completion and its result,
+        success or failure, is discarded (no timeline, transport, dialog or badge change).  The
+        'Analysing' badge is replaced by the truthful badge for the current transport.
+        """
+        self._source_generation += 1
+        job = self._wav_import_job
+        if job is None:
+            return
+        self._wav_import_job = None
+        if self._wav_import_after_id is not None:
+            try:
+                self.after_cancel(self._wav_import_after_id)
+            except tk.TclError:
+                pass
+            self._wav_import_after_id = None
+        _log.info("WAV import of %r superseded by a newer source selection; its result will be discarded",
+                  job.filepath)
+        if refresh_badge:
+            try:
+                self._update_audio_mode_badge()
+            except tk.TclError:
+                pass
+
+    def _poll_wav_import(self, job: "_WavImportJob") -> None:
+        """Tk-thread completion check for a background WAV analysis."""
+        if not self._has_publish_authority(job):
+            return                                   # superseded, or window being destroyed
+        if job.is_alive():
+            self._wav_import_after_id = self.after(self.WAV_IMPORT_POLL_MS, self._poll_wav_import, job)
+            return
+        self._wav_import_job = None
+        self._wav_import_after_id = None
+        self._update_audio_mode_badge()              # truthful badge for the (unchanged) current source
+        if job.error is not None:
+            messagebox.showerror("Audio Import Error", f"Failed to import WAV audio file:\n{job.error}")
+            return
+        try:
+            self._apply_imported_wav(job.filepath, job.wav_bytes, job.events)
+        except Exception as ex:
+            messagebox.showerror("Audio Import Error", f"Failed to import WAV audio file:\n{ex}")
+
+    def _apply_imported_wav(self, filepath: str, wav_bytes: bytes, events: list) -> None:
+        """Install analysed WAV events and the ORIGINAL PCM bytes as the playback source (Tk thread)."""
+        import os
+        basename = os.path.basename(filepath)
+        song = SongTimeline("imported_wav", basename)
+        row = song.create_row(self.WAV_IMPORT_ROW_ID, label="Audio Events")
+        for e in events:
+            row.add_event(e)
+        self.current_song = song
+        self.timeline = song.timeline
+        self.timeline_view.clear_group_timeline()
+        self.timeline_view.set_constant_row_mode(self.current_constant_row_mode)
+        self.timeline_view.set_timeline(self.timeline)
+        self.dual_view.pack_forget()
+        self.timeline_view.pack(fill="both", expand=True)
+        self.current_dataset_name = f"Imported WAV: {song.title}"
+        self._refresh_summary_display()
+        self._sync_transport_with_current_timeline(wav_bytes=wav_bytes)   # the one load: original PCM
+
+    def _on_open_musicxml_file(self) -> None:
+        """Prompt user for a MusicXML file and import it for playback."""
+        filepath = filedialog.askopenfilename(
+            title="Open MusicXML File",
+            filetypes=[("MusicXML files", "*.xml *.musicxml"), ("All files", "*.*")],
+        )
+        if not filepath:
+            return
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                xml_content = f.read()
+            import_res = parse_musicxml(xml_content)
+            import os
+            basename = os.path.basename(filepath)
+            song = SongTimeline("imported_musicxml", basename)
+            rows_dict = {}
+            for e in import_res.sound_events:
+                r_id = e.row_id or "Row 2"
+                if r_id not in rows_dict:
+                    rows_dict[r_id] = song.create_row(r_id, label=r_id)
+                rows_dict[r_id].add_event(e)
+            self.current_song = song
+            self.timeline = song.timeline
+            self.timeline_view.clear_group_timeline()
+            self.timeline_view.set_constant_row_mode(self.current_constant_row_mode)
+            self.timeline_view.set_timeline(self.timeline)
+            self.dual_view.pack_forget()
+            self.timeline_view.pack(fill="both", expand=True)
+            self.current_dataset_name = f"Imported MusicXML: {song.title}"
+            self._refresh_summary_display()
+            self._sync_transport_with_current_timeline(wav_bytes=None)    # the one load: synthesized
+        except Exception as ex:
+            messagebox.showerror("MusicXML Import Error", f"Failed to import MusicXML file:\n{ex}")
 
     def _on_export_json_file(self) -> None:
         """Export the currently active song/passage to JSON."""
@@ -703,12 +1291,22 @@ class MusicGUI(tk.Tk):
         self.timeline_view.set_constant_row_mode(self.current_constant_row_mode)
         self.dual_view.set_constant_row_mode(self.current_constant_row_mode)
 
+        # Display only: Row 1 is a mathematical representation of the current source, not a new
+        # source.  The transport (original PCM or synthesized audio, state, position), the dataset
+        # identity and any pending WAV import are left untouched.  The canvases were redrawn above
+        # (set_constant_row_mode -> redraw, which re-applies the playback cursor).
         if self.current_view_mode in ("duck", "dual"):
             self._refresh_dual_constant_summary()
-        elif self.current_view_mode == "midi":
-            self.show_midi_mode(self.current_song)
         else:
-            self._update_summary()
+            if self.current_view_mode == "midi":
+                btn = getattr(self, "_btn_row1_toggle", None)
+                if btn is not None and btn.winfo_exists():
+                    btn.configure(text=self._row1_toggle_text())
+            self._refresh_summary_display()
+
+    def _row1_toggle_text(self) -> str:
+        """Label of the MIDI-mode Row 1 toggle button for the current measurement mode."""
+        return "Row 1: Active Rows" if self.current_constant_row_mode == "active_rows" else "Row 1: Pitch Dev Profile"
 
     def _refresh_dual_constant_summary(self) -> None:
         """Update summary banner for dual views."""
@@ -785,6 +1383,8 @@ class MusicGUI(tk.Tk):
         )
         self._refresh_dual_constant_summary()
         self._update_status_bar()
+        if self.transport is not None:
+            self.on_transport_stop()
 
     def _show_solo_song1(self) -> None:
         """Display Song 1 alone in single view."""
@@ -992,11 +1592,22 @@ class MusicGUI(tk.Tk):
             text=f"Row 1 Pitches: {pitches}"
         )
         self._update_status_bar()
+        if self.transport is not None:
+            self.on_transport_stop()
 
     # --- Helper & Utility Methods ---
 
     def _update_summary(self) -> None:
-        """Update the top metric banner labels for single-timeline views."""
+        """Install the current timeline as the playback source and refresh the summary display.
+
+        For genuine source selections only.  Display-only changes (the Row 1 toggle) call
+        _refresh_summary_display, which never touches the transport.
+        """
+        self._refresh_summary_display()
+        self._sync_transport_with_current_timeline()
+
+    def _refresh_summary_display(self) -> None:
+        """Update the top metric banner labels for single-timeline views (display only, no transport)."""
         col_count = len(self.timeline.build_columns())
         row_count = self.timeline.row_count
         dur_s = self.timeline.total_duration_seconds

@@ -687,7 +687,7 @@ Status Legend:
 - **Expected Deliverable:** Research specification (`docs/audio_sheet_adapter_spec.md`) and prototype adapter modules (`music_model/audio_importer.py`, `music_model/musicxml_importer.py`) detailing supported formats, onset detection thresholds, pitch tracking limits, polyphony mapping, and explicit operational limitations.
 - **Verification Procedure:** Unit tests comparing ground-truth synthetic audio onsets against detected timestamps; round-trip MusicXML timing validation.
 - **Completion Criteria:** Clear specification of supported formats, polyphony handling, and known limitations; prototype adapters demonstrate reproducible onset extraction on test passages without destructive quantization; prototype adapters not claimed as completed production support.
-- **Current Status:** **[NOT STARTED]**.
+- **Current Status:** **[COMPLETED]** (published in commit `9965050`; see `JOB_02_COMPLETION_RECORD.md`).
 
 #### `JOB-03`: Real-Time Audio Playback & Synchronized Visual Transport
 - **Purpose:** Implement real-time audio playback synchronized with an advancing visual playhead cursor on the timeline canvas.
@@ -697,7 +697,7 @@ Status Legend:
 - **Expected Deliverable:** `music_gui/audio_playback.py` providing Start, Pause, Seek, and Loop transport controls.
 - **Verification Procedure:** Automated callback timestamp tests and interactive manual playback validation across benchmark passages; playback latency measured by hardware/software loopback or timestamp delta logging.
 - **Completion Criteria:** Playhead smoothly tracks audio; pause halts audio immediately without buffer overrun; engineering target of $\le 20\text{ ms}$ synchronization latency evaluated and documented as a performance target rather than an author requirement.
-- **Current Status:** **[NOT STARTED]**.
+- **Current Status:** **[COMPLETED WITH DOCUMENTED LIMITATIONS]** (independently accepted 2026-11-26; see `JOB_03_COMPLETION_RECORD.md` and the remaining-limitations report `JOB_03_REMAINING_LIMITATIONS.md`). Physical acoustic synchronization is **unmeasured**: the ≤ 20 ms engineering target is documented but has not been established by acoustic measurement. A native access violation observed once during WAV import on 2026-11-26 remains **unresolved** (root cause not identified; not claimed eliminated).
 
 ---
 
@@ -1013,8 +1013,8 @@ Development proceeds strictly through five dependency-ordered milestones. No dow
 
 Milestone 1: Audio Playback, Ingestion, & Sound Group Sifting
 ├── JOB-01: Ingestion & Non-Destructive Event Model [COMPLETED]
-├── JOB-02: Audio & Sheet Music Specifications [NOT STARTED]
-├── JOB-03: Real-Time Audio Playback & Transport [NOT STARTED]
+├── JOB-02: Audio & Sheet Music Specifications [COMPLETED]
+├── JOB-03: Real-Time Audio Playback & Transport [COMPLETED WITH DOCUMENTED LIMITATIONS]
 ├── JOB-04: Sifter Discovery Engine [PARTIALLY COMPLETE]
 ├── JOB-05: Phrase Boundary & Pause Classifier [NOT STARTED]
 └── JOB-06: Storyboard Action & Turn-Taking Binding [NOT STARTED]

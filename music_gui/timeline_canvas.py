@@ -89,6 +89,13 @@ class TimelineCanvas(tk.Frame):
         self.group_passage_mode: str = "ascending"  # 'ascending' or 'flat'
         self.group_cell_width: float = 80.0
 
+        # Playback Transport Cursor & Highlight state (JOB-03)
+        self._sound_bar_original_borders: Dict[str, Tuple[str, float]] = {}
+        self._currently_active_event_ids: Set[str] = set()
+        self._playback_cursor_ms: Optional[float] = None
+        # Active-event ids last supplied by the transport snapshot (None = derive from timeline).
+        self._playback_explicit_ids: Optional[Set[str]] = None
+
         # Build scrollable canvas architecture
         self.canvas = tk.Canvas(
             self,
@@ -247,6 +254,118 @@ class TimelineCanvas(tk.Frame):
     def find_dev_nodes(self) -> List[int]:
         """Find development curve node points in Row 1."""
         return list(self.canvas.find_withtag("dev_node"))
+
+    # --- JOB-03 Playhead Transport & Active Highlighting ---
+
+    def find_playback_cursor(self) -> List[int]:
+        """Find canvas item IDs for playback cursor components."""
+        return list(self.canvas.find_withtag("playback_cursor"))
+
+    def clear_playback_cursor(self) -> None:
+        """Remove playback cursor and restore original outlines of sound bars."""
+        self._playback_cursor_ms = None
+        self._playback_explicit_ids = None
+        self.canvas.delete("playback_cursor")
+        for ev_id in list(self._currently_active_event_ids):
+            orig_border, orig_w = self._sound_bar_original_borders.get(ev_id, (BORDER_DEFAULT, 2.0))
+            self.canvas.itemconfigure(f"sound_bar_{clean_tag(ev_id)}", outline=orig_border, width=orig_w)
+        self._currently_active_event_ids.clear()
+
+    def set_playback_cursor(
+        self,
+        position_ms: float,
+        active_event_ids: Optional[Set[str]] = None,
+        auto_scroll: bool = True,
+    ) -> None:
+        """Position the playback playhead cursor and highlight active sound events.
+
+        Args:
+            position_ms: Authoritative playback position in milliseconds.
+            active_event_ids: Optional set of active event IDs. If None, derived
+                from the timeline's get_active_events_at(position_ms).
+            auto_scroll: Whether to automatically scroll canvas to keep the cursor in view.
+        """
+        self._playback_cursor_ms = float(position_ms)
+        self._playback_explicit_ids = None if active_event_ids is None else set(active_event_ids)
+        x = self.coords.time_to_x(self._playback_cursor_ms)
+
+        y_hdr_top, _ = self.coords.header_y_bounds()
+        timeline_bottom_y = self.coords.total_height - 20
+
+        # Create or update cursor items
+        cursor_lines = self.canvas.find_withtag("playback_cursor_line")
+        cursor_heads = self.canvas.find_withtag("playback_cursor_head")
+
+        if cursor_lines and cursor_heads:
+            self.canvas.coords("playback_cursor_line", x, y_hdr_top, x, timeline_bottom_y)
+            self.canvas.coords(
+                "playback_cursor_head",
+                x - 6, y_hdr_top,
+                x + 6, y_hdr_top,
+                x, y_hdr_top + 10,
+            )
+        else:
+            self.canvas.delete("playback_cursor")
+            self.canvas.create_line(
+                x, y_hdr_top, x, timeline_bottom_y,
+                fill="#dc2626", width=2.5,
+                tags=("playback_cursor", "playback_cursor_line"),
+            )
+            self.canvas.create_polygon(
+                x - 6, y_hdr_top,
+                x + 6, y_hdr_top,
+                x, y_hdr_top + 10,
+                fill="#dc2626", outline="#991b1b", width=1,
+                tags=("playback_cursor", "playback_cursor_head"),
+            )
+
+        self.canvas.tag_raise("playback_cursor")
+        self.canvas.tag_raise("pinned_left")
+
+        # Update event highlighting
+        if active_event_ids is None and self.coords.timeline:
+            if hasattr(self.coords.timeline, "get_active_events_at"):
+                active_events = self.coords.timeline.get_active_events_at(self._playback_cursor_ms)
+                new_active_ids = {e.event_id for e in active_events}
+            elif hasattr(self.coords.timeline, "timeline") and hasattr(self.coords.timeline.timeline, "get_active_events_at"):
+                active_events = self.coords.timeline.timeline.get_active_events_at(self._playback_cursor_ms)
+                new_active_ids = {e.event_id for e in active_events}
+            else:
+                new_active_ids = {
+                    e.event_id
+                    for r in getattr(self.coords.timeline, "rows", ())
+                    for e in getattr(r, "events", ())
+                    if e.start_time_ms <= self._playback_cursor_ms < e.end_time_ms
+                }
+        else:
+            new_active_ids = set(active_event_ids or ())
+
+        # Un-highlight deactivated events
+        for ev_id in (self._currently_active_event_ids - new_active_ids):
+            orig_border, orig_w = self._sound_bar_original_borders.get(ev_id, (BORDER_DEFAULT, 2.0))
+            self.canvas.itemconfigure(f"sound_bar_{clean_tag(ev_id)}", outline=orig_border, width=orig_w)
+
+        # Highlight newly activated events
+        for ev_id in (new_active_ids - self._currently_active_event_ids):
+            self.canvas.itemconfigure(f"sound_bar_{clean_tag(ev_id)}", outline="#dc2626", width=3.5)
+
+        self._currently_active_event_ids = new_active_ids
+
+        # Auto-scrolling to keep playhead comfortably visible
+        if auto_scroll:
+            try:
+                x_view = self.canvas.xview()
+                total_w = self.coords.total_width
+                if total_w > 0 and len(x_view) == 2:
+                    vis_start = x_view[0] * total_w
+                    vis_end = x_view[1] * total_w
+                    header_w = self.coords.left_header_width
+                    if x > vis_end - 60 or x < vis_start + header_w:
+                        target_x = max(0.0, x - header_w - 80.0)
+                        self.canvas.xview_moveto(max(0.0, min(1.0, target_x / total_w)))
+                        self._update_pinned_headers()
+            except Exception:
+                pass
 
     # --- Pinned Left Sidebar Scroll Synchronization ---
 
@@ -706,6 +825,8 @@ class TimelineCanvas(tk.Frame):
         """Erase and redraw the complete timeline, sound rows, and constant row."""
         self.canvas.delete("all")
         self._last_pinned_x = 0.0
+        self._sound_bar_original_borders.clear()
+        self._currently_active_event_ids.clear()
 
         timeline = self.coords.timeline
         columns = timeline.build_columns()
@@ -853,6 +974,7 @@ class TimelineCanvas(tk.Frame):
                         f"row_event_{clean_tag(row.row_id)}",
                     ),
                 )
+                self._sound_bar_original_borders[event.event_id] = (border_color, 2.0)
 
                 for b_time in boundaries:
                     if event.start_time_ms < b_time < event.end_time_ms:
@@ -961,3 +1083,6 @@ class TimelineCanvas(tk.Frame):
             )
 
         self._update_pinned_headers()
+        if self._playback_cursor_ms is not None:
+            # Re-apply the transport's own exact-timing membership, not an integer re-derivation.
+            self.set_playback_cursor(self._playback_cursor_ms, self._playback_explicit_ids, auto_scroll=False)

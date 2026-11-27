@@ -107,6 +107,10 @@ class SongTimeline:
         """Derive sorted unique boundary timestamps (in milliseconds) for this song."""
         return self._timeline.extract_boundaries()
 
+    def get_active_events_at(self, time_ms: Union[int, float]) -> List[SoundEvent]:
+        """Return all sound events active at time_ms under half-open interval [start, end)."""
+        return self._timeline.get_active_events_at(time_ms)
+
     def build_columns(self) -> Tuple[TimeColumn, ...]:
         """Derive variable-width time columns for this song."""
         return self._timeline.build_columns()

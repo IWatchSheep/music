@@ -106,7 +106,7 @@ class TimelineCoordinates:
 
     # --- Horizontal Time-to-Pixel Transformations ---
 
-    def time_to_x(self, time_ms: int) -> float:
+    def time_to_x(self, time_ms: Union[int, float]) -> float:
         """Convert an integer millisecond timestamp to an absolute canvas X pixel coordinate.
 
         Linear transformation:

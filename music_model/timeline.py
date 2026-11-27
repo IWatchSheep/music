@@ -7,7 +7,7 @@ deduplicates them, and derives variable-width time columns spanning [t_j, t_{j+1
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Optional, Set, Tuple
+from typing import Dict, Iterator, List, Optional, Set, Tuple, Union
 
 from music_model.sound_event import SoundEvent
 from music_model.temporary_row import TemporaryRow
@@ -206,6 +206,15 @@ class MusicTimeline:
             boundaries_set.add(event.start_time_ms)
             boundaries_set.add(event.end_time_ms)
         return tuple(sorted(boundaries_set))
+
+    def get_active_events_at(self, time_ms: Union[int, float]) -> List[SoundEvent]:
+        """Return all sound events active at time_ms under half-open interval [start, end)."""
+        active: List[SoundEvent] = []
+        for row in self._rows.values():
+            for event in row.events:
+                if event.start_time_ms <= time_ms < event.end_time_ms:
+                    active.append(event)
+        return active
 
     def build_columns(self) -> Tuple[TimeColumn, ...]:
         """Derive variable-width time columns from event boundaries.
