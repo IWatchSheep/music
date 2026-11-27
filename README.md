@@ -592,7 +592,7 @@ The baseline demonstrates historical event-boundary refitting and visualization;
   - **2 Controls:** Control 1 (Fixed-Width Slicing) and Control 2 (Fair 100-seed Monte Carlo Random Baseline matching exact sifter boundary counts).
   - **Maximum-Cardinality 1-to-1 Bipartite Matching:** Augmenting-path algorithm provably finding maximum true positives without greedy blocking.
   - **Internal Boundary Benchmark:** Evaluates strictly internal boundaries ($0 < t < T$), eliminating artificial score inflation from endpoint matching:
-    - *Passage 1 (Synthetic Orchestral Duck Flight, $N=6$ internal refs, $\tau = \pm 60\text{ ms}$):* Sifter B (Motoric) had internal precision $50.0\%$, recall $66.7\%$, $F_1 = 0.571$ vs. 100-seed random baseline $0.125 \pm 0.119$.
+    - *Passage 1 (Synthetic Orchestral Duck Flight, $N=4$ internal refs (6 including passage edges), $\tau = \pm 60\text{ ms}$):* Sifter B (Motoric) had internal precision $66.7\%$, recall $50.0\%$, $F_1 = 0.571$ vs. 100-seed random baseline $0.089 \pm 0.150$. *(Factual correction 2026-11-27, values recomputed by `verify_group_discovery.py`: previously stated as $N=6$, precision $50.0\%$, recall $66.7\%$, random baseline $0.125 \pm 0.119$.)*
     - *Passage 2 (Contrapuntal Non-Symmetric Phrasing, $N=6$ internal refs, $\tau = \pm 60\text{ ms}$):* Sifter A (Breath/Rest) had internal precision $100.0\%$, recall $100.0\%$, $F_1 = 1.000$ vs. 100-seed random baseline $0.217 \pm 0.158$.
     - *Passage 3 (Negative Control, $N=0$ internal refs):* Sifters A, B, C, D discovered 0 false internal boundaries (passage-level zero false alarms, $FP = 0$), while Fixed-Width (400ms) produced 3 false boundaries.
   - **Sub-Unit Display:** Reported formatting of fractional spans (floating-point values are approximate); $50\text{ ms}$ intervals display cleanly as `(0.50u) [Sub-Unit < 1u]`.
@@ -646,7 +646,7 @@ To maintain scientific integrity across all human and AI contributors, the follo
 
 1. **Preserve the Author's Words:** The author's original words in `music.txt` are the permanent foundation of the project. They must never be altered, silently corrected, or omitted.
 2. **Explicit Labeling of Guesses:** Any interpretation, hypothesis, or speculative extrapolation by an AI assistant must be explicitly prefixed with `"I guess ..."` (or `"i guess ..."`), keeping hypotheses strictly separated from mathematical facts.
-3. **Strict Separation of Repositories:** The Calculator repository (`C:\Users\I_wat\PycharmProjects\calculator`) is permanently protected at commit `17be078d`. It must never be edited, staged, committed, or pushed.
+3. **Strict Separation of Repositories:** The Calculator repository (`%USERPROFILE%\PycharmProjects\calculator`) is permanently protected at commit `17be078d`. It must never be edited, staged, committed, or pushed.
 4. **Preserve Validated Code & Zero Regression:** Preserve the 91-test historical baseline and the locally reported additional 15 tests. When implementation work is authorized, rerun applicable tests and standalone scripts, report exact results and independently verify new sources. Do not run experiments as a prerequisite to approving documentation.
 5. **No Destructive Quantization:** Never alter, shift, or round raw MIDI ticks, tempo fractions, or continuous audio timestamps to force them onto visual display grids.
 6. **Transparent Reporting of Controls:** When evaluating algorithms against controls, report both successes and failures honestly. Synthetic benchmarks must never be claimed to prove how all music works.
@@ -711,7 +711,7 @@ Status Legend:
 - **Expected Deliverable:** `music_model/group_discovery.py` providing configurable `discover_sound_groups()` sifter algorithms alongside baseline comparison controls.
 - **Verification Procedure:** Run `tests/test_group_discovery.py` and `verify_group_discovery.py`.
 - **Completion Criteria:** Automated sifting evaluated against ground-truth repeated phrases; boundary indices reported transparently; existing 15 regression tests preserved as regression evidence (not proof of general discovery); candidate algorithms and limitations documented.
-- **Current Status:** **[PARTIALLY COMPLETE]** (Prototyped in untracked files; requires independent source verification and author authorization).
+- **Current Status:** **[COMPLETED WITH DOCUMENTED LIMITATIONS]** (independently accepted 2026-11-27: Stage 2a input corrections, Stage 2b recurrence discovery `discover_sound_groups()` in `music_model/recurrence_discovery.py`, Stage 2c independent held-out validation; see `JOB_04_COMPLETION_RECORD.md` and the remaining-limitations report `JOB_04_REMAINING_LIMITATIONS.md`). Matching is **exact only**; polyphony without voice information is **unsupported**; contour is **weak evidence**; nested and incidental relationships are reported, not resolved; worst-case search time is **cubic** within configured search limits. Results establish tested mathematical relation correctness on controlled symbolic passages; **general musical phrase significance is unverified** and no universal musical recognition is claimed.
 
 #### `JOB-05`: Acoustic Phrasing, Speech Cadence, & Breath Pause Discovery
 - **Purpose:** Evaluate candidate classifiers for acoustic phrase boundaries, speech cadence pauses, and breathing intervals that delineate natural sound groups.
@@ -1015,7 +1015,7 @@ Milestone 1: Audio Playback, Ingestion, & Sound Group Sifting
 ├── JOB-01: Ingestion & Non-Destructive Event Model [COMPLETED]
 ├── JOB-02: Audio & Sheet Music Specifications [COMPLETED]
 ├── JOB-03: Real-Time Audio Playback & Transport [COMPLETED WITH DOCUMENTED LIMITATIONS]
-├── JOB-04: Sifter Discovery Engine [PARTIALLY COMPLETE]
+├── JOB-04: Sifter Discovery Engine [COMPLETED WITH DOCUMENTED LIMITATIONS]
 ├── JOB-05: Phrase Boundary & Pause Classifier [NOT STARTED]
 └── JOB-06: Storyboard Action & Turn-Taking Binding [NOT STARTED]
     └── Research Gate 1: Verified sound-group discovery without destructive quantization.

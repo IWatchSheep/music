@@ -1,4 +1,4 @@
-"""JOB-03 independent acceptance runner (standard library only).
+"""JOB-03 / JOB-04 independent acceptance runner (standard library only).
 
 Run from anywhere; paths are resolved relative to this file's project root:
 
@@ -8,10 +8,12 @@ Run from anywhere; paths are resolved relative to this file's project root:
 
 Each step runs in its own child process, and its OWN exit code is recorded (no pipeline consumers).
 Results are written to <project>/acceptance_results/<UTC timestamp>/ (report.md, report.json, logs).
-Exit code: 0 when no requirement FAILs or is INCOMPLETE, the full suite succeeds, all seven REQUIRED
-standalone scripts are present and exit 0 (plus any OPTIONAL experimental script that is present), and
-the matrix references only existing tests; 1 otherwise; 2 on a runner error.  The two optional scripts
-(JOB-04 group discovery, row merger) are outside the JOB-03 publication boundary: run only if present.
+Exit code: 0 when no requirement FAILs or is INCOMPLETE, the full suite succeeds, all nine REQUIRED
+standalone scripts are present and exit 0 (plus the OPTIONAL experimental script when present), and
+the matrix references only existing tests; 1 otherwise; 2 on a runner error.  The required scripts
+include the JOB-04 group-discovery verification and ChatGPT's independent held-out verifier.  The one
+optional script (row merger) is outside the publication boundary: it runs only if present.
+Every script runs with the project root prepended to PYTHONPATH (the held-out verifier needs it).
 
 Status vocabulary (per requirement):
   PASS         every mapped platform-independent test passed and every mapped script exited 0
@@ -37,13 +39,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DEVICE_MODULE = "tests.test_playback_windows_device"
 # Required: always executed; a missing or failing required script fails acceptance.
+# The last two are JOB-04: the group-discovery verification and the independent held-out verifier
+# (supplied by ChatGPT; kept byte-identical; exits non-zero if any of its checks fails).
 REQUIRED_SCRIPTS = ["verify_audio_and_sheet_adapters.py", "verify_development.py", "verify_group_units.py",
                     "verify_midi_import.py", "verify_playback_transport.py", "verify_progressive.py",
-                    "verify_proof.py"]
-# Unpublished experiments outside the JOB-03 publication boundary (JOB-04 group discovery; row merger).
-# Executed only when present (a present script that fails still fails acceptance); when absent they
-# are reported as OUTSIDE PUBLICATION SCOPE and do not affect the result.
-OPTIONAL_SCRIPTS = ["verify_group_discovery.py", "verify_row_merger.py"]
+                    "verify_proof.py", "verify_group_discovery.py", "job04_investigation/job04_heldout_audit.py"]
+# Unpublished experiment outside the publication boundary (row merger).  Executed only when present
+# (a present script that fails still fails acceptance); when absent it is reported as
+# OUTSIDE PUBLICATION SCOPE and does not affect the result.
+OPTIONAL_SCRIPTS = ["verify_row_merger.py"]
 OUTSIDE_SCOPE = "OUTSIDE PUBLICATION SCOPE (absent)"
 
 
@@ -81,7 +85,7 @@ def _status_of(tid, *result_sets):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--windows-device", action="store_true", help="also run the opt-in real Windows MCI device tests")
-    ap.add_argument("--skip-scripts", action="store_true", help="do not run the nine standalone scripts (reported as NOT RUN)")
+    ap.add_argument("--skip-scripts", action="store_true", help="do not run the standalone scripts (reported as NOT RUN)")
     args = ap.parse_args()
 
     with open(os.path.join(HERE, "acceptance_matrix.json"), encoding="utf-8") as f:
@@ -89,7 +93,7 @@ def main() -> int:
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out_dir = os.path.join(ROOT, "acceptance_results", stamp)
     os.makedirs(out_dir, exist_ok=True)
-    print(f"JOB-03 acceptance runner | python {platform.python_version()} | {sys.platform} | results: {out_dir}", flush=True)
+    print(f"JOB-03/JOB-04 acceptance runner | python {platform.python_version()} | {sys.platform} | results: {out_dir}", flush=True)
 
     # 1. Complete platform-independent suite.  The opt-in flag is removed so device tests stay separate.
     env = dict(os.environ); env.pop("MUSIC_REAL_AUDIO_TESTS", None)
@@ -104,7 +108,9 @@ def main() -> int:
             denv = dict(os.environ); denv["MUSIC_REAL_AUDIO_TESTS"] = "1"
             device = _tests_step("device", out_dir, [DEVICE_MODULE], denv)
 
-    # 3. Standalone verification scripts.
+    # 3. Standalone verification scripts (project root prepended to PYTHONPATH).
+    senv = dict(os.environ)
+    senv["PYTHONPATH"] = ROOT + (os.pathsep + senv["PYTHONPATH"] if senv.get("PYTHONPATH") else "")
     scripts = {}
     for s in REQUIRED_SCRIPTS + OPTIONAL_SCRIPTS:
         required = s in REQUIRED_SCRIPTS
@@ -115,7 +121,8 @@ def main() -> int:
             scripts[s] = {"exit_code": "MISSING" if required else OUTSIDE_SCOPE, "seconds": 0, "required": required}
             print(f"[script] {s}: {'MISSING (required)' if required else OUTSIDE_SCOPE}", flush=True)
             continue
-        rc, secs = _run([sys.executable, "-X", "faulthandler", s], os.path.join(out_dir, f"script_{s}.log"))
+        rc, secs = _run([sys.executable, "-X", "faulthandler", s],
+                        os.path.join(out_dir, "script_" + s.replace("/", "_") + ".log"), env=senv)
         scripts[s] = {"exit_code": rc, "seconds": secs, "required": required}
         print(f"[script] {s} ({'required' if required else 'optional, present'}): python exit code = {rc} ({secs} s)", flush=True)
 
@@ -231,7 +238,7 @@ def main() -> int:
 
 def _write_markdown(rep, path):
     s = rep["suite"]
-    L = [f"# JOB-03 Acceptance Report ({rep['generated_utc']})", "",
+    L = [f"# JOB-03 / JOB-04 Acceptance Report ({rep['generated_utc']})", "",
          f"- Python: `{rep['python'].split()[0]}` on `{rep['platform']}`",
          f"- **Overall: {rep['overall']}**",
          f"- Complete suite: run {s['run']}, **passed {s['passed']}, skipped {s['skipped']}**, failures {s['failures']}, errors {s['errors']} (python exit code {s['exit_code']})"]

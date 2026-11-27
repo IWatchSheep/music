@@ -1,12 +1,12 @@
-<!-- Snapshot of the acceptance run on the exact proposed JOB-03 publication tree (Windows, --windows-device, 2026-11-27T04:49:10Z). Regenerate with acceptance/run_acceptance.py. -->
+<!-- Snapshot of the confirmation acceptance run on the exact proposed JOB-04 R2 publication tree (Windows, --windows-device, 2026-11-27T10:40:31Z). The preceding R2 run 1 (10:34:36Z) FAILED on a native access violation (A21) and is recorded in JOB_04_VERIFICATION_LOG.txt section 11. Regenerate with acceptance/run_acceptance.py. -->
 
-# JOB-03 Acceptance Report (20261127T044910Z)
+# JOB-03 / JOB-04 Acceptance Report (20261127T104031Z)
 
 - Python: `3.15.2` on `Windows-11-10.0.26300-SP0`
 - **Overall: ACCEPTANCE CHECKS PASSED**
-- Complete suite: run 278, **passed 264, skipped 14**, failures 0, errors 0 (python exit code 0)
+- Complete suite: run 358, **passed 344, skipped 14**, failures 0, errors 0 (python exit code 0)
 - Real Windows device tests: run 14, failures 0, errors 0, skipped 0 (python exit code 0)
-- Standalone scripts: verify_audio_and_sheet_adapters.py = 0, verify_development.py = 0, verify_group_units.py = 0, verify_midi_import.py = 0, verify_playback_transport.py = 0, verify_progressive.py = 0, verify_proof.py = 0, verify_group_discovery.py = OUTSIDE PUBLICATION SCOPE (absent), verify_row_merger.py = OUTSIDE PUBLICATION SCOPE (absent)
+- Standalone scripts: verify_audio_and_sheet_adapters.py = 0, verify_development.py = 0, verify_group_units.py = 0, verify_midi_import.py = 0, verify_playback_transport.py = 0, verify_progressive.py = 0, verify_proof.py = 0, verify_group_discovery.py = 0, job04_investigation/job04_heldout_audit.py = 0, verify_row_merger.py = OUTSIDE PUBLICATION SCOPE (absent)
 
 > Simulated and device timing figures are software/driver measurements, not acoustic measurements.
 
@@ -35,7 +35,16 @@
 | A19 | Synthesized (MusicXML/MIDI) playback uses exact source timing; failure states are coherent; no cumulative software drift | **PASS** (5/5 tests; required scripts 3/3) | n/a | Author reported MusicXML import and playback work (2026-11-26). | — |
 | A20 | Physical acoustic synchronization of sound and picture (<= 20 ms engineering target) | **NO-AUTOMATED-COVERAGE** (0/0 tests) | n/a | — | No acoustic or microphone measurement exists; cannot be established by software tests. |
 | A21 | Native access violation (2026-11-26 08:30) - root cause | **PASS (regression only; see remaining_unverified)** (1/1 tests) | n/a | Latest Author WAV re-test completed without a crash (this does not establish elimination). | UNRESOLVED: native memory corruption source (CPython 3.15.2 defect vs. system/driver instability) not established; the child-process test only detects a crash if one occurs in that run. |
-| A22 | No regression of previously accepted behaviour (complete suite; the seven required standalone verification scripts; the two unpublished experimental scripts only when present) | **PASS** (1/1 tests; required scripts 7/7; optional scripts: verify_group_discovery.py=OUTSIDE PUBLICATION SCOPE (absent), verify_row_merger.py=OUTSIDE PUBLICATION SCOPE (absent)) | PASS | — | — |
+| A22 | No regression of previously accepted behaviour (complete suite; the nine required standalone verification scripts, including the JOB-04 group-discovery verification and the independent held-out verifier; the unpublished row-merger experiment only when present) | **PASS** (1/1 tests; required scripts 9/9; optional scripts: verify_row_merger.py=OUTSIDE PUBLICATION SCOPE (absent)) | PASS | — | — |
+| G01 | JOB-04: the original 15 group-discovery regression tests and the legacy verification script are preserved as regression evidence (not proof of general discovery) | **PASS** (15/15 tests; required scripts 1/1) | n/a | — | The legacy boundary sifters A-D are regression evidence only; they are not a general phrase-discovery method. |
+| G02 | JOB-04 Stage 2a: boundary-engine input corrections (unpitched is not pitch 60, fractional pitch kept, tick-only timing rejected, exact rational timing with provenance, no invented polyphonic order, row attribution kept, controls labelled) | **PASS** (16/16 tests) | n/a | — | — |
+| G03 | JOB-04 Stage 2b: recurring sound groups found by six exact candidate relations (exact, transposition, rhythm, contour, interval_only, rhythm_proportional) with exact rational timing and no tolerance (strict transposition also compares inter-onset intervals); nested repeats marked; no Row 1 or grid fields | **PASS** (14/14 tests; required scripts 1/1) | n/a | — | Exact-only matching: performed or transcribed timing jitter does not match.; Contour is weak evidence (chance-level counts in shuffled surrogates; incidental families on non-repeating passages).; Nested and incidental relationships are reported, not resolved into a single intended phrase. |
+| G04 | JOB-04 Stage 2b: occurrence identities and boundary indices reported transparently (half-open indices, original event references, supplied ids preserved, generated ids flagged, globally unique reported identifiers, unspecified and named voices never share a stream key) | **PASS** (15/15 tests; required scripts 1/1) | n/a | — | Generated anonymous keys are stable under reordering but are not persistent identities. |
+| G05 | JOB-04 Stage 2b: ambiguity and limits reported, not hidden (input safeguards, overlapping occurrences, overlapping-only rejection, polyphony without voices excluded with reason, unpitched breaks, configured search limits and completeness scope, invalid configuration rejected) | **PASS** (17/17 tests) | n/a | — | Polyphony without voice information is unsupported (excluded and reported; no voice separation).; Worst-case cubic search time; long inputs need max_length or max_windows, and a bounded search is reported as incomplete. |
+| G06 | JOB-04 Stage 2b: results are identical for the same notes in any input order | **PASS** (3/3 tests; required scripts 1/1) | n/a | — | — |
+| G07 | JOB-04 Stage 2c: independent held-out controlled validation (ChatGPT's verifier, byte-identical; 17 passages, six methods, lengths 3-5; exhaustive pair sets compared with a direct value-by-value oracle; 886 checks) | **PASS** (0/0 tests; required scripts 1/1) | n/a | — | Establishes tested mathematical relation correctness on controlled symbolic passages, not universal musical phrase significance. |
+| G08 | JOB-04: comparison controls preserved (fixed-width slicing and count-matched seeded random baseline; labelled as controls) | **PASS** (3/3 tests; required scripts 1/1) | n/a | — | Shuffled-surrogate comparisons are descriptive; no statistical-significance claim is made. |
+| G09 | JOB-04: candidate algorithms and limitations documented (JOB_04_STAGE2B_SPECIFICATION.md, JOB_04_COMPLETION_RECORD.md, JOB_04_REMAINING_LIMITATIONS.md) | **NO-AUTOMATED-COVERAGE** (0/0 tests) | n/a | — | Documentation item: reviewed by the independent auditor, not by an automated test.; General musical phrase significance is unverified; no universal musical recognition is claimed. |
 
 ## Test mapping
 
@@ -205,7 +214,8 @@
 - [exit 0] script `verify_playback_transport.py`
 - [exit 0] script `verify_progressive.py`
 - [exit 0] script `verify_proof.py`
-- [optional; exit OUTSIDE PUBLICATION SCOPE (absent)] script `verify_group_discovery.py`
+- [exit 0] script `verify_group_discovery.py`
+- [exit 0] script `job04_investigation/job04_heldout_audit.py`
 - [optional; exit OUTSIDE PUBLICATION SCOPE (absent)] script `verify_row_merger.py`
 - [device: pass] `tests.test_playback_windows_device.TestRealMciDevice.test_r1_ordinary_playback_advances_without_mci_263`
 - [device: pass] `tests.test_playback_windows_device.TestRealMciDevice.test_r2_fractional_22070_frame_wav_completes`
@@ -221,6 +231,113 @@
 - [device: pass] `tests.test_playback_windows_device.TestRealMciDevice.test_r9_source_replacement_releases_previous_device`
 - [device: pass] `tests.test_playback_windows_device.TestRealMciNonSilentWavImport.test_gui_imports_non_silent_wav_into_real_device_and_releases_it`
 - [device: pass] `tests.test_playback_windows_device.TestRealMciThroughMusicGUI.test_gui_end_to_end_playback_completion_and_teardown`
+
+### G01 — PASS
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_controls_fixed_and_random`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_derive_composite_row1_segments`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_empty_reference_scoring_transparency`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_evaluation_metrics_precision_recall_f1`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_extract_note_timing_polymorphic`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_fractional_units_and_sub_unit_detection`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_internal_boundaries_evaluation`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_maximum_cardinality_bipartite_matching`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_monte_carlo_random_baseline`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_a_breath_rests`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_b_motoric_rhythm_and_negative_case`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_c_melodic_contour`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_d_cross_row_handoffs`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_timing_diagnostics_silence_overlap_offgrid`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_two_song_isolation`
+- [exit 0] script `verify_group_discovery.py`
+
+### G02 — PASS
+- [pass] `tests.test_group_discovery_stage2a.TestEvaluationControls.test_p09_internal_random_baseline_requires_span`
+- [pass] `tests.test_group_discovery_stage2a.TestEvaluationControls.test_p10_empty_reference_and_legacy_specificity_are_explicit`
+- [pass] `tests.test_group_discovery_stage2a.TestEvaluationControls.test_periodic_grid_and_controls_are_labelled`
+- [pass] `tests.test_group_discovery_stage2a.TestIdentityAndRowAttribution.test_event_identity_and_indices_preserved`
+- [pass] `tests.test_group_discovery_stage2a.TestIdentityAndRowAttribution.test_p11_boundaries_keep_row_attribution`
+- [pass] `tests.test_group_discovery_stage2a.TestPitchHandling.test_p01_missing_pitch_is_unpitched_not_60`
+- [pass] `tests.test_group_discovery_stage2a.TestPitchHandling.test_p03_fractional_pitch_preserved`
+- [pass] `tests.test_group_discovery_stage2a.TestPitchHandling.test_p14_unpitched_soundevent_does_not_crash_any_method`
+- [pass] `tests.test_group_discovery_stage2a.TestPitchHandling.test_unpitched_event_breaks_contour_sequence`
+- [pass] `tests.test_group_discovery_stage2a.TestPolyphonyAndEndpoints.test_contour_sifter_refuses_to_invent_order_for_polyphonic_row`
+- [pass] `tests.test_group_discovery_stage2a.TestPolyphonyAndEndpoints.test_overlapping_group_end_is_latest_end_in_contour_and_crossrow`
+- [pass] `tests.test_group_discovery_stage2a.TestPolyphonyAndEndpoints.test_p05_no_false_rest_under_sustained_note_and_true_group_end`
+- [pass] `tests.test_group_discovery_stage2a.TestTimingHandling.test_integer_fallback_is_labelled_not_exact`
+- [pass] `tests.test_group_discovery_stage2a.TestTimingHandling.test_malformed_and_non_finite_timing_rejected_by_sifters`
+- [pass] `tests.test_group_discovery_stage2a.TestTimingHandling.test_p02_tick_only_timing_is_rejected`
+- [pass] `tests.test_group_discovery_stage2a.TestTimingHandling.test_p04_authoritative_exact_timing_used_with_provenance`
+
+### G03 — PASS
+- [pass] `tests.test_group_discovery_stage2b.TestExactRecurrence.test_time_displaced_exact_repetition_found`
+- [pass] `tests.test_group_discovery_stage2b.TestExactRecurrence.test_configurable_minimum_length`
+- [pass] `tests.test_group_discovery_stage2b.TestExactRecurrence.test_nested_shorter_repeats_marked_not_maximal`
+- [pass] `tests.test_group_discovery_stage2b.TestExactRecurrence.test_include_nested_false_hides_but_reports`
+- [pass] `tests.test_group_discovery_stage2b.TestExactRecurrence.test_no_row1_or_grid_in_result`
+- [pass] `tests.test_group_discovery_stage2b.TestTranspositionAndIntervals.test_transposition_displacement_preserved_and_identities_kept`
+- [pass] `tests.test_group_discovery_stage2b.TestTranspositionAndIntervals.test_interval_only_distinct_from_strict_transposition`
+- [pass] `tests.test_group_discovery_stage2b.TestTranspositionAndIntervals.test_cross_row_transposed_match`
+- [pass] `tests.test_group_discovery_stage2b.TestRhythmAndContour.test_rhythm_independent_of_pitch`
+- [pass] `tests.test_group_discovery_stage2b.TestRhythmAndContour.test_proportional_rhythm_is_separate_with_exact_scale`
+- [pass] `tests.test_group_discovery_stage2b.TestRhythmAndContour.test_contour_includes_repeated_pitch_and_is_weak`
+- [pass] `tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_exact_fractional_timing_matches_without_tolerance`
+- [pass] `tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_non_repeating_passage_has_no_strict_families`
+- [pass] `tests.test_group_discovery_stage2c_coverage.TestStrictTranspositionComparesInterOnsetIntervals.test_equal_intervals_and_durations_with_different_onset_spacing`
+- [exit 0] script `job04_investigation/job04_heldout_audit.py`
+
+### G04 — PASS
+- [pass] `tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_duplicate_ids_disambiguated_by_default`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_duplicate_supplied_ids_rejected_when_configured`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_generated_ids_are_flagged_and_supplied_ids_preserved`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestPublicEventReferences.test_input_index_excluded_from_result_equality`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestPublicEventReferences.test_occurrence_events_recover_source_and_provenance`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestStreamIdentity.test_auditor_reproduction_empty_voice_is_unspecified`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestStreamIdentity.test_unspecified_and_named_voices_never_share_a_key`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestStreamIdentity.test_whitespace_voice_is_unspecified`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_auditor_reproduction_existing_suffix_reserved`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_collision_with_generated_anonymous_identifier`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_collisions_across_rows_and_voices`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_multiple_occupied_suffixes`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_randomized_uniqueness_property`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_strict_mode_rejects_each_collision_kind`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_supplied_ids_preserved_in_event_refs`
+- [exit 0] script `job04_investigation/job04_heldout_audit.py`
+
+### G05 — PASS
+- [pass] `tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_audio_estimated_pitch_flagged`
+- [pass] `tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_distinct_rationals_do_not_collapse`
+- [pass] `tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_float_pitch_compatibility`
+- [pass] `tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_fraction_pitch_preserved_exactly`
+- [pass] `tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_huge_pitch_and_time_rejected_without_overflow`
+- [pass] `tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_negative_start_rejected_consistently`
+- [pass] `tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_overlapping_occurrences_listed_and_flagged`
+- [pass] `tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_overlapping_only_repeat_is_rejected_and_reported`
+- [pass] `tests.test_group_discovery_stage2b.TestPolyphonyVoicesUnpitched.test_explicit_voices_form_separate_monophonic_streams`
+- [pass] `tests.test_group_discovery_stage2b.TestPolyphonyVoicesUnpitched.test_polyphonic_stream_unsupported_and_reported`
+- [pass] `tests.test_group_discovery_stage2b.TestPolyphonyVoicesUnpitched.test_unpitched_breaks_pitch_methods_but_rhythm_supports_it`
+- [pass] `tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_config_object_and_group_discovery_entry_point`
+- [pass] `tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_empty_and_short_inputs`
+- [pass] `tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_invalid_configuration_rejected`
+- [pass] `tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_window_limit_reported_not_silent`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestConfigAndSearchScope.test_bounded_versus_unrestricted_completeness`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestConfigAndSearchScope.test_malformed_numeric_parameters_rejected`
+
+### G06 — PASS
+- [pass] `tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_input_order_determinism`
+- [pass] `tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_anonymous_ids_invariant_under_input_reversal`
+- [pass] `tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_reversed_input_gives_identical_identifiers`
+- [exit 0] script `job04_investigation/job04_heldout_audit.py`
+
+### G07 — PASS
+- [exit 0] script `job04_investigation/job04_heldout_audit.py`
+
+### G08 — PASS
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_controls_fixed_and_random`
+- [pass] `tests.test_group_discovery.TestGroupDiscoveryEngine.test_monte_carlo_random_baseline`
+- [pass] `tests.test_group_discovery_stage2a.TestEvaluationControls.test_periodic_grid_and_controls_are_labelled`
+- [exit 0] script `verify_group_discovery.py`
+
+### G09 — NO-AUTOMATED-COVERAGE
 
 ## Skipped tests in the complete suite
 

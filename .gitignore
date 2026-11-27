@@ -8,3 +8,4 @@ __pycache__/
 .pytest_cache/
 .coverage
 acceptance_results/
+job04_investigation/results/

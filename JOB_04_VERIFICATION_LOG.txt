@@ -1,0 +1,955 @@
+JOB-04 VERIFICATION LOG
+Revision 2 (R2), prepared 2026-11-27 by Claude Opus 5.5. Windows 11 Pro 10.0.26300, CPython 3.15.2.
+Sections 1-9 are the R1 publication-preparation record, kept unchanged as history (R1 tree: 85 files, 79 JOB-04 tests).
+Sections 10-13 are R2: the authorized coverage test, README status lines, .gitignore line and path sanitization.
+Section 5.3 is updated in R2 (the proposed test was authorized and applied). The R2 tree has 87 files and 80 JOB-04 tests.
+Every '[exit code: N]' / 'exit=N' / 'RUNNER_EXIT=N' is the child process's own exit code.
+Paths: <scratch> is a session scratch directory under %TEMP%; <project> is the project root.
+Outputs are reproduced verbatim apart from that path substitution.
+
+====================================================================================================
+1. Frozen implementation identity
+====================================================================================================
+
+JOB_04_STAGE2B_R3_REVIEW.zip SHA-256 = 5b53a5da114ff6635271220737b5c0f1351b13c9896345f841f9d309984bccf1
+  (identical to the value in ChatGPT's acceptance audit).
+Every non-evidence file in that archive (81 files) was compared byte-for-byte with <project>: differ [] missing [].
+Held-out verifier as supplied: SHA-256 713be72a2d050fc0782d35a760afdafd6cc469cda05fb4c186d314df49e54846, 5306 bytes, LF line
+  endings; copied unchanged to job04_investigation/job04_heldout_audit.py (same hash).
+After R3, files changed only in documentation and acceptance infrastructure (see the manifest); no production or test file changed.
+
+====================================================================================================
+2. Publication tree construction
+====================================================================================================
+
+The tree = the 61 files tracked at HEAD e1a11e7 (README.md and acceptance/* at their proposed working-copy content)
++ the new JOB-04 files listed in JOB_04_PUBLICATION_MANIFEST.md. It was copied into <scratch>/pubtree1 and run there.
+Excluded (absent from the tree): verify_row_merger.py, job04_investigation/results/, crash log, review ZIPs, evidence folders.
+Sections 6 and 7 ran with the four JOB-04 records not yet present; they are documentation and are not read by any
+test or script. Section 9 is the confirmation run on the final tree including them (recorded in the manifest).
+
+====================================================================================================
+3. Focused JOB-04 tests and verify_group_discovery.py (on the publication tree copy)
+====================================================================================================
+
+$ python -m unittest -v tests.test_group_discovery tests.test_group_discovery_stage2a tests.test_group_discovery_stage2b tests.test_group_discovery_stage2b_identity tests.test_group_discovery_stage2b_unique_ids
+test_controls_fixed_and_random (tests.test_group_discovery.TestGroupDiscoveryEngine.test_controls_fixed_and_random)
+Test Control 1 (Fixed-Width) and Control 2 (Random Baseline). ... ok
+test_derive_composite_row1_segments (tests.test_group_discovery.TestGroupDiscoveryEngine.test_derive_composite_row1_segments)
+Test composite Row 1 segments derivation from discovered groups. ... ok
+test_empty_reference_scoring_transparency (tests.test_group_discovery.TestGroupDiscoveryEngine.test_empty_reference_scoring_transparency)
+Test transparent handling of negative control where ground truth has 0 internal boundaries. ... ok
+test_evaluation_metrics_precision_recall_f1 (tests.test_group_discovery.TestGroupDiscoveryEngine.test_evaluation_metrics_precision_recall_f1)
+Test evaluation metrics against reference ground truth. ... ok
+test_extract_note_timing_polymorphic (tests.test_group_discovery.TestGroupDiscoveryEngine.test_extract_note_timing_polymorphic)
+Test extraction across SoundEvent, MockNote, and float timings. ... ok
+test_fractional_units_and_sub_unit_detection (tests.test_group_discovery.TestGroupDiscoveryEngine.test_fractional_units_and_sub_unit_detection)
+Test that sub-unit intervals (e.g. 50ms) are NOT rounded down to 0u. ... ok
+test_internal_boundaries_evaluation (tests.test_group_discovery.TestGroupDiscoveryEngine.test_internal_boundaries_evaluation)
+Test evaluating internal boundaries separately from edge boundaries (0 < t < T). ... ok
+test_maximum_cardinality_bipartite_matching (tests.test_group_discovery.TestGroupDiscoveryEngine.test_maximum_cardinality_bipartite_matching)
+Test that bipartite matching finds maximum cardinality where greedy could block. ... ok
+test_monte_carlo_random_baseline (tests.test_group_discovery.TestGroupDiscoveryEngine.test_monte_carlo_random_baseline)
+Test Monte Carlo baseline across multiple seeds. ... ok
+test_sifter_a_breath_rests (tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_a_breath_rests)
+Test Sifter A identifies boundaries at rests >= threshold. ... ok
+test_sifter_b_motoric_rhythm_and_negative_case (tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_b_motoric_rhythm_and_negative_case)
+Test Sifter B identifies periodic spans and reports negative when non-repeating. ... ok
+test_sifter_c_melodic_contour (tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_c_melodic_contour)
+Test Sifter C identifies turning points in melodic contour. ... ok
+test_sifter_d_cross_row_handoffs (tests.test_group_discovery.TestGroupDiscoveryEngine.test_sifter_d_cross_row_handoffs)
+Test Sifter D identifies cross-row entry cues without circular credit. ... ok
+test_timing_diagnostics_silence_overlap_offgrid (tests.test_group_discovery.TestGroupDiscoveryEngine.test_timing_diagnostics_silence_overlap_offgrid)
+Test diagnostic accounting of silence, overlap, and off-grid events. ... ok
+test_two_song_isolation (tests.test_group_discovery.TestGroupDiscoveryEngine.test_two_song_isolation)
+Test that two separate passages processed sequentially do not share state. ... ok
+test_p09_internal_random_baseline_requires_span (tests.test_group_discovery_stage2a.TestEvaluationControls.test_p09_internal_random_baseline_requires_span) ... ok
+test_p10_empty_reference_and_legacy_specificity_are_explicit (tests.test_group_discovery_stage2a.TestEvaluationControls.test_p10_empty_reference_and_legacy_specificity_are_explicit) ... ok
+test_periodic_grid_and_controls_are_labelled (tests.test_group_discovery_stage2a.TestEvaluationControls.test_periodic_grid_and_controls_are_labelled) ... ok
+test_event_identity_and_indices_preserved (tests.test_group_discovery_stage2a.TestIdentityAndRowAttribution.test_event_identity_and_indices_preserved) ... ok
+test_p11_boundaries_keep_row_attribution (tests.test_group_discovery_stage2a.TestIdentityAndRowAttribution.test_p11_boundaries_keep_row_attribution) ... ok
+test_p01_missing_pitch_is_unpitched_not_60 (tests.test_group_discovery_stage2a.TestPitchHandling.test_p01_missing_pitch_is_unpitched_not_60) ... ok
+test_p03_fractional_pitch_preserved (tests.test_group_discovery_stage2a.TestPitchHandling.test_p03_fractional_pitch_preserved) ... ok
+test_p14_unpitched_soundevent_does_not_crash_any_method (tests.test_group_discovery_stage2a.TestPitchHandling.test_p14_unpitched_soundevent_does_not_crash_any_method) ... ok
+test_unpitched_event_breaks_contour_sequence (tests.test_group_discovery_stage2a.TestPitchHandling.test_unpitched_event_breaks_contour_sequence) ... ok
+test_contour_sifter_refuses_to_invent_order_for_polyphonic_row (tests.test_group_discovery_stage2a.TestPolyphonyAndEndpoints.test_contour_sifter_refuses_to_invent_order_for_polyphonic_row) ... ok
+test_overlapping_group_end_is_latest_end_in_contour_and_crossrow (tests.test_group_discovery_stage2a.TestPolyphonyAndEndpoints.test_overlapping_group_end_is_latest_end_in_contour_and_crossrow) ... ok
+test_p05_no_false_rest_under_sustained_note_and_true_group_end (tests.test_group_discovery_stage2a.TestPolyphonyAndEndpoints.test_p05_no_false_rest_under_sustained_note_and_true_group_end) ... ok
+test_integer_fallback_is_labelled_not_exact (tests.test_group_discovery_stage2a.TestTimingHandling.test_integer_fallback_is_labelled_not_exact) ... ok
+test_malformed_and_non_finite_timing_rejected_by_sifters (tests.test_group_discovery_stage2a.TestTimingHandling.test_malformed_and_non_finite_timing_rejected_by_sifters) ... ok
+test_p02_tick_only_timing_is_rejected (tests.test_group_discovery_stage2a.TestTimingHandling.test_p02_tick_only_timing_is_rejected) ... ok
+test_p04_authoritative_exact_timing_used_with_provenance (tests.test_group_discovery_stage2a.TestTimingHandling.test_p04_authoritative_exact_timing_used_with_provenance) ... ok
+test_configurable_minimum_length (tests.test_group_discovery_stage2b.TestExactRecurrence.test_configurable_minimum_length) ... ok
+test_include_nested_false_hides_but_reports (tests.test_group_discovery_stage2b.TestExactRecurrence.test_include_nested_false_hides_but_reports) ... ok
+test_nested_shorter_repeats_marked_not_maximal (tests.test_group_discovery_stage2b.TestExactRecurrence.test_nested_shorter_repeats_marked_not_maximal) ... ok
+test_no_row1_or_grid_in_result (tests.test_group_discovery_stage2b.TestExactRecurrence.test_no_row1_or_grid_in_result) ... ok
+test_time_displaced_exact_repetition_found (tests.test_group_discovery_stage2b.TestExactRecurrence.test_time_displaced_exact_repetition_found) ... ok
+test_audio_estimated_pitch_flagged (tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_audio_estimated_pitch_flagged) ... ok
+test_distinct_rationals_do_not_collapse (tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_distinct_rationals_do_not_collapse) ... ok
+test_float_pitch_compatibility (tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_float_pitch_compatibility) ... ok
+test_fraction_pitch_preserved_exactly (tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_fraction_pitch_preserved_exactly) ... ok
+test_huge_pitch_and_time_rejected_without_overflow (tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_huge_pitch_and_time_rejected_without_overflow) ... ok
+test_negative_start_rejected_consistently (tests.test_group_discovery_stage2b.TestInputContractSafeguards.test_negative_start_rejected_consistently) ... ok
+test_exact_fractional_timing_matches_without_tolerance (tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_exact_fractional_timing_matches_without_tolerance) ... ok
+test_input_order_determinism (tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_input_order_determinism) ... ok
+test_non_repeating_passage_has_no_strict_families (tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_non_repeating_passage_has_no_strict_families) ... ok
+test_overlapping_occurrences_listed_and_flagged (tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_overlapping_occurrences_listed_and_flagged) ... ok
+test_overlapping_only_repeat_is_rejected_and_reported (tests.test_group_discovery_stage2b.TestOverlapAmbiguityTiming.test_overlapping_only_repeat_is_rejected_and_reported) ... ok
+test_explicit_voices_form_separate_monophonic_streams (tests.test_group_discovery_stage2b.TestPolyphonyVoicesUnpitched.test_explicit_voices_form_separate_monophonic_streams) ... ok
+test_polyphonic_stream_unsupported_and_reported (tests.test_group_discovery_stage2b.TestPolyphonyVoicesUnpitched.test_polyphonic_stream_unsupported_and_reported) ... ok
+test_unpitched_breaks_pitch_methods_but_rhythm_supports_it (tests.test_group_discovery_stage2b.TestPolyphonyVoicesUnpitched.test_unpitched_breaks_pitch_methods_but_rhythm_supports_it) ... ok
+test_contour_includes_repeated_pitch_and_is_weak (tests.test_group_discovery_stage2b.TestRhythmAndContour.test_contour_includes_repeated_pitch_and_is_weak) ... ok
+test_proportional_rhythm_is_separate_with_exact_scale (tests.test_group_discovery_stage2b.TestRhythmAndContour.test_proportional_rhythm_is_separate_with_exact_scale) ... ok
+test_rhythm_independent_of_pitch (tests.test_group_discovery_stage2b.TestRhythmAndContour.test_rhythm_independent_of_pitch) ... ok
+test_config_object_and_group_discovery_entry_point (tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_config_object_and_group_discovery_entry_point) ... ok
+test_empty_and_short_inputs (tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_empty_and_short_inputs) ... ok
+test_invalid_configuration_rejected (tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_invalid_configuration_rejected) ... ok
+test_window_limit_reported_not_silent (tests.test_group_discovery_stage2b.TestSearchLimitsAndConfig.test_window_limit_reported_not_silent) ... ok
+test_cross_row_transposed_match (tests.test_group_discovery_stage2b.TestTranspositionAndIntervals.test_cross_row_transposed_match) ... ok
+test_interval_only_distinct_from_strict_transposition (tests.test_group_discovery_stage2b.TestTranspositionAndIntervals.test_interval_only_distinct_from_strict_transposition) ... ok
+test_transposition_displacement_preserved_and_identities_kept (tests.test_group_discovery_stage2b.TestTranspositionAndIntervals.test_transposition_displacement_preserved_and_identities_kept) ... ok
+test_bounded_versus_unrestricted_completeness (tests.test_group_discovery_stage2b_identity.TestConfigAndSearchScope.test_bounded_versus_unrestricted_completeness) ... ok
+test_malformed_numeric_parameters_rejected (tests.test_group_discovery_stage2b_identity.TestConfigAndSearchScope.test_malformed_numeric_parameters_rejected) ... ok
+test_anonymous_ids_invariant_under_input_reversal (tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_anonymous_ids_invariant_under_input_reversal) ... ok
+test_duplicate_ids_disambiguated_by_default (tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_duplicate_ids_disambiguated_by_default) ... ok
+test_duplicate_supplied_ids_rejected_when_configured (tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_duplicate_supplied_ids_rejected_when_configured) ... ok
+test_generated_ids_are_flagged_and_supplied_ids_preserved (tests.test_group_discovery_stage2b_identity.TestIdentityContract.test_generated_ids_are_flagged_and_supplied_ids_preserved) ... ok
+test_input_index_excluded_from_result_equality (tests.test_group_discovery_stage2b_identity.TestPublicEventReferences.test_input_index_excluded_from_result_equality) ... ok
+test_occurrence_events_recover_source_and_provenance (tests.test_group_discovery_stage2b_identity.TestPublicEventReferences.test_occurrence_events_recover_source_and_provenance) ... ok
+test_auditor_reproduction_empty_voice_is_unspecified (tests.test_group_discovery_stage2b_identity.TestStreamIdentity.test_auditor_reproduction_empty_voice_is_unspecified) ... ok
+test_unspecified_and_named_voices_never_share_a_key (tests.test_group_discovery_stage2b_identity.TestStreamIdentity.test_unspecified_and_named_voices_never_share_a_key) ... ok
+test_whitespace_voice_is_unspecified (tests.test_group_discovery_stage2b_identity.TestStreamIdentity.test_whitespace_voice_is_unspecified) ... ok
+test_auditor_reproduction_existing_suffix_reserved (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_auditor_reproduction_existing_suffix_reserved) ... ok
+test_collision_with_generated_anonymous_identifier (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_collision_with_generated_anonymous_identifier) ... ok
+test_collisions_across_rows_and_voices (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_collisions_across_rows_and_voices) ... ok
+test_multiple_occupied_suffixes (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_multiple_occupied_suffixes) ... ok
+test_randomized_uniqueness_property (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_randomized_uniqueness_property) ... ok
+test_reversed_input_gives_identical_identifiers (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_reversed_input_gives_identical_identifiers) ... ok
+test_strict_mode_rejects_each_collision_kind (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_strict_mode_rejects_each_collision_kind) ... ok
+test_supplied_ids_preserved_in_event_refs (tests.test_group_discovery_stage2b_unique_ids.TestGlobalIdentifierUniqueness.test_supplied_ids_preserved_in_event_refs) ... ok
+
+----------------------------------------------------------------------
+Ran 79 tests in 0.138s
+
+OK
+[exit code: 0]
+
+$ python verify_group_discovery.py
+================================================================================
+MUSIC PROJECT - JOB-04 STAGE 2a: GROUP BOUNDARY CANDIDATE BENCHMARK (LEGACY PASSAGES)
+================================================================================
+All summary figures below are COMPUTED in this run; expectations are asserted and the exit
+code is 1 if any fails.  These are boundary candidates, not recurrence discovery.
+
+================================================================================
+BENCHMARK EVALUATION: Passage 1: Calibration Passage (Real SMF Type 1 MIDI Duck Flight, 4 rows, 21 notes, 4114ms)
+================================================================================
+[Timing Diagnostics & Sanity Audit]
+  Notes Analyzed:            21
+  Silence / Rest Intervals:  4 detected
+    - Silence interval: [1050.0, 1200.0) ms (duration 150.0 ms)
+    - Silence interval: [1650.0, 1800.0) ms (duration 150.0 ms)
+    - Silence interval: [2250.0, 2400.0) ms (duration 150.0 ms)
+    - ... and 1 more silence interval(s)
+  Polyphonic Overlaps:       5 detected
+    - Overlap in Row Track 2: Low Brass: [600.0, 1800.0) ms
+    - Overlap in Row Track 4: High Trumpets: [2614.0, 2721.0) ms
+  Off-Grid Note Timings:     30 (Preserved without snapping)
+  Malformed / Zero-dur notes:0 (Defect count)
+
+[Reference Standards — Designer-Specified Analytical Score References]
+  Total Reference Count (inc edges):    6 [0.0, 840.0, 1200.0, 2400.0, 3257.0, 4114.0]
+  Strictly Internal Reference Count:     4 [840.0, 1200.0, 2400.0, 3257.0]
+  Maximum Cardinality Bipartite Matching Tolerance: +/- 60.0 ms
+  Passage Interval:                     [0.0, 4114.0) ms
+
+[PRIMARY BENCHMARK: STRICTLY INTERNAL BOUNDARIES (0 < t < T)]
+Evaluates phrase discovery without trivial start/end boundary inflation.
+Method / Candidate                   | Discovered | TP   | FP   | FN   | Precision | Recall   | F1 Score | Random F1 (100 runs)
+-------------------------------------------------------------------------------------------------------------------------------
+Sifter A: Breath / Articulation Rest Sifter | 10         | 3    | 7    | 1    |     30.0% |    75.0% |    0.429 | 0.137 +/- 0.120     
+Sifter B: Motoric Rhythm Sifter      | 3          | 2    | 1    | 2    |     66.7% |    50.0% |    0.571 | 0.089 +/- 0.150     
+Sifter C: Melodic Contour / Gestural Sifter | 10         | 3    | 7    | 1    |     30.0% |    75.0% |    0.429 | 0.137 +/- 0.120     
+Sifter D: Cross-Row Hand-off Sifter  | 13         | 2    | 11   | 2    |     15.4% |    50.0% |    0.235 | 0.138 +/- 0.110     
+Control 1: Fixed-Width (400ms)       | 21         | 4    | 17   | 0    |     19.0% |   100.0% |    0.320 | 0.138 +/- 0.087     
+
+[SECONDARY CHECK: TOTAL BOUNDARY COVERAGE ([0, T]) — Milestone 5A Baseline]
+Method / Candidate                   | Discovered | TP   | FP   | FN   | Precision | Recall   | F1 Score
+--------------------------------------------------------------------------------------------------------
+Sifter A: Breath / Articulation Rest Sifter | 12         | 5    | 7    | 1    |     41.7% |    83.3% |    0.556
+Sifter B: Motoric Rhythm Sifter      | 5          | 4    | 1    | 2    |     80.0% |    66.7% |    0.727
+Sifter C: Melodic Contour / Gestural Sifter | 12         | 5    | 7    | 1    |     41.7% |    83.3% |    0.556
+Sifter D: Cross-Row Hand-off Sifter  | 15         | 4    | 11   | 2    |     26.7% |    66.7% |    0.381
+Control 1: Fixed-Width (400ms)       | 24         | 6    | 18   | 0    |     25.0% |   100.0% |    0.400
+Control 2: Random (seed=42)          | 15         | 3    | 12   | 3    |     20.0% |    50.0% |    0.286
+
+[Sifter D: Cross-Row Hand-off Sifter — Row 1 Structural Segments]
+  Total Composite Segments Derived: 14
+    Seg 1: [0.0, 600.0) ms (6u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 36.0
+    Seg 2: [600.0, 1650.0) ms (10.50u) | Active Rows: 2 | Active Grps: 3 | Mean Pitch: 48.5
+    Seg 3: [1650.0, 1800.0) ms (1.50u) | Active Rows: 1 | Active Grps: 2 | Mean Pitch: 39.5
+    Seg 4: [1800.0, 2250.0) ms (4.50u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 49.0
+    Seg 5: [2250.0, 2400.0) ms (1.50u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 36.0
+    Seg 6: [2400.0, 2829.0) ms (4.29u) | Active Rows: 3 | Active Grps: 3 | Mean Pitch: 65.0
+    ... and 8 additional segment(s)
+
+[Sifter A: Breath / Articulation Rest Sifter — Row 1 Structural Segments]
+  Total Composite Segments Derived: 11
+    Seg 1: [0.0, 600.0) ms (6u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 42.5
+    Seg 2: [600.0, 1050.0) ms (4.50u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 45.0
+    Seg 3: [1050.0, 1200.0) ms (1.50u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 42.5
+    Seg 4: [1200.0, 1650.0) ms (4.50u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 46.0
+    Seg 5: [1650.0, 1800.0) ms (1.50u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 42.5
+    Seg 6: [1800.0, 2250.0) ms (4.50u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 46.4
+    ... and 5 additional segment(s)
+
+================================================================================
+BENCHMARK EVALUATION: Passage 2: Held-Out Generalization Passage (Contrapuntal Non-Symmetric Phrasing, 2 rows, 10 notes, 3200ms)
+================================================================================
+[Timing Diagnostics & Sanity Audit]
+  Notes Analyzed:            10
+  Silence / Rest Intervals:  3 detected
+    - Silence interval: [1500.0, 1800.0) ms (duration 300.0 ms)
+    - Silence interval: [800.0, 900.0) ms (duration 100.0 ms)
+    - Silence interval: [2000.0, 2200.0) ms (duration 200.0 ms)
+  Polyphonic Overlaps:       0 detected
+  Off-Grid Note Timings:     2 (Preserved without snapping)
+  Malformed / Zero-dur notes:0 (Defect count)
+
+[Reference Standards — Designer-Specified Analytical Score References]
+  Total Reference Count (inc edges):    8 [0.0, 800.0, 900.0, 1500.0, 1800.0, 2000.0, 2200.0, 3200.0]
+  Strictly Internal Reference Count:     6 [800.0, 900.0, 1500.0, 1800.0, 2000.0, 2200.0]
+  Maximum Cardinality Bipartite Matching Tolerance: +/- 60.0 ms
+  Passage Interval:                     [0.0, 3200.0) ms
+
+[PRIMARY BENCHMARK: STRICTLY INTERNAL BOUNDARIES (0 < t < T)]
+Evaluates phrase discovery without trivial start/end boundary inflation.
+Method / Candidate                   | Discovered | TP   | FP   | FN   | Precision | Recall   | F1 Score | Random F1 (100 runs)
+-------------------------------------------------------------------------------------------------------------------------------
+Sifter A: Breath / Articulation Rest Sifter | 6          | 6    | 0    | 0    |    100.0% |   100.0% |    1.000 | 0.217 +/- 0.158     
+Sifter B: Motoric Rhythm Sifter      | 0          | 0    | 0    | 6    |      0.0% |     0.0% |    0.000 | 0.000 +/- 0.000     
+Sifter C: Melodic Contour / Gestural Sifter | 8          | 5    | 3    | 1    |     62.5% |    83.3% |    0.714 | 0.238 +/- 0.141     
+Sifter D: Cross-Row Hand-off Sifter  | 9          | 6    | 3    | 0    |     66.7% |   100.0% |    0.800 | 0.242 +/- 0.138     
+Control 1: Fixed-Width (400ms)       | 7          | 2    | 5    | 4    |     28.6% |    33.3% |    0.308 | 0.233 +/- 0.150     
+
+[SECONDARY CHECK: TOTAL BOUNDARY COVERAGE ([0, T]) — Milestone 5A Baseline]
+Method / Candidate                   | Discovered | TP   | FP   | FN   | Precision | Recall   | F1 Score
+--------------------------------------------------------------------------------------------------------
+Sifter A: Breath / Articulation Rest Sifter | 8          | 8    | 0    | 0    |    100.0% |   100.0% |    1.000
+Sifter B: Motoric Rhythm Sifter      | 2          | 2    | 0    | 6    |    100.0% |    25.0% |    0.400
+Sifter C: Melodic Contour / Gestural Sifter | 10         | 7    | 3    | 1    |     70.0% |    87.5% |    0.778
+Sifter D: Cross-Row Hand-off Sifter  | 11         | 8    | 3    | 0    |     72.7% |   100.0% |    0.842
+Control 1: Fixed-Width (400ms)       | 9          | 4    | 5    | 4    |     44.4% |    50.0% |    0.471
+Control 2: Random (seed=42)          | 11         | 5    | 6    | 3    |     45.5% |    62.5% |    0.526
+
+[Sifter D: Cross-Row Hand-off Sifter — Row 1 Structural Segments]
+  Total Composite Segments Derived: 10
+    Seg 1: [0.0, 750.0) ms (7.50u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 53.3
+    Seg 2: [750.0, 800.0) ms (0.50u) [Sub-Unit < 1u] | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 55.7
+    Seg 3: [800.0, 900.0) ms (1u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 43.0
+    Seg 4: [900.0, 1500.0) ms (6u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 60.7
+    Seg 5: [1500.0, 1800.0) ms (3u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 69.5
+    Seg 6: [1800.0, 2000.0) ms (2u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 60.0
+    ... and 4 additional segment(s)
+
+[Sifter A: Breath / Articulation Rest Sifter — Row 1 Structural Segments]
+  Total Composite Segments Derived: 7
+    Seg 1: [0.0, 800.0) ms (8u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 50.8
+    Seg 2: [800.0, 900.0) ms (1u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 39.5
+    Seg 3: [900.0, 1500.0) ms (6u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 54.5
+    Seg 4: [1500.0, 1800.0) ms (3u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 69.5
+    Seg 5: [1800.0, 2000.0) ms (2u) | Active Rows: 2 | Active Grps: 2 | Mean Pitch: 54.0
+    Seg 6: [2000.0, 2200.0) ms (2u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 38.5
+    ... and 1 additional segment(s)
+
+================================================================================
+BENCHMARK EVALUATION: Passage 3: Negative Control Passage (Continuous Irregular Stream, 1 row, 6 notes, 1500ms)
+================================================================================
+[Timing Diagnostics & Sanity Audit]
+  Notes Analyzed:            6
+  Silence / Rest Intervals:  0 detected
+  Polyphonic Overlaps:       0 detected
+  Off-Grid Note Timings:     8 (Preserved without snapping)
+  Malformed / Zero-dur notes:0 (Defect count)
+
+[Reference Standards — Designer-Specified Analytical Score References]
+  Total Reference Count (inc edges):    2 [0.0, 1500.0]
+  Strictly Internal Reference Count:     0 []
+  Maximum Cardinality Bipartite Matching Tolerance: +/- 60.0 ms
+  Passage Interval:                     [0.0, 1500.0) ms
+
+[PRIMARY BENCHMARK: STRICTLY INTERNAL BOUNDARIES (0 < t < T)]
+Evaluates phrase discovery without trivial start/end boundary inflation.
+Method / Candidate                   | Discovered | TP   | FP   | FN   | Precision | Recall   | F1 Score | Random F1 (100 runs)
+-------------------------------------------------------------------------------------------------------------------------------
+Sifter A: Breath / Articulation Rest Sifter | 0          | 0    | 0    | 0    |    100.0% |   100.0% |    1.000 | n/a (no internal refs)
+Sifter B: Motoric Rhythm Sifter      | 0          | 0    | 0    | 0    |    100.0% |   100.0% |    1.000 | n/a (no internal refs)
+Sifter C: Melodic Contour / Gestural Sifter | 0          | 0    | 0    | 0    |    100.0% |   100.0% |    1.000 | n/a (no internal refs)
+Sifter D: Cross-Row Hand-off Sifter  | 0          | 0    | 0    | 0    |    100.0% |   100.0% |    1.000 | n/a (no internal refs)
+Control 1: Fixed-Width (400ms)       | 3          | 0    | 3    | 0    |      0.0% |     0.0% |    0.000 | n/a (no internal refs)
+
+[SECONDARY CHECK: TOTAL BOUNDARY COVERAGE ([0, T]) — Milestone 5A Baseline]
+Method / Candidate                   | Discovered | TP   | FP   | FN   | Precision | Recall   | F1 Score
+--------------------------------------------------------------------------------------------------------
+Sifter A: Breath / Articulation Rest Sifter | 2          | 2    | 0    | 0    |    100.0% |   100.0% |    1.000
+Sifter B: Motoric Rhythm Sifter      | 2          | 2    | 0    | 0    |    100.0% |   100.0% |    1.000
+Sifter C: Melodic Contour / Gestural Sifter | 2          | 2    | 0    | 0    |    100.0% |   100.0% |    1.000
+Sifter D: Cross-Row Hand-off Sifter  | 2          | 2    | 0    | 0    |    100.0% |   100.0% |    1.000
+Control 1: Fixed-Width (400ms)       | 5          | 2    | 3    | 0    |     40.0% |   100.0% |    0.571
+Control 2: Random (seed=42)          | 2          | 2    | 0    | 0    |    100.0% |   100.0% |    1.000
+
+[Sifter D: Cross-Row Hand-off Sifter — Row 1 Structural Segments]
+  Total Composite Segments Derived: 1
+    Seg 1: [0.0, 1500.0) ms (15u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 62.5
+
+[Sifter A: Breath / Articulation Rest Sifter — Row 1 Structural Segments]
+  Total Composite Segments Derived: 1
+    Seg 1: [0.0, 1500.0) ms (15u) | Active Rows: 1 | Active Grps: 1 | Mean Pitch: 62.5
+
+================================================================================
+COMPUTED SUMMARY (strictly internal boundaries, tolerance +/- 60 ms)
+================================================================================
+  Passage 1 | Sifter A: Breath / Articulation Rest Sifter   | F1 0.429 | FP 7 | random count-matched F1 0.137 +/- 0.120
+  Passage 1 | Sifter B: Motoric Rhythm Sifter               | F1 0.571 | FP 1 | random count-matched F1 0.089 +/- 0.150
+  Passage 1 | Sifter C: Melodic Contour / Gestural Sifter   | F1 0.429 | FP 7 | random count-matched F1 0.137 +/- 0.120
+  Passage 1 | Sifter D: Cross-Row Hand-off Sifter           | F1 0.235 | FP 11 | random count-matched F1 0.138 +/- 0.110
+  Passage 1 | Control 1: Fixed-Width (400ms)                | F1 0.320 | FP 17 | random count-matched F1 0.138 +/- 0.087
+  Passage 2 | Sifter A: Breath / Articulation Rest Sifter   | F1 1.000 | FP 0 | random count-matched F1 0.217 +/- 0.158
+  Passage 2 | Sifter B: Motoric Rhythm Sifter               | F1 0.000 | FP 0 | random count-matched F1 0.000 +/- 0.000
+  Passage 2 | Sifter C: Melodic Contour / Gestural Sifter   | F1 0.714 | FP 3 | random count-matched F1 0.238 +/- 0.141
+  Passage 2 | Sifter D: Cross-Row Hand-off Sifter           | F1 0.800 | FP 3 | random count-matched F1 0.242 +/- 0.138
+  Passage 2 | Control 1: Fixed-Width (400ms)                | F1 0.308 | FP 5 | random count-matched F1 0.233 +/- 0.150
+  Passage 3 | Sifter A: Breath / Articulation Rest Sifter   | F1 1.000 | FP 0 | no internal references
+  Passage 3 | Sifter B: Motoric Rhythm Sifter               | F1 1.000 | FP 0 | no internal references
+  Passage 3 | Sifter C: Melodic Contour / Gestural Sifter   | F1 1.000 | FP 0 | no internal references
+  Passage 3 | Sifter D: Cross-Row Hand-off Sifter           | F1 1.000 | FP 0 | no internal references
+  Passage 3 | Control 1: Fixed-Width (400ms)                | F1 0.000 | FP 3 | no internal references
+
+EXPECTATION CHECKS
+  [PASS] P1 Sifter B internal: TP=2 FP=1 FN=2 (precision 2/3, recall 1/2, F1 4/7)  (TP=2 FP=1 FN=2 P=0.6667 R=0.5000 F1=0.5714)
+  [PASS] P1 Sifter C internal: 10 discovered, TP=3 (Stage 2a polyphony correction)  (discovered=10 TP=3)
+  [PASS] P1 diagnostics: polyphonic rows reported  (polyphonic_rows=('Row Track 2: Low Brass', 'Row Track 4: High Trumpets'))
+  [PASS] P2 Sifter A internal: P=R=F1=1 (references defined at rests)  (P=1.0 R=1.0 F1=1.0)
+  [PASS] P3 negative control Sifter A: 0 internal false positives  (FP=0)
+  [PASS] P3 negative control Sifter B: 0 internal false positives  (FP=0)
+  [PASS] P3 negative control Sifter C: 0 internal false positives  (FP=0)
+  [PASS] P3 negative control Sifter D: 0 internal false positives  (FP=0)
+  [PASS] P3 negative control fixed-width: 3 internal false positives  (FP=3)
+  [PASS] P2 legacy Row 1 segment [750, 800) is 0.50u (no 0u collapse)  ([(750.0, 800.0, '0.50u')])
+  [PASS] P1 Sifter A: boundaries_by_row union equals discovered_boundaries_ms  (12 vs 12)
+  [PASS] P1 Sifter B: boundaries_by_row union equals discovered_boundaries_ms  (5 vs 5)
+  [PASS] P1 Sifter C: boundaries_by_row union equals discovered_boundaries_ms  (12 vs 12)
+  [PASS] P1 Sifter D: boundaries_by_row union equals discovered_boundaries_ms  (15 vs 15)
+  [PASS] P2 Sifter A: boundaries_by_row union equals discovered_boundaries_ms  (8 vs 8)
+  [PASS] P2 Sifter B: boundaries_by_row union equals discovered_boundaries_ms  (2 vs 2)
+  [PASS] P2 Sifter C: boundaries_by_row union equals discovered_boundaries_ms  (10 vs 10)
+  [PASS] P2 Sifter D: boundaries_by_row union equals discovered_boundaries_ms  (11 vs 11)
+  [PASS] P3 Sifter A: boundaries_by_row union equals discovered_boundaries_ms  (2 vs 2)
+  [PASS] P3 Sifter B: boundaries_by_row union equals discovered_boundaries_ms  (2 vs 2)
+  [PASS] P3 Sifter C: boundaries_by_row union equals discovered_boundaries_ms  (2 vs 2)
+  [PASS] P3 Sifter D: boundaries_by_row union equals discovered_boundaries_ms  (2 vs 2)
+
+22/22 expectation checks passed.
+VERIFICATION PASSED (exit code 0)
+[exit code: 0]
+
+====================================================================================================
+4. Research harness (job04_investigation/; scratch copy, so generated results/ stayed out of <project>)
+====================================================================================================
+
+4.1 Development evaluation, run 1 (no faulthandler), about 2026-11-27 10:12 UTC: NATIVE ACCESS VIOLATION (JOB-03 A21).
+    Git Bash reported 'Segmentation fault' (exit 139 = the shell's mapping of Windows 0xC0000005). The process died
+    while printing a traceback header; no faulting frame is available. No retry was automatic.
+
+$ python job04_investigation/run_stage2b_evaluation.py
+Traceback (most recent call last):
+[exit code: 139]
+
+4.2 Development evaluation, run 2 (deliberate single repeat with -X faulthandler), 2026-11-27 10:15:11 UTC:
+
+$ python -X faulthandler job04_investigation/run_stage2b_evaluation.py
+passage               relations found (primary)   maximal fams e/t/r/c    incidental e/t/r/c    nested e/t/r/c      delim disc/fix/rnd
+exact_with_rests      1/1                         1/1/2/4                 0/0/0/0               2/2/1/2             2/0/0.01 of 2
+exact_legato          1/1                         1/1/8/8                 0/0/0/0               2/2/1/3             3/0/0.01 of 3
+transposed            1/1                         0/1/5/4                 0/0/0/0               0/2/0/2             2/0/0.00 of 2
+rhythm_only           1/1                         0/0/1/2                 0/0/0/0               0/0/2/1             2/0/0.01 of 2
+contour_only          1/1                         0/0/2/3                 0/0/0/0               0/0/0/0             2/0/0.01 of 2
+different_lengths     2/2                         1/1/2/4                 0/0/0/0               20/20/18/14         4/0/0.18 of 4
+non_repeating         0/0                         0/0/0/5                 0/0/0/5               0/0/0/3             -
+accidental_similarity 0/0                         0/0/0/3                 0/0/0/3               0/0/0/0             -
+cross_row             1/1                         0/1/3/3                 0/0/0/0               0/2/1/0             2/0/0.02 of 2
+empty_dict            0/0                         0/0/0/0                 0/0/0/0               0/0/0/0             -
+empty_row             0/0                         0/0/0/0                 0/0/0/0               0/0/0/0             -
+one_note              0/0                         0/0/0/0                 0/0/0/0               0/0/0/0             -
+two_notes             0/0                         0/0/0/0                 0/0/0/0               0/0/0/0             -
+
+Shuffle controls (maximal-family counts; observed vs surrogate mean, fraction of 100 surrogates >= observed):
+  exact_with_rests       pitch: exac=1/0.01(0.01) tran=1/0.01(0.01) rhyt=2/2.0(1.0) cont=4/2.65(0.19) | rhyth: exac=1/0.18(0.18) tran=1/0.18(0.18) rhyt=2/1.35(0.41) cont=4/4.0(1.0) | note_: exac=1/0.02(0.02) tran=1/0.04(0.04) rhyt=2/1.35(0.41) cont=4/2.65(0.19)
+  exact_legato           pitch: exac=1/0.01(0.01) tran=1/0.06(0.05) rhyt=8/8.0(1.0) cont=8/6.59(0.27) | rhyth: exac=1/0.88(0.73) tran=1/0.88(0.73) rhyt=8/6.37(0.2) cont=8/8.0(1.0) | note_: exac=1/0.05(0.04) tran=1/0.11(0.09) rhyt=8/6.37(0.2) cont=8/6.59(0.27)
+  transposed             pitch: exac=0/0.0(1.0) tran=1/0.06(0.06) rhyt=5/5.0(1.0) cont=4/2.79(0.2) | rhyth: exac=0/0.17(1.0) tran=1/0.66(0.61) rhyt=5/2.38(0.04) cont=4/4.0(1.0) | note_: exac=0/0.0(1.0) tran=1/0.05(0.05) rhyt=5/2.38(0.04) cont=4/2.79(0.2)
+  rhythm_only            pitch: exac=0/0.0(1.0) tran=0/0.01(1.0) rhyt=1/1.0(1.0) cont=2/3.17(0.94) | rhyth: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=1/0.58(0.51) cont=2/2.0(1.0) | note_: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=1/0.58(0.51) cont=2/3.17(0.94)
+  contour_only           pitch: exac=0/0.0(1.0) tran=0/0.05(1.0) rhyt=2/2.0(1.0) cont=3/3.12(0.73) | rhyth: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=2/2.49(1.0) cont=3/3.0(1.0) | note_: exac=0/0.0(1.0) tran=0/0.04(1.0) rhyt=2/2.49(1.0) cont=3/3.12(0.73)
+  different_lengths      pitch: exac=1/0.0(0.0) tran=1/0.01(0.01) rhyt=2/2.0(1.0) cont=4/5.05(0.88) | rhyth: exac=1/0.12(0.12) tran=1/0.12(0.12) rhyt=2/1.55(0.46) cont=4/4.0(1.0) | note_: exac=1/0.03(0.03) tran=1/0.03(0.03) rhyt=2/1.55(0.46) cont=4/5.05(0.88)
+  non_repeating          pitch: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=0/0.0(1.0) cont=5/5.11(0.64) | rhyth: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=0/0.65(1.0) cont=5/5.0(1.0) | note_: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=0/0.65(1.0) cont=5/5.11(0.64)
+  accidental_similarity  pitch: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=0/0.0(1.0) cont=3/1.74(0.2) | rhyth: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=0/0.01(1.0) cont=3/3.0(1.0) | note_: exac=0/0.0(1.0) tran=0/0.0(1.0) rhyt=0/0.01(1.0) cont=3/1.74(0.2)
+  cross_row              pitch: exac=0/0.0(1.0) tran=1/0.03(0.03) rhyt=3/3.0(1.0) cont=3/2.09(0.29) | rhyth: exac=0/0.0(1.0) tran=1/0.16(0.16) rhyt=3/1.5(0.12) cont=3/3.0(1.0) | note_: exac=0/0.0(1.0) tran=1/0.04(0.04) rhyt=3/1.5(0.12) cont=3/2.09(0.29)
+
+EXPECTATION CHECKS (from fixture construction)
+  [PASS] exact_with_rests: intended exact relation found by exact  
+  [PASS] exact_legato: intended exact relation found by exact  
+  [PASS] transposed: intended transposed relation found by transposition  
+  [PASS] rhythm_only: intended rhythm relation found by rhythm  
+  [PASS] contour_only: intended contour relation found by contour  
+  [PASS] different_lengths: intended exact relation found by exact  
+  [PASS] different_lengths: intended exact relation found by exact  
+  [PASS] cross_row: intended transposed relation found by transposition  
+44/44 checks passed
+[exit code: 0]
+
+4.1/4.2 preserved as SEPARATE evidence files (outside the repository; the failure is not superseded by the pass):
+    %USERPROFILE%\JOB_04_A21_EVIDENCE_20261127\run1_CRASHED_stage2b_evaluation.txt  SHA-256 fc945c771eb0adec5c7056a45577620d990f5aaa297fab72b0f3888220976832
+    %USERPROFILE%\JOB_04_A21_EVIDENCE_20261127\run2_PASSED_stage2b_evaluation.txt  SHA-256 bf6195c92fa1b40bc34c232ba4953ba82f12ac62888fa4c667103a9654147ddf
+    The failure shows the problem is not confined to GUI or audio execution. Its cause remains unresolved and is
+    not attributed to Python, hardware or drivers. No system-level change was made; no automatic retries.
+
+4.3 Baseline validation, defect probes, performance:
+
+$ python job04_investigation/run_baseline_validation.py
+Engine output fields: sifter_name, groups_by_row, discovered_boundaries_ms, diagnostics, row1_segments, boundaries_by_row, segmentation_kind, warnings, group_id, row_id, start_ms, end_ms, notes, method, start_unit, end_unit, event_ids, event_indices, exact_start_ms, exact_end_ms, timing_sources, unpitched_count
+Recurrence-related fields: NONE
+
+passage               method          disc  TP  FP  FN      P      R     F1  rand F1       inst delimited  widths        bf
+---------------------------------------------------------------------------------------------------------------------------
+exact_with_rests      A_rests            4   4   0   0  1.000  1.000  1.000  0.096+/-0.146 2/2             1 (equal)     agree
+exact_with_rests      B_motoric          0   0   0   4  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+exact_with_rests      C_contour          9   4   5   0  0.444  1.000  0.615  0.135+/-0.134 0/2             3             agree
+exact_with_rests      D_crossrow         0   0   0   4  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+exact_with_rests      CTRL_fixed400     10   2   8   2  0.200  0.500  0.286  0.131+/-0.128 0/2             2             agree
+
+exact_legato          A_rests            0   0   0   4  0.000  0.000  0.000  -             0/3             1 (equal)     agree
+exact_legato          B_motoric          0   0   0   4  0.000  0.000  0.000  -             0/3             1 (equal)     agree
+exact_legato          C_contour         11   3   8   1  0.273  0.750  0.400  0.098+/-0.092 0/3             4             agree
+exact_legato          D_crossrow         0   0   0   4  0.000  0.000  0.000  -             0/3             1 (equal)     agree
+exact_legato          CTRL_fixed400     15   1  14   3  0.067  0.250  0.105  0.092+/-0.074 0/3             2             agree
+
+transposed            A_rests            0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+transposed            B_motoric          0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+transposed            C_contour          7   2   5   0  0.286  1.000  0.444  0.100+/-0.123 0/2             3             agree
+transposed            D_crossrow         0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+transposed            CTRL_fixed400      9   1   8   1  0.111  0.500  0.182  0.095+/-0.112 0/2             2             agree
+
+rhythm_only           A_rests            0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+rhythm_only           B_motoric          0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+rhythm_only           C_contour          8   2   6   0  0.250  1.000  0.400  0.105+/-0.121 0/2             4             agree
+rhythm_only           D_crossrow         0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+rhythm_only           CTRL_fixed400      7   0   7   2  0.000  0.000  0.000  0.100+/-0.134 0/2             2             agree
+
+contour_only          A_rests            0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+contour_only          B_motoric          0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+contour_only          C_contour          8   2   6   0  0.250  1.000  0.400  0.105+/-0.121 0/2             2             agree
+contour_only          D_crossrow         0   0   0   2  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+contour_only          CTRL_fixed400      7   0   7   2  0.000  0.000  0.000  0.100+/-0.134 0/2             2             agree
+
+different_lengths     A_rests            0   0   0   3  0.000  0.000  0.000  -             0/4             1 (equal)     agree
+different_lengths     B_motoric          0   0   0   3  0.000  0.000  0.000  -             0/4             1 (equal)     agree
+different_lengths     C_contour          7   3   4   0  0.429  1.000  0.600  0.096+/-0.120 2/4             4             agree
+different_lengths     D_crossrow         0   0   0   3  0.000  0.000  0.000  -             0/4             1 (equal)     agree
+different_lengths     CTRL_fixed400     11   1  10   2  0.091  0.333  0.143  0.112+/-0.100 0/4             2             agree
+
+non_repeating         A_rests            0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+non_repeating         B_motoric          0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+non_repeating         C_contour          8   0   8   0  0.000  0.000  0.000  -             -               6             agree
+non_repeating         D_crossrow         0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+non_repeating         CTRL_fixed400     12   0  12   0  0.000  0.000  0.000  -             -               2             agree
+
+accidental_similarity A_rests            0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+accidental_similarity B_motoric          0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+accidental_similarity C_contour          5   0   5   0  0.000  0.000  0.000  -             -               3             agree
+accidental_similarity D_crossrow         0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+accidental_similarity CTRL_fixed400      7   0   7   0  0.000  0.000  0.000  -             -               2             agree
+
+cross_row             A_rests            0   0   0   1  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+cross_row             B_motoric          0   0   0   1  0.000  0.000  0.000  -             0/2             1 (equal)     agree
+cross_row             C_contour          5   1   4   0  0.200  1.000  0.333  0.104+/-0.161 0/2             4             agree
+cross_row             D_crossrow         4   1   3   0  0.250  1.000  0.400  0.091+/-0.172 1/2             4             agree
+cross_row             CTRL_fixed400      6   1   5   0  0.167  1.000  0.286  0.109+/-0.146 0/2             2             agree
+
+empty_dict            A_rests            0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_dict            B_motoric          0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_dict            C_contour          0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_dict            D_crossrow         0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_dict            CTRL_fixed400      0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+
+empty_row             A_rests            0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_row             B_motoric          0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_row             C_contour          0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_row             D_crossrow         0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+empty_row             CTRL_fixed400      0   0   0   0  1.000  1.000  1.000  -             -               0             agree
+
+one_note              A_rests            0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+one_note              B_motoric          0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+one_note              C_contour          0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+one_note              D_crossrow         0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+one_note              CTRL_fixed400      1   0   1   0  0.000  0.000  0.000  -             -               2             agree
+
+two_notes             A_rests            0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+two_notes             B_motoric          0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+two_notes             C_contour          1   0   1   0  0.000  0.000  0.000  -             -               1 (equal)     agree
+two_notes             D_crossrow         0   0   0   0  1.000  1.000  1.000  -             -               1 (equal)     agree
+two_notes             CTRL_fixed400      1   0   1   0  0.000  0.000  0.000  -             -               2             agree
+
+Ground-truth recurrence relations across all passages: 8; reported by the engine: 0 (no recurrence output exists).
+[exit code: 0]
+
+$ python job04_investigation/defect_probes.py
+[P01] NOT CONFIRMED: A note without any pitch attribute is silently given pitch 60 (no error, no flag).
+      observed: pitch=None
+[P02] NOT CONFIRMED: A tick-only object's MIDI ticks are used as milliseconds without conversion.
+      observed: rejected: AmbiguousTimingError: row#0: only tick timing is present; ticks are not milliseconds. Convert with the source tempo map (e.g. MidiImporter) before group discovery.
+[P03] NOT CONFIRMED: Fractional pitch (e.g. a WAV-estimated height 60.4) is rounded to an integer before analysis.
+      observed: pitch=60.4
+[P04] NOT CONFIRMED: Exact rational source timing on a SoundEvent (attributes exact_*_sec_rational) is ignored; only integer-ms start_time_ms/end_time_ms are read.
+      observed: read start=0.022675736961451247 end=1.0204081632653061; exact source end = 1.020408 ms
+[P05] NOT CONFIRMED: Sifter A, polyphony inside one row: a rest is reported while an earlier long note is still sounding, and the group end is the LAST-STARTED note's end, not the latest end.
+      observed: groups=[(0.0, 1000.0)] (bass sounds throughout 0-1000 ms, so no silence exists)
+[P06] CONFIRMED: Sifter B only tests three hard-coded spans (300/400/200 ms); a clean 500 ms periodic pattern is reported as non-repeating.
+      observed: methods=['Sifter_B_NoRepetition']
+[P07] CONFIRMED: Sifter B output groups are all equal-width slices of the chosen span (a periodic grid), not musically delimited groups.
+      observed: group widths=[300.0], method=Sifter_B_Motoric_300ms, note 900-1500 straddles slices
+[P08] CONFIRMED: Sifter D in dense two-row polyphony places a boundary between almost every pair of notes.
+      observed: upper row: 8 notes split into 8 groups
+[P09] NOT CONFIRMED: Monte Carlo baseline silently assumes the span (0, 1000) ms when passage_span_ms is omitted.
+      observed: rejected: internal_only=True requires passage_span_ms (no default span is assumed)
+[P10] CONFIRMED: EvaluationMetrics.specificity is 1.0/0.0 by 'no false positive' rather than a true-negative rate, and F1 = 1.0 is reported when nothing exists and nothing is found.
+      observed: empty/empty F1=1.0; 2 of 3 correct + 1 FP -> specificity=0.0
+[P11] NOT CONFIRMED: Discovered boundaries are a union across rows: row attribution is lost in discovered_boundaries_ms (only recoverable from groups_by_row).
+      observed: discovered_boundaries_ms=[0.0, 100.0, 300.0, 400.0]; boundaries_by_row={'a': [0.0, 100.0, 300.0, 400.0], 'b': [0.0, 400.0]}
+[P12] CONFIRMED: Every sifter result also derives Row 1 segments (derive_row1_from_discovered_groups), which belongs to later jobs (merger / transfer to Row 1).
+      observed: row1_segments=3
+[P13] NOT CONFIRMED: verify_group_discovery.py prints hard-coded summary figures that differ from the values it computes, has no assertions, and always exits 0.
+      observed: summary strings '0.125 +/- 0.119' and '0.222 +/- 0.141' are literals; computed values are 0.089 +/- 0.150 and 0.217 +/- 0.158 (see verify output)
+[P14] NOT CONFIRMED: A SoundEvent with height=None (what the JOB-02 WAV importer emits for unpitched events) crashes extract_note_timing and therefore every sifter.
+      observed: no exception
+
+5/14 probes confirmed; errors: 0
+[exit code: 0]
+
+$ python job04_investigation/run_stage2b_performance.py
+input                       L  seconds  windows/method  families  maximal complete
+random                     50     0.18            1176        44       26     True
+random                    100     1.30            4851       178       96     True
+random                    200    10.33           19701       317      226     True
+random                    400    83.21           79401       770      496     True
+identical                  50     0.42            1176        92       92     True
+identical                 100     3.12            4851       192      192     True
+identical                 200    25.08           19701       392      392     True
+identical, max_windows=20000  400     4.27           19716        53       53    False
+search notes: ('exact: window limit 20000 reached; searched lengths 3..55 of 3..400 (lengths >= 56 NOT searched)',)
+[exit code: 0]
+
+====================================================================================================
+5. Stage 2c independent held-out verifier
+====================================================================================================
+
+5.1 Execution on the publication tree copy:
+
+$ PYTHONPATH=. python job04_investigation/job04_heldout_audit.py
+fractional_exact families 36
+negative_transpose families 30
+rhythm_only families 13
+contour_only families 6
+interval_only families 12
+scaled_rhythm families 7
+near_pitch families 27
+near_timing families 24
+cross_row families 30
+unpitched families 12
+overlap_only families 0
+periodic_overlap families 12
+negative families 1
+empty families 0
+short families 0
+explicit_voices families 36
+ambiguous_chord families 0
+checks 886 failures 0
+
+[exit code: 0]
+
+Also run in <project> before the tree was built: 'checks 886 failures 0', exit 0.
+
+5.2 Sensitivity check (scratch copies only; <project> never modified). One fault injected into
+    music_model/recurrence_discovery.py per copy; the unmodified verifier was run; for a surviving mutant the 79
+    JOB-04 tests were also run against it.
+
+[control] none (control): exit 0; checks 886 failures 0
+[KILLED] contour treats a repeated pitch as rising: exit 1; checks 908 failures 8
+[KILLED] exact ignores durations: exit 1; checks 892 failures 3
+[SURVIVED] transposition ignores inter-onset intervals: exit 0; checks 886 failures 0 | project JOB-04 tests on this mutant: exit 0; Ran 79 tests in 0.137s OK; 
+[KILLED] rhythm ignores inter-onset intervals: exit 1; checks 894 failures 2
+[KILLED] pitch rounded to an integer before comparison: exit 1; checks 904 failures 9
+[KILLED] proportional rhythm uses float division: exit 1; checks 884 failures 7
+
+mutants killed: 5/6; control exit 0
+exit=0
+
+5.3 Coverage gap: witness for the surviving mutant (transposition signature without inter-onset intervals).
+    Two 3-note windows: durations 1,1,1 ms and intervals +2,+2 in both; onsets (0,1,2) vs (10,13,16).
+
+== correct engine (control copy)
+transposition families: []
+== mutant
+transposition families: [(3, [0, 3])]
+
+    The correct engine is right (equal relative onsets are part of strict transposition; specification section 4).
+    R1: proposed, not applied.  R2: AUTHORIZED by ChatGPT's publication audit and APPLIED as
+    tests/test_group_discovery_stage2c_coverage.py (one test; no production change; the 79 earlier tests and the
+    held-out verifier byte-identical). It asserts: no 'exact' family; no strict 'transposition' family; exactly one
+    'interval_only' family at half-open ranges [0,3) and [3,6), event ids a0-a2 / b0-b2, pitches kept, +7 on every note.
+    It passes on the correct engine and FAILS on the mutant (the mutant copy from 5.2, <scratch>/mut/m3):
+
+$ python -m unittest -v tests.test_group_discovery_stage2c_coverage      (cwd = <project>; correct engine)
+test_equal_intervals_and_durations_with_different_onset_spacing (tests.test_group_discovery_stage2c_coverage.TestStrictTranspositionComparesInterOnsetIntervals.test_equal_intervals_and_durations_with_different_onset_spacing) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
+[exit code: 0]
+
+$ python -m unittest -v tests.test_group_discovery_stage2c_coverage      (cwd = <scratch>/mut/m3; mutant: transposition signature without inter-onset intervals; output filtered to the result lines)
+test_equal_intervals_and_durations_with_different_onset_spacing (tests.test_group_discovery_stage2c_coverage.TestStrictTranspositionComparesInterOnsetIntervals.test_equal_intervals_and_durations_with_different_onset_spacing) ... FAIL
+FAIL: test_equal_intervals_and_durations_with_different_onset_spacing (tests.test_group_discovery_stage2c_coverage.TestStrictTranspositionComparesInterOnsetIntervals.test_equal_intervals_and_durations_with_different_onset_spacing)
+AssertionError: Lists differ: [RecurrenceFamily(family_key='transpositio[3349 chars]=())] != []
+Ran 1 test in 0.003s
+FAILED (failures=1)
+[exit code: 1]
+
+====================================================================================================
+6. Full acceptance runner on the exact proposed publication tree (--windows-device)
+====================================================================================================
+
+$ python -X faulthandler acceptance/run_acceptance.py --windows-device      (cwd = <scratch>/pubtree1)
+JOB-03/JOB-04 acceptance runner | python 3.15.2 | win32 | results: <scratch>\pubtree1\acceptance_results\20261127T100721Z
+[suite] python exit code = 0 (173.7 s); run=357 failures=0 errors=0 skipped=14
+[device] python exit code = 0 (22.8 s); run=14 failures=0 errors=0 skipped=0
+[script] verify_audio_and_sheet_adapters.py (required): python exit code = 0 (28.0 s)
+[script] verify_development.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_units.py (required): python exit code = 0 (0.1 s)
+[script] verify_midi_import.py (required): python exit code = 0 (0.1 s)
+[script] verify_playback_transport.py (required): python exit code = 0 (0.6 s)
+[script] verify_progressive.py (required): python exit code = 0 (0.1 s)
+[script] verify_proof.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_discovery.py (required): python exit code = 0 (0.1 s)
+[script] job04_investigation/job04_heldout_audit.py (required): python exit code = 0 (0.2 s)
+[script] verify_row_merger.py: OUTSIDE PUBLICATION SCOPE (absent)
+
+SUITE: run=357 passed=343 skipped=14 failures=0 errors=0 (exit 0)
+DEVICE: {'exit_code': 0, 'run': 14, 'failures': 0, 'errors': 0, 'skipped': 0}
+  A01  PASS                                             device: n/a
+  A02  PASS                                             device: n/a
+  A03  PASS                                             device: PASS
+  A04  PASS                                             device: PASS
+  A05  PASS                                             device: n/a
+  A06  PASS                                             device: n/a
+  A07  PASS                                             device: PASS
+  A08  PASS                                             device: n/a
+  A09  PASS                                             device: n/a
+  A10  PASS                                             device: n/a
+  A11  PASS                                             device: n/a
+  A12  PASS                                             device: PASS
+  A13  PASS                                             device: PASS
+  A14  PASS                                             device: PASS
+  A15  PASS                                             device: PASS
+  A16  PASS                                             device: PASS
+  A17  PASS                                             device: PASS
+  A18  PASS                                             device: PASS
+  A19  PASS                                             device: n/a
+  A20  NO-AUTOMATED-COVERAGE                            device: n/a
+  A21  PASS (regression only; see remaining_unverified) device: n/a
+  A22  PASS                                             device: PASS
+  G01  PASS                                             device: n/a
+  G02  PASS                                             device: n/a
+  G03  PASS                                             device: n/a
+  G04  PASS                                             device: n/a
+  G05  PASS                                             device: n/a
+  G06  PASS                                             device: n/a
+  G07  PASS                                             device: n/a
+  G08  PASS                                             device: n/a
+  G09  NO-AUTOMATED-COVERAGE                            device: n/a
+
+ACCEPTANCE CHECKS PASSED  -> <scratch>\pubtree1\acceptance_results\20261127T100721Z\report.md
+RUNNER_EXIT=0
+
+The per-requirement report of this run is acceptance/ACCEPTANCE_COVERAGE_MATRIX.md (regenerated from its report.md).
+
+====================================================================================================
+7. Rule check: required held-out verifier missing
+====================================================================================================
+
+Tree = publication tree with job04_investigation/job04_heldout_audit.py deleted; no --windows-device.
+$ python acceptance/run_acceptance.py      (cwd = <scratch>/rulecheck)
+JOB-03/JOB-04 acceptance runner | python 3.15.2 | win32 | results: <scratch>\rulecheck\acceptance_results\20261127T101544Z
+[suite] python exit code = 0 (173.6 s); run=357 failures=0 errors=0 skipped=14
+[script] verify_audio_and_sheet_adapters.py (required): python exit code = 0 (27.9 s)
+[script] verify_development.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_units.py (required): python exit code = 0 (0.1 s)
+[script] verify_midi_import.py (required): python exit code = 0 (0.1 s)
+[script] verify_playback_transport.py (required): python exit code = 0 (0.6 s)
+[script] verify_progressive.py (required): python exit code = 0 (0.1 s)
+[script] verify_proof.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_discovery.py (required): python exit code = 0 (0.1 s)
+[script] job04_investigation/job04_heldout_audit.py: MISSING (required)
+[script] verify_row_merger.py: OUTSIDE PUBLICATION SCOPE (absent)
+
+SUITE: run=357 passed=343 skipped=14 failures=0 errors=0 (exit 0)
+  A01  PASS                                             device: n/a
+  A02  PASS                                             device: n/a
+  A03  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt sections
+  A04  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A05  PASS                                             device: n/a
+  A06  PASS                                             device: n/a
+  A07  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A08  PASS                                             device: n/a
+  A09  PASS                                             device: n/a
+  A10  PASS                                             device: n/a
+  A11  PASS                                             device: n/a
+  A12  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A13  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A14  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A15  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A16  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A17  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A18  PASS                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  A19  PASS                                             device: n/a
+  A20  NO-AUTOMATED-COVERAGE                            device: n/a
+  A21  PASS (regression only; see remaining_unverified) device: n/a
+  A22  FAIL                                             device: NOT RUN HERE (recorded: JOB_03_VERIFICATION_LOG.txt section 
+  G01  PASS                                             device: n/a
+  G02  PASS                                             device: n/a
+  G03  FAIL                                             device: n/a
+  G04  FAIL                                             device: n/a
+  G05  PASS                                             device: n/a
+  G06  FAIL                                             device: n/a
+  G07  FAIL                                             device: n/a
+  G08  PASS                                             device: n/a
+  G09  NO-AUTOMATED-COVERAGE                            device: n/a
+
+ACCEPTANCE CHECKS FAILED  -> <scratch>\rulecheck\acceptance_results\20261127T101544Z\report.md
+RUNNER_EXIT=1
+
+====================================================================================================
+8. Protected boundaries and dependency check (<project>)
+====================================================================================================
+
+$ git rev-parse HEAD
+e1a11e7d5b03a44621f177e8bce5aa504d726334
+$ git diff --stat HEAD   (tracked files changed in the working copy)
+ README.md                         |   2 +-
+ acceptance/README.md              |  31 ++++-
+ acceptance/acceptance_matrix.json | 240 +++++++++++++++++++++++++++++++++++++-
+ acceptance/run_acceptance.py      |  37 +++---
+ 4 files changed, 284 insertions(+), 26 deletions(-)
+$ git diff --quiet HEAD -- music.txt music_gui music_model/audio_importer.py music_model/song.py music_model/timeline.py verify_playback_transport.py tests/test_audio_playback.py tests/test_playback_consolidated.py tests/test_playback_windows_device.py tests/test_wav_import_regression.py tests/fixtures; echo exit=$?
+exit=0  (0 = JOB-03 production code, its tests, fixture and music.txt identical to HEAD)
+$ git diff --cached --name-only   (index)
+(empty index)
+$ grep publication tree for references to excluded experimental files
+./acceptance/run_acceptance.py
+(python files referencing row_merger; only the runner's optional list is expected)
+(no imports of excluded files)
+
+====================================================================================================
+9. R1 confirmation run on the final R1 tree
+====================================================================================================
+
+2026-11-27T10:19:44Z: 357 run, 343 passed, 14 skipped, 0 failures or errors; device 14/14; 9/9 required scripts exit 0;
+row merger OUTSIDE PUBLICATION SCOPE (absent); runner exit 0. (Recorded in the R1 manifest; R1 superseded by R2.)
+
+====================================================================================================
+10. R2 path sanitization check (Author-approved; see JOB_04_PATH_SANITIZATION.md)
+====================================================================================================
+
+Rule: 'C:\Users\<user>' -> '%USERPROFILE%'. Originals preserved at %USERPROFILE%\JOB_04_PUBLICATION_R2_BACKUP_20261127\ .
+Output of the check script (path prefixes in its output sanitized like the rest of this log):
+
+JOB_02_COMPLETION_RECORD.md: original 34098 B 03275d27f8e70be43e5a419bbc5854707949b0fdcf8d4a37ad5a6075c9771c8f
+  current  34096 B 85a2c80efe79c306f084b15d140535cb692d162a17807f4896290d09fe0de194
+  occurrences replaced: 2; path-only lines: [299, 327]; other changed lines: []
+  rule(original) == current: True
+  remaining personal paths in current: 0
+README.md: original 114340 B 76487e5600b5d8b2155b3e19d2b72a0eb9557b436537bb5d0f67d17bcddea55b
+  current  115030 B 4522cc6e2f157b0253301b99293f42be7f1ff6456ee70921cf4ba8763df2ff61
+  occurrences replaced: 1; path-only lines: [649]; other changed lines: [714, 1018]
+  rule(original) == current: False
+    line 714 (authorized non-path change): - **Current Status:** **[COMPLETED WITH DOCUMENTED LIMITATIONS]** (independently accepted ...
+    line 1018 (authorized non-path change): ├── JOB-04: Sifter Discovery Engine [COMPLETED WITH DOCUMENTED LIMITATIONS]
+...
+  remaining personal paths in current: 0
+JOB_02 original == HEAD blob (modulo CRLF): True
+
+====================================================================================================
+11. R2 run 1: full acceptance runner on the R2 publication tree (--windows-device) -- FAILED (A21 recurrence)
+====================================================================================================
+
+RESULT: ACCEPTANCE CHECKS FAILED, runner exit 1. verify_audio_and_sheet_adapters.py (JOB-02 code) ended with
+3221225477 = 0xC0000005 (native access violation, JOB-03 A21); faulthandler frame music_model/audio_importer.py:437
+(_estimate_pitch_autocorrelation). A02, A03, A19 and A22 FAIL because they map that script. Everything else passed:
+suite 358 run / 344 passed / 14 skipped / 0 failures; device 14/14; the other 8 required scripts exit 0; G01-G08 PASS.
+No automatic retry. Complete run preserved: %USERPROFILE%\JOB_04_A21_EVIDENCE_20261127\r2_acceptance_run_FAILED_20261127T103436Z\
+Faulthandler output of the failing script (from that run's script log):
+
+Windows fatal exception: access violation
+
+Current thread 0x00001be0 (most recent call first):
+  File "<scratch>\r2tree1\music_model\audio_importer.py", line 437 in <genexpr>
+  File "<scratch>\r2tree1\music_model\audio_importer.py", line 437 in _estimate_pitch_autocorrelation
+  File "<scratch>\r2tree1\music_model\audio_importer.py", line 356 in detect_candidates
+  File "<scratch>\r2tree1\music_model\audio_importer.py", line 513 in import_audio_to_sound_events
+  File "<scratch>\r2tree1\verify_audio_and_sheet_adapters.py", line 172 in run_audio_benchmarks
+  File "<scratch>\r2tree1\verify_audio_and_sheet_adapters.py", line 1014 in main
+  File "<scratch>\r2tree1\verify_audio_and_sheet_adapters.py", line 1038 in <module>
+
+Current thread's C stack trace (most recent call first):
+  <cannot get C stack on this system>
+
+Tree: <scratch>/r2tree1 = 61 tracked files (7 at their proposed content) + 25 new JOB-04 files + the R1 versions
+of the JOB-04 records; JOB_04_PATH_SANITIZATION.md was written during this run. Records are documentation only.
+$ python -X faulthandler acceptance/run_acceptance.py --windows-device      (cwd = <scratch>/r2tree1)
+JOB-03/JOB-04 acceptance runner | python 3.15.2 | win32 | results: <scratch>\r2tree1\acceptance_results\20261127T103436Z
+[suite] python exit code = 0 (173.2 s); run=358 failures=0 errors=0 skipped=14
+[device] python exit code = 0 (23.0 s); run=14 failures=0 errors=0 skipped=0
+[script] verify_audio_and_sheet_adapters.py (required): python exit code = 3221225477 (18.3 s)
+[script] verify_development.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_units.py (required): python exit code = 0 (0.1 s)
+[script] verify_midi_import.py (required): python exit code = 0 (0.1 s)
+[script] verify_playback_transport.py (required): python exit code = 0 (0.6 s)
+[script] verify_progressive.py (required): python exit code = 0 (0.1 s)
+[script] verify_proof.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_discovery.py (required): python exit code = 0 (0.1 s)
+[script] job04_investigation/job04_heldout_audit.py (required): python exit code = 0 (0.2 s)
+[script] verify_row_merger.py: OUTSIDE PUBLICATION SCOPE (absent)
+
+SUITE: run=358 passed=344 skipped=14 failures=0 errors=0 (exit 0)
+DEVICE: {'exit_code': 0, 'run': 14, 'failures': 0, 'errors': 0, 'skipped': 0}
+  A01  PASS                                             device: n/a
+  A02  FAIL                                             device: n/a
+  A03  FAIL                                             device: PASS
+  A04  PASS                                             device: PASS
+  A05  PASS                                             device: n/a
+  A06  PASS                                             device: n/a
+  A07  PASS                                             device: PASS
+  A08  PASS                                             device: n/a
+  A09  PASS                                             device: n/a
+  A10  PASS                                             device: n/a
+  A11  PASS                                             device: n/a
+  A12  PASS                                             device: PASS
+  A13  PASS                                             device: PASS
+  A14  PASS                                             device: PASS
+  A15  PASS                                             device: PASS
+  A16  PASS                                             device: PASS
+  A17  PASS                                             device: PASS
+  A18  PASS                                             device: PASS
+  A19  FAIL                                             device: n/a
+  A20  NO-AUTOMATED-COVERAGE                            device: n/a
+  A21  PASS (regression only; see remaining_unverified) device: n/a
+  A22  FAIL                                             device: PASS
+  G01  PASS                                             device: n/a
+  G02  PASS                                             device: n/a
+  G03  PASS                                             device: n/a
+  G04  PASS                                             device: n/a
+  G05  PASS                                             device: n/a
+  G06  PASS                                             device: n/a
+  G07  PASS                                             device: n/a
+  G08  PASS                                             device: n/a
+  G09  NO-AUTOMATED-COVERAGE                            device: n/a
+
+ACCEPTANCE CHECKS FAILED  -> <scratch>\r2tree1\acceptance_results\20261127T103436Z\report.md
+RUNNER_EXIT=1
+
+Because this run failed, acceptance/ACCEPTANCE_COVERAGE_MATRIX.md is NOT regenerated from it (see section 13).
+
+====================================================================================================
+12. R2 protected boundaries and dependency check (<project>)
+====================================================================================================
+
+$ git rev-parse HEAD
+e1a11e7d5b03a44621f177e8bce5aa504d726334
+$ git diff --stat HEAD
+ .gitignore                               |   1 +
+ JOB_02_COMPLETION_RECORD.md              |   4 +-
+ README.md                                |   8 +-
+ acceptance/ACCEPTANCE_COVERAGE_MATRIX.md | 128 +++++++++++++++-
+ acceptance/README.md                     |  31 +++-
+ acceptance/acceptance_matrix.json        | 241 ++++++++++++++++++++++++++++++-
+ acceptance/run_acceptance.py             |  37 +++--
+ 7 files changed, 413 insertions(+), 37 deletions(-)
+$ git diff --quiet HEAD -- music.txt music_gui music_model/audio_importer.py music_model/song.py music_model/timeline.py verify_playback_transport.py tests/test_audio_playback.py tests/test_playback_consolidated.py tests/test_playback_windows_device.py tests/test_wav_import_regression.py tests/fixtures
+exit=0  (0 = JOB-03 production code, its tests, fixture and music.txt identical to HEAD)
+$ git diff --cached --name-only
+(empty index)
+$ git check-ignore -v job04_investigation/results/stage2b_evaluation.json
+.gitignore:11:job04_investigation/results/	job04_investigation/results/stage2b_evaluation.json
+$ dependency check on the R2 tree: python files importing excluded files
+(none)
+./acceptance/run_acceptance.py
+(only the runner's optional list references row_merger)
+
+====================================================================================================
+13. R2 run 2: planned confirmation run on the final R2 tree (--windows-device)
+====================================================================================================
+
+Tree: <scratch>/r2final = the final R2 tree with every record at its R2 content (this log and the manifest at their
+pre-run versions). Run deliberately once after R2 run 1; it is not an automatic retry, and run 1's failure stands.
+After this run, only documentation changed: acceptance/ACCEPTANCE_COVERAGE_MATRIX.md (regenerated from this run's
+report.md), this log (this section added) and the manifest (results recorded).
+$ python -X faulthandler acceptance/run_acceptance.py --windows-device      (cwd = <scratch>/r2final)
+JOB-03/JOB-04 acceptance runner | python 3.15.2 | win32 | results: <scratch>\r2final\acceptance_results\20261127T104031Z
+[suite] python exit code = 0 (172.7 s); run=358 failures=0 errors=0 skipped=14
+[device] python exit code = 0 (22.9 s); run=14 failures=0 errors=0 skipped=0
+[script] verify_audio_and_sheet_adapters.py (required): python exit code = 0 (28.0 s)
+[script] verify_development.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_units.py (required): python exit code = 0 (0.1 s)
+[script] verify_midi_import.py (required): python exit code = 0 (0.1 s)
+[script] verify_playback_transport.py (required): python exit code = 0 (0.6 s)
+[script] verify_progressive.py (required): python exit code = 0 (0.1 s)
+[script] verify_proof.py (required): python exit code = 0 (0.1 s)
+[script] verify_group_discovery.py (required): python exit code = 0 (0.1 s)
+[script] job04_investigation/job04_heldout_audit.py (required): python exit code = 0 (0.2 s)
+[script] verify_row_merger.py: OUTSIDE PUBLICATION SCOPE (absent)
+
+SUITE: run=358 passed=344 skipped=14 failures=0 errors=0 (exit 0)
+DEVICE: {'exit_code': 0, 'run': 14, 'failures': 0, 'errors': 0, 'skipped': 0}
+  A01  PASS                                             device: n/a
+  A02  PASS                                             device: n/a
+  A03  PASS                                             device: PASS
+  A04  PASS                                             device: PASS
+  A05  PASS                                             device: n/a
+  A06  PASS                                             device: n/a
+  A07  PASS                                             device: PASS
+  A08  PASS                                             device: n/a
+  A09  PASS                                             device: n/a
+  A10  PASS                                             device: n/a
+  A11  PASS                                             device: n/a
+  A12  PASS                                             device: PASS
+  A13  PASS                                             device: PASS
+  A14  PASS                                             device: PASS
+  A15  PASS                                             device: PASS
+  A16  PASS                                             device: PASS
+  A17  PASS                                             device: PASS
+  A18  PASS                                             device: PASS
+  A19  PASS                                             device: n/a
+  A20  NO-AUTOMATED-COVERAGE                            device: n/a
+  A21  PASS (regression only; see remaining_unverified) device: n/a
+  A22  PASS                                             device: PASS
+  G01  PASS                                             device: n/a
+  G02  PASS                                             device: n/a
+  G03  PASS                                             device: n/a
+  G04  PASS                                             device: n/a
+  G05  PASS                                             device: n/a
+  G06  PASS                                             device: n/a
+  G07  PASS                                             device: n/a
+  G08  PASS                                             device: n/a
+  G09  NO-AUTOMATED-COVERAGE                            device: n/a
+
+ACCEPTANCE CHECKS PASSED  -> <scratch>\r2final\acceptance_results\20261127T104031Z\report.md
+RUNNER_EXIT=0

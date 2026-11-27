@@ -296,7 +296,7 @@ When exact rational attributes are missing (e.g. historical baseline events), `g
 ## 5. Git Workspace Accounting & Protected Repository Status
 
 ```
-Repository: C:\Users\I_wat\PycharmProjects\music
+Repository: %USERPROFILE%\PycharmProjects\music
 Branch: main (up to date with origin/main)
 Checkpoint: 2a4b261 (uncommitted local changes pending author authorization)
 Zero Git Commits / Zero Pushes Performed
@@ -324,7 +324,7 @@ Untracked Baseline Artifacts Preserved:
   - verify_row_merger.py
 
 Protected Calculator Repository:
-  - Path: C:\Users\I_wat\PycharmProjects\calculator
+  - Path: %USERPROFILE%\PycharmProjects\calculator
   - Status: Strictly untouched, read-only at checkpoint 17be078d
 ```
 
